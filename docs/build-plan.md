@@ -4,17 +4,17 @@
 
 ## 재개 체크포인트
 
-- 진행 단계: Bootstrap — Docker/Compose
-- 현재 브랜치: `main`
-- 현재 작업 슬라이스: Bootstrap A — Docker/Compose
-- 슬라이스 목표: 단일 Dockerfile과 공통/dev/prod Compose 구성 확정
+- 진행 단계: Phase 0 — Foundation
+- 현재 브랜치: `development`
+- 현재 작업 슬라이스: Phase 0A — scaffold
+- 슬라이스 목표: Django/DRF/PostgreSQL 프로젝트와 환경 설정, `/api/v1` 및 health check 기반 구성
 - 변경 파일 예산: 최대 30개
-- 관련 명세: 없음. 이 슬라이스는 애플리케이션 구현 전 실행 환경 부트스트랩이다.
-- 현재까지 완료: 단일 Dockerfile과 공통/dev/prod Compose 구성 및 환경변수 예시/실행 문서 작성, dev/prod 병합 설정과 이미지 빌드 검증
-- 확인된 결정: 단일 `Dockerfile`, `docker-compose.yml`, `docker-compose_dev.yml`, `docker-compose_prod.yml`, PostgreSQL
+- 관련 명세: `api-spec.md` 공통 규약/health check, `domain-model.md` 공통 원칙
+- 현재까지 완료: Bootstrap A — Docker/Compose
+- 확인된 결정: Django/DRF/PostgreSQL, 관리자 REST는 session 인증 + `IsAdminUser`
 - 미해결/설계 의심: 없음
-- 다음 작업: Bootstrap A — Docker/Compose
-- 정확한 다음 행동: 검증된 Bootstrap A 변경을 `main`에 커밋하고 완료 이력을 기록한 뒤, 최종 커밋에서 `development`를 생성한다.
+- 다음 작업: Phase 0A — scaffold
+- 정확한 다음 행동: Phase 0 관련 명세 섹션을 읽고 `development`에서 Django/DRF 프로젝트 스캐폴드, 환경 설정, `/api/v1` 및 health check를 구현한다.
 - 마지막 검증: 2026-06-13 dev/prod `docker compose config` 및 app target 빌드 성공, `git diff --check` 통과
 
 이 섹션은 세션 재개를 위한 영속 상태다. 새 세션이 추가 질문 없이 다음 행동을 수행할 수 있을 정도로 유지한다.
@@ -25,8 +25,7 @@
 
 | 슬라이스 | 완료 커밋/PR | 검증 증거 | 설계 변경 |
 | --- | --- | --- | --- |
-
-아직 완료 이력 없음. 현재 문서 부트스트랩은 작업 트리에 있으며 커밋 후 완료 이력에 기록한다.
+| Bootstrap A — Docker/Compose | `45bd637` | dev/prod `docker compose config`, dev/prod app target 빌드, `git diff --check` | 없음 |
 
 완료 판정:
 
