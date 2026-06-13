@@ -1,0 +1,29 @@
+services:
+  app:
+    build:
+      target: production
+    command: gunicorn --bind 0.0.0.0:8000 config.wsgi:application
+    environment:
+      DJANGO_DEBUG: "false"
+    init: true
+    read_only: true
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+
+  db:
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G

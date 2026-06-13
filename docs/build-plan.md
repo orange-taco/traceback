@@ -10,12 +10,12 @@
 - 슬라이스 목표: 단일 Dockerfile과 공통/dev/prod Compose 구성 확정
 - 변경 파일 예산: 최대 30개
 - 관련 명세: 없음. 이 슬라이스는 애플리케이션 구현 전 실행 환경 부트스트랩이다.
-- 현재까지 완료: 문서 설계와 작업 규칙 정리
+- 현재까지 완료: 단일 Dockerfile과 공통/dev/prod Compose 구성 및 환경변수 예시/실행 문서 작성, dev/prod 병합 설정과 이미지 빌드 검증
 - 확인된 결정: 단일 `Dockerfile`, `docker-compose.yml`, `docker-compose_dev.yml`, `docker-compose_prod.yml`, PostgreSQL
 - 미해결/설계 의심: 없음
 - 다음 작업: Bootstrap A — Docker/Compose
-- 정확한 다음 행동: `main`에서 Dockerfile 하나와 Compose 파일 3개를 만들고 dev/prod 병합 설정을 검증한다. 완료 후 커밋된 `main`에서 `development`를 생성한다.
-- 마지막 검증: 2026-06-13 문서 상호 참조/필수 모델/API 확인, `git diff --check` 통과
+- 정확한 다음 행동: 검증된 Bootstrap A 변경을 `main`에 커밋하고 완료 이력을 기록한 뒤, 최종 커밋에서 `development`를 생성한다.
+- 마지막 검증: 2026-06-13 dev/prod `docker compose config` 및 app target 빌드 성공, `git diff --check` 통과
 
 이 섹션은 세션 재개를 위한 영속 상태다. 새 세션이 추가 질문 없이 다음 행동을 수행할 수 있을 정도로 유지한다.
 
