@@ -11,4 +11,5 @@ class HealthCheckTests(SimpleTestCase):
     def test_api_v1_namespace_exists(self) -> None:
         response = self.client.get("/api/v1/")
 
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {})

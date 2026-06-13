@@ -18,9 +18,12 @@ dev = [
     "django-stubs[compatible-mypy]>=5.2,<6",
     "djangorestframework-stubs[compatible-mypy]>=3.16,<4",
     "mypy>=1.16,<2",
+    "pre-commit>=4.2,<5",
     "pytest>=8.4,<9",
+    "pytest-cov>=6.2,<7",
     "pytest-django>=4.11,<5",
     "ruff>=0.12,<0.13",
+    "yamllint>=1.37,<2",
 ]
 
 [tool.uv]
@@ -28,8 +31,17 @@ package = false
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings.test"
-addopts = ["--strict-config", "--strict-markers"]
+addopts = [
+    "--strict-config",
+    "--strict-markers",
+    "--cov=apps",
+    "--cov-report=term-missing",
+    "--cov-fail-under=90",
+]
 testpaths = ["apps"]
+
+[tool.coverage.run]
+data_file = ".pytest_cache/.coverage"
 
 [tool.ruff]
 target-version = "py312"

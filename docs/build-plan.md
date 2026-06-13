@@ -8,14 +8,14 @@
 - 현재 브랜치: `feature/phase-0a-foundation`
 - 현재 작업 슬라이스: Phase 0A — scaffold
 - 슬라이스 목표: Django/DRF/PostgreSQL 프로젝트와 환경 설정, `/api/v1` 및 health check 기반 구성
-- 변경 파일 예산: 최대 30개
+- 변경 파일 예산: 이번 설정 기반 슬라이스는 사용자 승인으로 30개 제한 예외
 - 관련 명세: `api-spec.md` 공통 규약/health check, `domain-model.md` 공통 원칙
-- 현재까지 완료: Bootstrap A — Docker/Compose, Phase 0A Django/DRF scaffold와 health check, `uv`/Ruff/mypy/pytest/CI, production image release workflow
-- 확인된 결정: Django/DRF/PostgreSQL, `uv` + lockfile, Gunicorn + Uvicorn worker + ASGI, local/staging/production 환경, 로컬 Compose PostgreSQL, AWS ECS Fargate + ALB + managed PostgreSQL, 로컬 파일 저장소와 staging/production S3
+- 현재까지 완료: Bootstrap A — Docker/Compose, Phase 0A Django/DRF scaffold와 DefaultRouter/health check, `uv`/Ruff/mypy/yamllint/pytest/coverage/CI, CodeRabbit/Dependabot/pre-commit, `development` → `main` production ECR/EC2 CD workflow
+- 확인된 결정: Django/DRF/PostgreSQL, `uv` + lockfile, Gunicorn + Uvicorn worker + ASGI, development(local)/staging(AWS)/production(AWS), development 기본 Compose + production 공통 overlay, 로컬 Compose PostgreSQL, AWS EC2 + Docker Compose + managed PostgreSQL, 로컬 파일 저장소와 staging/production S3
 - 미해결/설계 의심: 없음
 - 다음 작업: Phase 0A — scaffold
-- 정확한 다음 행동: Phase 0A 변경을 커밋하고 `development` 대상 PR로 검증한다. 병합 후 Phase 0B 공통 오류/pagination/request ID/관리자 인증을 별도 브랜치에서 구현한다.
-- 마지막 검증: 2026-06-13 Ruff lint/format, strict mypy, Django check/migration drift, pytest, dev/prod Compose config와 image build, dev `/health`, production Gunicorn ASGI healthy smoke test 통과
+- 정확한 다음 행동: Phase 0A 설정 보강 변경을 커밋하고 `development` 대상 PR로 검증한다. 병합 후 Phase 0B 공통 오류/pagination/request ID/관리자 인증을 별도 브랜치에서 구현한다.
+- 마지막 검증: 2026-06-13 Ruff lint/format, YAML lint, strict mypy, Django check/migration drift, pytest/coverage, development/production Compose config, development `/health`, production Gunicorn ASGI healthy smoke test 통과
 
 이 섹션은 세션 재개를 위한 영속 상태다. 새 세션이 추가 질문 없이 다음 행동을 수행할 수 있을 정도로 유지한다.
 
@@ -25,7 +25,7 @@
 
 | 슬라이스 | 완료 커밋/PR | 검증 증거 | 설계 변경 |
 | --- | --- | --- | --- |
-| Bootstrap A — Docker/Compose | `45bd637` | dev/prod `docker compose config`, dev/prod app target 빌드, `git diff --check` | 없음 |
+| Bootstrap A — Docker/Compose | `45bd637` | development/production `docker compose config`, development/production app target 빌드, `git diff --check` | 없음 |
 
 완료 판정:
 
@@ -94,10 +94,9 @@ PR 피드백도 같은 기준으로 분류한다. 피드백이 API 계약, 모�
 Docker/Compose 부트스트랩 결정:
 
 - Dockerfile은 루트의 단일 `Dockerfile`만 사용한다.
-- `docker-compose.yml`은 공통 서비스/네트워크/볼륨의 기준 파일이다.
-- `docker-compose_dev.yml`은 개발 전용 command, bind mount, port, 개발 환경값을 추가/재정의한다.
-- `docker-compose_prod.yml`은 운영 command, restart/resource/security 설정과 운영 환경값을 추가/재정의한다.
-- 개발 실행은 `docker compose -f docker-compose.yml -f docker-compose_dev.yml ...` 형식을 사용한다.
+- `docker-compose.yml`은 로컬 development 서비스/네트워크/볼륨/command/bind mount/port의 기준 파일이다.
+- `docker-compose_prod.yml`은 production command, restart/resource/security 설정과 운영 환경값을 추가/재정의하고 로컬 bind mount/port/PostgreSQL service를 제거한다.
+- 개발 실행은 `docker compose ...` 형식을 사용한다.
 - 운영 실행은 `docker compose -f docker-compose.yml -f docker-compose_prod.yml ...` 형식을 사용한다.
 - 비밀값은 Compose 파일에 직접 저장하지 않는다.
 
@@ -126,12 +125,12 @@ Phase 0 결정:
 ## Bootstrap A — Docker/Compose
 
 - **브랜치**: `main` 직접 작업. 이 부트스트랩 완료 후 `development` 생성.
-- **파일**: 단일 `Dockerfile`, `.dockerignore`, `docker-compose.yml`, `docker-compose_dev.yml`, `docker-compose_prod.yml`, 필요한 환경변수 예시/실행 문서.
+- **파일**: 단일 `Dockerfile`, `.dockerignore`, `docker-compose.yml`, `docker-compose_prod.yml`, 필요한 환경변수 예시/실행 문서.
 - **공통 Compose**: 애플리케이션과 PostgreSQL 서비스, named volume, healthcheck, 공통 네트워크/환경변수 계약.
-- **개발 Overlay**: bind mount, 개발 command, 개발 port, 로컬 편의 설정.
+- **Development 기본 구성**: bind mount, 개발 command, 개발 port, 로컬 PostgreSQL.
 - **운영 Overlay**: 운영 command, 자동 재시작, 운영 노출/보안 설정. 소스 bind mount 금지.
 - **완료**:
-  - `docker compose -f docker-compose.yml -f docker-compose_dev.yml config` 성공
+  - `docker compose config` 성공
   - `docker compose -f docker-compose.yml -f docker-compose_prod.yml config` 성공
   - 단일 Dockerfile로 두 환경 이미지 구성이 가능
   - 비밀값이 저장소 파일에 포함되지 않음

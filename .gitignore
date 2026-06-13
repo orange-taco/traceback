@@ -1,5 +1,10 @@
 .idea/
 .env
+.env.*
+!.env.example
+.coverage
+coverage.xml
+htmlcov/
 __pycache__/
 *.py[cod]
 .mypy_cache/

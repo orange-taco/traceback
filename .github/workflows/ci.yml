@@ -15,6 +15,16 @@ permissions:
   contents: read
 
 jobs:
+  release-gate:
+    name: Release branch gate
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require development source branch
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: test "$HEAD_REF" = development
+
   quality:
     name: Quality
     runs-on: ubuntu-latest
@@ -28,8 +38,11 @@ jobs:
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run mypy .
-      - run: docker compose --env-file .env.example -f docker-compose.yml -f docker-compose_dev.yml config --quiet
-      - run: docker compose --env-file .env.example -f docker-compose.yml -f docker-compose_prod.yml config --quiet
+      - run: uv run yamllint .
+      - run: docker compose --env-file .env.example config --quiet
+      - env:
+          APP_IMAGE: traceback-production:ci
+        run: docker compose --env-file .env.example -f docker-compose.yml -f docker-compose_prod.yml config --quiet
       - run: docker build --target production .
 
   test:
@@ -66,11 +79,19 @@ jobs:
 
   production-smoke:
     name: Production smoke
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker compose --env-file .env.example -f docker-compose.yml -f docker-compose_prod.yml up -d --build --wait
+      - run: docker build --target production -t traceback-production-smoke:${{ github.sha }} .
+      - env:
+          APP_IMAGE: traceback-production-smoke:${{ github.sha }}
+        run: docker compose --env-file .env.example -f docker-compose.yml -f docker-compose_prod.yml up -d --no-build --wait
       - if: always()
+        env:
+          APP_IMAGE: traceback-production-smoke:${{ github.sha }}
         run: docker compose --env-file .env.example -f docker-compose.yml -f docker-compose_prod.yml logs --no-color
       - if: always()
+        env:
+          APP_IMAGE: traceback-production-smoke:${{ github.sha }}
         run: docker compose --env-file .env.example -f docker-compose.yml -f docker-compose_prod.yml down -v
