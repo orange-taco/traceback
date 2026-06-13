@@ -4,12 +4,8 @@ services:
       target: development
     command: python manage.py runserver 0.0.0.0:8000
     environment:
-      DJANGO_DEBUG: "true"
+      DJANGO_SETTINGS_MODULE: config.settings.development
     ports:
       - "8000:8000"
     volumes:
       - .:/app
-
-  db:
-    ports:
-      - "5432:5432"

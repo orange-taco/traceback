@@ -5,17 +5,17 @@
 ## 재개 체크포인트
 
 - 진행 단계: Phase 0 — Foundation
-- 현재 브랜치: `development`
+- 현재 브랜치: `feature/phase-0a-foundation`
 - 현재 작업 슬라이스: Phase 0A — scaffold
 - 슬라이스 목표: Django/DRF/PostgreSQL 프로젝트와 환경 설정, `/api/v1` 및 health check 기반 구성
 - 변경 파일 예산: 최대 30개
 - 관련 명세: `api-spec.md` 공통 규약/health check, `domain-model.md` 공통 원칙
-- 현재까지 완료: Bootstrap A — Docker/Compose
-- 확인된 결정: Django/DRF/PostgreSQL, 관리자 REST는 session 인증 + `IsAdminUser`
+- 현재까지 완료: Bootstrap A — Docker/Compose, Phase 0A Django/DRF scaffold와 health check, `uv`/Ruff/mypy/pytest/CI, production image release workflow
+- 확인된 결정: Django/DRF/PostgreSQL, `uv` + lockfile, Gunicorn + Uvicorn worker + ASGI, local/staging/production 환경, 로컬 Compose PostgreSQL, AWS ECS Fargate + ALB + managed PostgreSQL, 로컬 파일 저장소와 staging/production S3
 - 미해결/설계 의심: 없음
 - 다음 작업: Phase 0A — scaffold
-- 정확한 다음 행동: Phase 0 관련 명세 섹션을 읽고 `development`에서 Django/DRF 프로젝트 스캐폴드, 환경 설정, `/api/v1` 및 health check를 구현한다.
-- 마지막 검증: 2026-06-13 dev/prod `docker compose config` 및 app target 빌드 성공, `git diff --check` 통과
+- 정확한 다음 행동: Phase 0A 변경을 커밋하고 `development` 대상 PR로 검증한다. 병합 후 Phase 0B 공통 오류/pagination/request ID/관리자 인증을 별도 브랜치에서 구현한다.
+- 마지막 검증: 2026-06-13 Ruff lint/format, strict mypy, Django check/migration drift, pytest, dev/prod Compose config와 image build, dev `/health`, production Gunicorn ASGI healthy smoke test 통과
 
 이 섹션은 세션 재개를 위한 영속 상태다. 새 세션이 추가 질문 없이 다음 행동을 수행할 수 있을 정도로 유지한다.
 
