@@ -6,9 +6,9 @@ services:
       target: development
     command: python manage.py runserver 0.0.0.0:8000
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-traceback}:${POSTGRES_PASSWORD:-development-only}@db:5432/${POSTGRES_DB:-traceback}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-}
-      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY is required}
       DJANGO_SETTINGS_MODULE: config.settings.development
     healthcheck:
       test: ["CMD", "python", "scripts/healthcheck.py"]
@@ -16,35 +16,12 @@ services:
       timeout: 5s
       retries: 5
       start_period: 15s
-    depends_on:
-      db:
-        condition: service_healthy
     networks:
       - backend
     ports:
       - "8000:8000"
     volumes:
       - .:/app
-
-  db:
-    image: postgres:17-alpine
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-traceback}
-      POSTGRES_USER: ${POSTGRES_USER:-traceback}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-development-only}
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-      start_period: 5s
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - backend
-
-volumes:
-  postgres_data:
 
 networks:
   backend:

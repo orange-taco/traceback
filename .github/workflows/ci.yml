@@ -36,7 +36,7 @@ jobs:
         with:
           enable-cache: true
           version: "0.10.4"
-      - run: uv sync --locked --all-groups
+      - run: uv sync --frozen --all-groups
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run mypy .
@@ -76,7 +76,7 @@ jobs:
         with:
           enable-cache: true
           version: "0.10.4"
-      - run: uv sync --locked --all-groups
+      - run: uv sync --frozen --all-groups
       - run: uv run python manage.py check
       - run: uv run python manage.py makemigrations --check --dry-run
       - run: uv run pytest

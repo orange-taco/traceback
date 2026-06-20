@@ -15,12 +15,12 @@ COPY pyproject.toml uv.lock ./
 FROM base AS production-dependencies
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-dev --no-install-project
+    uv sync --frozen --no-dev --no-install-project
 
 FROM base AS development-dependencies
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --all-groups --no-install-project
+    uv sync --frozen --all-groups --no-install-project
 
 FROM development-dependencies AS development
 
