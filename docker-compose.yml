@@ -3,34 +3,25 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: development
+    command: python manage.py runserver 0.0.0.0:8000
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - backend
-
-  db:
-    image: postgres:17-alpine
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY is required}
+      DJANGO_SETTINGS_MODULE: config.settings.development
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-      interval: 5s
+      test: ["CMD", "python", "scripts/healthcheck.py"]
+      interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 5s
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      start_period: 15s
     networks:
       - backend
-
-volumes:
-  postgres_data:
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
 
 networks:
   backend:

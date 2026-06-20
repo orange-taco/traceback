@@ -1,10 +1,11 @@
 services:
   app:
-    build:
-      target: production
-    command: gunicorn --bind 0.0.0.0:8000 config.wsgi:application
+    build: !reset null
+    image: ${APP_IMAGE:?APP_IMAGE is required}
+    command: !reset []
     environment:
-      DJANGO_DEBUG: "false"
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      DJANGO_SETTINGS_MODULE: config.settings.production
     init: true
     read_only: true
     restart: unless-stopped
@@ -12,18 +13,10 @@ services:
       - no-new-privileges:true
     tmpfs:
       - /tmp
+    ports: !reset []
+    volumes: !reset []
     deploy:
       resources:
         limits:
           cpus: "1.0"
           memory: 512M
-
-  db:
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    deploy:
-      resources:
-        limits:
-          cpus: "1.0"
-          memory: 1G

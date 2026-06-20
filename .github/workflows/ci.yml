@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - development
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  release-gate:
+    name: Release branch gate
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require development source branch
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: test "$HEAD_REF" = development
+
+  quality:
+    name: Quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          version: "0.10.4"
+      - run: uv sync --frozen --all-groups
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run mypy .
+      - run: uv run yamllint .
+      - run: docker compose --env-file .env.example config --quiet
+      - env:
+          APP_IMAGE: traceback-production:ci
+        run: docker compose --env-file .env.example -f docker-compose.yml -f docker-compose_prod.yml config --quiet
+      - run: docker build --target production .
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: traceback
+          POSTGRES_USER: traceback
+          POSTGRES_PASSWORD: traceback
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U traceback -d traceback"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://traceback:traceback@localhost:5432/traceback
+      DJANGO_SECRET_KEY: ci-only-secret-key
+      DJANGO_SETTINGS_MODULE: config.settings.test
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          version: "0.10.4"
+      - run: uv sync --frozen --all-groups
+      - run: uv run python manage.py check
+      - run: uv run python manage.py makemigrations --check --dry-run
+      - run: uv run pytest
+
+  production-smoke:
+    name: Production smoke
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          persist-credentials: false
+      - run: docker build --target production -t traceback-production-smoke:${{ github.sha }} .
+      - env:
+          APP_IMAGE: traceback-production-smoke:${{ github.sha }}
+        run: docker compose --env-file .env.example -f docker-compose.yml -f docker-compose_prod.yml up -d --no-build --wait
+      - if: always()
+        env:
+          APP_IMAGE: traceback-production-smoke:${{ github.sha }}
+        run: docker compose --env-file .env.example -f docker-compose.yml -f docker-compose_prod.yml logs --no-color
+      - if: always()
+        env:
+          APP_IMAGE: traceback-production-smoke:${{ github.sha }}
+        run: docker compose --env-file .env.example -f docker-compose.yml -f docker-compose_prod.yml down -v
