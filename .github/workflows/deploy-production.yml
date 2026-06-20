@@ -69,6 +69,7 @@ jobs:
               --document-name AWS-RunShellScript \
               --parameters commands="[
                 \"cd /opt/traceback\",
+                \"docker compose version --short | awk -F. '{sub(/^v/, \\\"\\\", \\$1); if ((\\$1 + 0) * 1000000 + (\\$2 + 0) * 1000 + (\\$3 + 0) < 2024004) exit 1}'\",
                 \"aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin ${APP_IMAGE%%/*}\",
                 \"APP_IMAGE=$APP_IMAGE docker compose --env-file .env -f docker-compose.yml -f docker-compose_prod.yml pull app\",
                 \"APP_IMAGE=$APP_IMAGE docker compose --env-file .env -f docker-compose.yml -f docker-compose_prod.yml up -d --no-build --wait app\"
