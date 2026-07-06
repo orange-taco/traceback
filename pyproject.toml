@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "TRACEBACK commerce backend"
 requires-python = ">=3.12,<3.13"
 dependencies = [
-    "Django>=5.2,<5.3",
+    "Django>=5.1,<5.3",
     "dj-database-url>=2.3,<3",
     "djangorestframework>=3.16,<4",
     "gunicorn>=23,<24",
@@ -15,7 +15,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "django-stubs[compatible-mypy]>=5.2,<6",
+    "django-stubs[compatible-mypy]>=5.1,<6",
     "djangorestframework-stubs[compatible-mypy]>=3.16,<4",
     "mypy>=1.16,<2",
     "pre-commit>=4.2,<5",
