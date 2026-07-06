@@ -5,17 +5,17 @@
 ## 재개 체크포인트
 
 - 진행 단계: Phase 0 — Foundation
-- 현재 브랜치: `feature/phase-0a-foundation`
+- 현재 브랜치: `phase-0-foundation`
 - 현재 작업 슬라이스: Phase 0A — scaffold
 - 슬라이스 목표: Django/DRF/PostgreSQL 프로젝트와 환경 설정, `/api/v1` 및 health check 기반 구성
 - 변경 파일 예산: 이번 설정 기반 슬라이스는 사용자 승인으로 30개 제한 예외
-- 관련 명세: `api-spec.md` 공통 규약/health check, `domain-model.md` 공통 원칙
+- 관련 명세: `phase-0-completion.md`, `api-spec.md` 공통 규약/health check, `domain-model.md` 공통 원칙
 - 현재까지 완료: Bootstrap A — Docker/Compose, Phase 0A Django/DRF scaffold와 DefaultRouter/health check, `uv`/Ruff/mypy/yamllint/pytest/coverage/CI, CodeRabbit/Dependabot/pre-commit, `development` → `main` production ECR/EC2 CD workflow
 - 확인된 결정: Django/DRF/PostgreSQL, `uv` + lockfile, Gunicorn + Uvicorn worker + ASGI, development(local)/staging(AWS)/production(AWS), development 기본 Compose + production 공통 overlay, 로컬 Compose PostgreSQL, AWS EC2 + Docker Compose + managed PostgreSQL, 로컬 파일 저장소와 staging/production S3
-- 미해결/설계 의심: 없음
-- 다음 작업: Phase 0A — scaffold
-- 정확한 다음 행동: Phase 0A 설정 보강 변경을 커밋하고 `development` 대상 PR로 검증한다. 병합 후 Phase 0B 공통 오류/pagination/request ID/관리자 인증을 별도 브랜치에서 구현한다.
-- 마지막 검증: 2026-06-13 Ruff lint/format, YAML lint, strict mypy, Django check/migration drift, pytest/coverage, development/production Compose config, development `/health`, production Gunicorn ASGI healthy smoke test 통과
+- 미해결/설계 의심: Phase 0 전체 완료 조건 중 공통 오류 응답, pagination, request ID, 관리자 REST 인증, `SiteSetting`, `IdempotencyRecord` 구현이 아직 확인되지 않음. `User`는 기본 `auth.User` 유지 또는 커스텀 User 도입 결정을 Phase 1 전에 확정해야 함
+- 다음 작업: Phase 0B — common API/auth
+- 정확한 다음 행동: `docs/phase-0-completion.md` 기준으로 `User` 결정을 먼저 확정하고, Phase 0B 공통 오류 응답, pagination, request ID, 관리자 REST 인증, 공통 모델을 `development` 대상 PR로 구현한다. Phase 0 완료 전 Phase 1 Catalog를 시작하지 않는다.
+- 마지막 검증: 2026-07-06 Django 5.2.15 설치 확인, `uv run pytest` 통과, `uv run python manage.py check --settings=config.settings.test` 통과. 기본 development 설정의 `manage.py check`는 `DJANGO_SECRET_KEY` 미주입 시 실패.
 
 이 섹션은 세션 재개를 위한 영속 상태다. 새 세션이 추가 질문 없이 다음 행동을 수행할 수 있을 정도로 유지한다.
 
@@ -142,7 +142,7 @@ Phase 0 결정:
 - **범위**: Django/DRF/PostgreSQL 프로젝트, 환경 설정, `User`, `SiteSetting`, `IdempotencyRecord`, `/api/v1`, health check, 공통 오류, pagination, `request_id`, 관리자 인증, CI.
 - **검증**: 설정/비밀키 주입, namespace 분리, 관리자 권한, 공통 응답 규약.
 - **완료**: 새 환경에서 설치, migrate, 테스트가 성공하고 CI가 같은 검증을 실행한다.
-- **참고**: `api-spec.md` 기본/응답 정책, `domain-model.md` User/SiteSetting/IdempotencyRecord.
+- **참고**: `phase-0-completion.md`, `api-spec.md` 기본/응답 정책, `domain-model.md` User/SiteSetting/IdempotencyRecord.
 
 ## Phase 1 — Catalog
 
