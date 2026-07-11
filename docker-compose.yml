@@ -5,8 +5,11 @@ services:
       dockerfile: Dockerfile
       target: development
     command: python manage.py runserver 0.0.0.0:8000
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
-      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      DATABASE_URL: ${COMPOSE_DATABASE_URL:-postgresql://traceback:development-only@db:5432/traceback}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY is required}
       DJANGO_SETTINGS_MODULE: config.settings.development
@@ -22,6 +25,26 @@ services:
       - "8000:8000"
     volumes:
       - .:/app
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-traceback}
+      POSTGRES_USER: ${POSTGRES_USER:-traceback}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-development-only}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
 networks:
   backend:
+
+volumes:
+  postgres_data:

@@ -241,6 +241,8 @@ MVP라도 다음 원칙은 유지한다.
 - Django/DRF/PostgreSQL 기반을 만든다.
 - `/api/v1` 기준과 `/health`를 둔다.
 - 공통 오류 응답, pagination, request ID, 관리자 인증을 얇게 만든다.
+- Custom User/Auth 기반을 만든다.
+- Kakao/Naver 소셜 계정 연결, 이메일 변경 요청, 사용자 토큰, 혜택 중복 방지 ledger의 최소 모델을 만든다.
 - 운영/개발 명령과 CI를 유지한다.
 
 아직 하지 않는다:
@@ -248,6 +250,16 @@ MVP라도 다음 원칙은 유지한다.
 - 커머스 도메인 모델 전체 구현
 - 주문/결제/재고 상세 설계 구현
 - 미래 관리자 API 전체 구현
+- `SiteSetting` 구현. 공개 설정이나 배송 정책이 필요해지는 Phase 1 또는 Phase 3에서 다시 확정한다.
+- `IdempotencyRecord` 구현. 주문/결제/관리자 명령 API가 시작되는 Phase 3 전에 다시 확정한다.
+
+확정된 Phase 0B 기준:
+
+- User는 `AbstractBaseUser` + `PermissionsMixin` 기반 custom User를 사용하고 email로 로그인한다.
+- 관리자 REST API는 `/api/v1/admin/` namespace와 Django session + `IsAdminUser`를 기준으로 한다.
+- `UserToken`은 이메일 인증 24시간, 비밀번호 설정 1시간, 비밀번호 재설정 1시간 뒤 만료한다.
+- `EmailChangeRequest`는 24시간 뒤 만료하고 같은 user 기준 10분에 1회 요청을 허용한다.
+- `BenefitClaim`은 원문 개인정보 없이 HMAC hash ledger로 장기 보관한다.
 
 ### Phase 1 - Catalog
 

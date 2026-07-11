@@ -3,6 +3,7 @@ services:
     build: !reset null
     image: ${APP_IMAGE:?APP_IMAGE is required}
     command: !reset []
+    depends_on: !reset []
     environment:
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
       DJANGO_SETTINGS_MODULE: config.settings.production
@@ -20,3 +21,4 @@ services:
         limits:
           cpus: "1.0"
           memory: 512M
+  db: !reset null

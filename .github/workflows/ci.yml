@@ -79,6 +79,8 @@ jobs:
       - run: uv sync --frozen --all-groups
       - run: uv run python manage.py check
       - run: uv run python manage.py makemigrations --check --dry-run
+      - run: uv run python manage.py migrate --noinput
+      - run: uv run python manage.py migrate --check
       - run: uv run pytest
 
   production-smoke:

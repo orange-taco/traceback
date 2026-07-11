@@ -117,6 +117,9 @@ email/password로 먼저 가입한 뒤 같은 이메일의 소셜 로그인을 �
 - 대표 이메일 변경을 허용한다.
 - 새 이메일 인증이 완료되기 전까지 기존 `User.email`을 유지한다.
 - 이메일 변경은 별도 `EmailChangeRequest` 모델로 관리한다.
+- 이메일 변경 요청은 24시간 뒤 만료한다.
+- 재요청은 같은 user 기준 10분에 1회 허용한다.
+- 새 요청이 생성되면 기존 미확정 요청은 만료 처리한다.
 
 모델:
 
@@ -169,6 +172,14 @@ UserToken
   user-bound one-time token이다.
 - 반면 이메일 변경은 `new_email`이 필요하므로 `EmailChangeRequest`가 더 명확하다.
 
+만료 시간:
+
+```text
+email_verify: 24시간
+password_set: 1시간
+password_reset: 1시간
+```
+
 ## Phone Verification
 
 - 가입 시 phone은 받지 않는다.
@@ -190,6 +201,9 @@ where phone_verified_at is not null and deleted_at is null
 - 웰컴 쿠폰은 phone SMS 인증 완료 후 지급한다.
 - 계정 생성 경로가 email/password, kakao, naver 중 무엇이든 phone 기준으로 1회만 지급한다.
 - 이메일이나 소셜 계정 연결은 계정 편의성 문제이고, 혜택 중복 방지는 phone hash ledger로 분리한다.
+- `BenefitClaim`은 중복 혜택 지급 방지 ledger로 장기 보관한다.
+- 원문 phone/email/social identity는 저장하지 않고 서버 secret pepper 기반 HMAC hash만 저장한다.
+- 개인정보 처리방침에는 부정 이용 및 중복 혜택 지급 방지를 위해 일부 식별정보를 복호화할 수 없는 방식으로 변환하여 보관할 수 있음을 반영한다.
 
 모델명:
 
@@ -223,7 +237,7 @@ Hash 정책:
 
 - 원문 email/phone/social identity를 혜택 ledger에 저장하지 않는다.
 - 서버 secret pepper를 사용한 HMAC hash를 저장한다.
-- 탈퇴 후에도 `BenefitClaim`은 중복 지급 방지 목적과 보관 기간에 따라 유지한다.
+- 탈퇴 후에도 `BenefitClaim`은 중복 지급 방지 목적의 HMAC hash ledger로 장기 보관한다.
 
 ## Deactivation / Withdrawal
 
@@ -270,10 +284,10 @@ SocialAccount 비활성화/익명화
   시작되는 Phase에서 scope/key/request hash/status 계약과 함께 구현한다.
 - Phase 3 Order 시작 전에는 반드시 다시 결정한다.
 
-## Open Questions
+## Resolved Phase 0B Decisions
 
-Phase 0B 구현 전 다음을 추가 결정한다.
+Phase 0B 구현 전 남아 있던 결정은 2026-07-11에 다음으로 확정했다.
 
-1. `BenefitClaim`의 보관 기간과 개인정보 처리방침 반영 문구.
-2. `UserToken`의 목적별 만료 시간.
-3. `EmailChangeRequest`의 만료 시간과 재요청 rate limit.
+1. `BenefitClaim`은 HMAC hash ledger로 장기 보관하고 원문 개인정보는 저장하지 않는다.
+2. `UserToken` 만료 시간은 `email_verify` 24시간, `password_set` 1시간, `password_reset` 1시간으로 둔다.
+3. `EmailChangeRequest`는 24시간 뒤 만료하고, 같은 user 기준 10분에 1회 요청을 허용한다.

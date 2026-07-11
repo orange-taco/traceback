@@ -6,13 +6,14 @@ Phase 1 Catalog는 이 문서의 필수 항목이 통과하고
 
 ## Current Verdict
 
-2026-07-06 기준 Phase 0은 **완료 아님**.
+2026-07-11 기준 Phase 0은 **완료 아님**.
 
 완료된 부분은 Django/DRF scaffold, ASGI entrypoint, `/api/v1/` router,
 `/health`, 기본 CI/품질 도구, Docker/Compose 기반이다.
 
 Phase 0 완료를 막는 항목은 custom User/Auth 구현, 공통 API 인프라,
-관리자 REST 인증, 명시적 migrate 검증이다.
+관리자 REST 인증이다. User/Auth 정책 결정은
+`docs/phaseB.md`에 확정되어 있으며, 남은 작업은 구현과 검증이다.
 
 ## Version Baseline
 
@@ -33,13 +34,13 @@ ASGI 운영을 전제로 하므로 Django는 반드시 `5.1` 이상이어야 한
 | --- | --- | --- |
 | Project scaffold | Django settings split, ASGI entrypoint, DRF installed, `/api/v1/` router mounted | Done |
 | Health check | `GET /health` returns `200 {"status": "ok"}` without auth | Done |
-| PostgreSQL | CI migration/test verification uses PostgreSQL; local development documents PostgreSQL migrate path | Partial |
-| CI | CI runs install, lint, format check, mypy, Django check, migration drift check, migrate, tests, Compose config, production image build | Partial: missing explicit `migrate` |
+| PostgreSQL | CI migration/test verification uses PostgreSQL; local development documents PostgreSQL migrate path | Done: CI uses PostgreSQL service; local development defaults to Docker Compose PostgreSQL |
+| CI | CI runs install, lint, format check, mypy, Django check, migration drift check, migrate, migration check, tests, Compose config, production image build | Workflow includes explicit `migrate --noinput` and `migrate --check`; pending CI run evidence |
 | Django version | Dependency range keeps Django `>=5.1,<5.3` for ASGI runtime | Done |
 | User | Implement decided custom User before commerce migrations | Decided in `phaseB.md`, missing implementation |
 | SocialAccount | Support initial Kakao/Naver social account linking model and constraints | Decided in `phaseB.md`, missing implementation |
-| Email/token flows | Email change request and user token baseline for verification/password flows | Decided in `phaseB.md`, missing implementation |
-| BenefitClaim | Record welcome benefit claims by HMAC phone hash to prevent duplicate issuance | Decided in `phaseB.md`, missing implementation |
+| Email/token flows | Email change request and user token baseline for verification/password flows | Decided in `phaseB.md`: email verify 24h, password set/reset 1h, email change 24h with 10m per-user request limit; missing implementation |
+| BenefitClaim | Record welcome benefit claims by HMAC phone hash to prevent duplicate issuance | Decided in `phaseB.md`: long-lived HMAC hash ledger without raw personal data; missing implementation |
 | SiteSetting | Explicitly defer until Catalog/Order needs concrete public settings or shipping policy | Deferred |
 | IdempotencyRecord | Explicitly defer until Order/Payment/admin command APIs introduce idempotent writes | Deferred |
 | Error response | DRF exception handler returns stable `code`, `message`, `details`, `request_id` contract | Missing |
@@ -56,8 +57,7 @@ ASGI 운영을 전제로 하므로 Django는 반드시 `5.1` 이상이어야 한
 1. User/Auth model:
    Implement the custom User/Auth decisions recorded in `docs/phaseB.md`.
 2. Admin REST namespace:
-   Confirm the namespace shape before adding admin endpoints. Baseline expectation:
-   `/api/v1/admin/`.
+   Use `/api/v1/admin/` for the Phase 0B admin REST authentication baseline.
 3. SiteSetting:
    Deferred from Phase 0B. Revisit before Phase 1 Catalog if public settings are
    needed for home/PDP, and before Phase 3 Order if shipping fee policy is needed.
@@ -82,10 +82,8 @@ Phase 0 must not implement commerce domain behavior beyond common foundation:
 3. Add admin REST authentication baseline:
    session authentication with `IsAdminUser` and tests proving anonymous/non-staff
    users are rejected while staff users are accepted.
-4. Add explicit migration verification:
-   CI should run `manage.py migrate`, not only `makemigrations --check`.
-5. Add tests for the missing common behavior, not only `/health`.
-6. Update `docs/build-plan.md` checkpoint and completion history only after the
+4. Add tests for the missing common behavior, not only `/health`.
+5. Update `docs/build-plan.md` checkpoint and completion history only after the
    above is implemented and verified.
 
 ## Phase 0 Completion Command Set

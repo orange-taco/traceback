@@ -4,15 +4,9 @@ Command reference: [docs/commands.md](docs/commands.md)
 
 ## Local development
 
-Local development runs Django with `uv` and a locally installed PostgreSQL.
-Docker is reserved for production image builds, smoke tests, and deployment.
-
-Create the local database and user in PostgreSQL:
-
-```sql
-CREATE USER traceback WITH PASSWORD 'development-only';
-CREATE DATABASE traceback OWNER traceback;
-```
+Local development uses Docker Compose PostgreSQL by default. Django can run
+directly on the host with `uv`, or inside the Compose `app` container when you
+want the whole stack containerized.
 
 Create the environment and install dependencies:
 
@@ -22,11 +16,23 @@ uv sync --all-groups
 uv run pre-commit install
 ```
 
-Run Django locally:
+Start the local PostgreSQL service:
+
+```sh
+docker compose --env-file .env up -d db
+```
+
+Run Django on the host:
 
 ```sh
 uv run --env-file .env python manage.py migrate
 uv run --env-file .env python manage.py runserver
+```
+
+Or run the application container against the Compose database:
+
+```sh
+docker compose --env-file .env up app
 ```
 
 The project standard is `uv`; do not maintain a separate `requirements.txt` or
@@ -64,5 +70,7 @@ uv run mypy .
 uv run yamllint .
 uv run python manage.py check --settings=config.settings.test
 uv run python manage.py makemigrations --check --dry-run --settings=config.settings.test
+uv run python manage.py migrate --settings=config.settings.test
+uv run python manage.py migrate --check --settings=config.settings.test
 uv run pytest
 ```
