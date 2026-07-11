@@ -25,8 +25,8 @@ docker compose --env-file .env up -d db
 ```
 
 The local database is published on host port `15432` to avoid conflicts with
-locally installed PostgreSQL. Django reads `TRACEBACK_DATABASE_URL` before
-falling back to `DATABASE_URL`. Compose uses `TRACEBACK_POSTGRES_*` variables
+locally installed PostgreSQL. Django requires `TRACEBACK_DATABASE_URL` and does
+not fall back to `DATABASE_URL`. Compose uses `TRACEBACK_POSTGRES_*` variables
 for the local database service to avoid collisions with shell-level
 `POSTGRES_*` values.
 
@@ -101,7 +101,7 @@ image is built. The running container starts Gunicorn directly; it does not use
 Production `.env` requires at least:
 
 ```env
-DATABASE_URL=postgresql://...
+TRACEBACK_DATABASE_URL=postgresql://...
 DJANGO_SECRET_KEY=...
 DJANGO_ALLOWED_HOSTS=...
 ```

@@ -106,5 +106,4 @@ docker build --target production .
 ```
 
 Use `.env` or CI environment variables for commands that require
-`DJANGO_SECRET_KEY` and a database URL. Local development may use
-`TRACEBACK_DATABASE_URL`; staging/production may use `DATABASE_URL`.
+`DJANGO_SECRET_KEY` and `TRACEBACK_DATABASE_URL`.

@@ -65,7 +65,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
-      DATABASE_URL: postgresql://traceback:traceback@localhost:5432/traceback
+      TRACEBACK_DATABASE_URL: postgresql://traceback:traceback@localhost:5432/traceback
       DJANGO_SECRET_KEY: ci-only-secret-key
       DJANGO_SETTINGS_MODULE: config.settings.test
     steps:

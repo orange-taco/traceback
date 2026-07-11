@@ -5,7 +5,7 @@ services:
     command: !reset []
     depends_on: !reset []
     environment:
-      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      TRACEBACK_DATABASE_URL: ${TRACEBACK_DATABASE_URL:?TRACEBACK_DATABASE_URL is required}
       DJANGO_SETTINGS_MODULE: config.settings.production
     init: true
     read_only: true

@@ -23,9 +23,9 @@ docker compose --env-file .env up -d db
 ```
 
 The local database is published on host port `15432` to avoid conflicts with
-locally installed PostgreSQL. Django reads `TRACEBACK_DATABASE_URL` first and
-falls back to `DATABASE_URL`, so project-local `.env` values are not accidentally
-shadowed by a shell-level `DATABASE_URL`.
+locally installed PostgreSQL. Django requires `TRACEBACK_DATABASE_URL` and does
+not fall back to `DATABASE_URL`, so project-local `.env` values cannot be
+silently shadowed by a shell-level database URL.
 
 Run Django on the host:
 
@@ -54,7 +54,7 @@ APP_IMAGE=traceback-production:local docker compose --env-file .env.example -f d
 Staging and production use the same production image, settings, and Compose
 overlay. Each server injects its own untracked `.env`. The production overlay
 removes the local source mount, host port, and PostgreSQL container and requires
-an external `DATABASE_URL`.
+an external `TRACEBACK_DATABASE_URL`.
 
 ## Delivery
 
