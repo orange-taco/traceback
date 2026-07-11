@@ -54,7 +54,12 @@ TEMPLATES = [
 ASGI_APPLICATION = "config.asgi.application"
 
 DATABASES = {
-    "default": dj_database_url.config(conn_max_age=60, conn_health_checks=True)
+    "default": dj_database_url.config(
+        env="TRACEBACK_DATABASE_URL",
+        default=os.getenv("DATABASE_URL"),
+        conn_max_age=60,
+        conn_health_checks=True,
+    )
 }
 
 AUTH_PASSWORD_VALIDATORS = [

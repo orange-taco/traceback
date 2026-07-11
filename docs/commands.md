@@ -24,6 +24,12 @@ Start the local PostgreSQL service:
 docker compose --env-file .env up -d db
 ```
 
+The local database is published on host port `15432` to avoid conflicts with
+locally installed PostgreSQL. Django reads `TRACEBACK_DATABASE_URL` before
+falling back to `DATABASE_URL`. Compose uses `TRACEBACK_POSTGRES_*` variables
+for the local database service to avoid collisions with shell-level
+`POSTGRES_*` values.
+
 ### Run the application
 
 Run Django on the host against the Docker Compose database:
