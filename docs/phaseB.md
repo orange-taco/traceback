@@ -14,6 +14,10 @@ Phase 0B는 커머스 도메인 기능을 만들지 않고, 이후 Catalog/Cart/
 - Django `AbstractBaseUser` + `PermissionsMixin` 기반으로 설계한다.
 - 로그인 식별자는 email이다.
 - `USERNAME_FIELD = "email"`로 둔다.
+- email은 저장, 가입, 로그인, 이메일 변경, 소셜 자동 연결 전에 동일한 규칙으로 정규화한다.
+- 정규화 규칙은 앞뒤 공백 제거 후 전체 주소를 소문자로 변환하는 것이다.
+- email unique 검증과 로그인 lookup은 정규화된 email 기준으로 수행한다.
+- 로그인 lookup과 소셜 자동 연결 대상은 `is_active = true`이고 `deleted_at is null`인 User로 제한한다.
 - `username`은 로그인 ID가 아니라 화면 표시용 닉네임/핸들로 사용한다.
 - `username`은 자동 생성하고 unique로 둔다.
 - `nickname` 필드는 만들지 않는다.
@@ -25,8 +29,9 @@ Phase 0B는 커머스 도메인 기능을 만들지 않고, 이후 Catalog/Cart/
 ```text
 User
 - id
-- email unique required
+- email unique required, normalized
 - username unique required, auto-generated
+- username_changed_at nullable
 - name nullable
 - phone_e164 nullable
 - phone_verified_at nullable
@@ -70,7 +75,10 @@ SocialAccount
 - provider_user_id
 - provider_email nullable
 - provider_email_verified
+- is_active
 - linked_at
+- deleted_at nullable
+- anonymized_at nullable
 - created_at
 - updated_at
 ```
@@ -84,12 +92,20 @@ unique(user, provider)
 
 `provider_email`은 서비스 대표 이메일이 아니라 provider가 로그인 시점에 준
 이메일 snapshot이다. 자동 연결 판단과 감사/디버깅 근거로 사용한다.
+소셜 로그인 lookup은 `is_active = true`이고 `deleted_at is null`인 `SocialAccount`만 대상으로 한다.
+회원 탈퇴 시 `SocialAccount`는 삭제하지 않고 비활성화한다.
+탈퇴 처리에서는 `is_active = false`, `deleted_at = now`, `anonymized_at = now`로 두고,
+`provider_user_id`는 `deleted:{social_account_id}` 형태로 익명화해 unique slot을 해제한다.
+`provider_email`은 null로 지우고 `provider_email_verified = false`로 변경한다.
+탈퇴 후 같은 provider 계정으로 재가입하면 기존 비활성 `SocialAccount`를 재사용하지 않고 새 행을 만든다.
 
 ## Social And Email Account Linking
 
 공통 전제:
 
-- `User.email`은 서비스 대표 이메일이며 unique/required이다.
+- `User.email`은 정규화된 서비스 대표 이메일이며 unique/required이다.
+- 이메일 기반 가입, 로그인, 자동 연결 lookup은 활성·비삭제 User만 대상으로 한다.
+- 탈퇴한 User는 email을 익명화하므로 같은 원문 이메일로 재가입할 수 있다.
 - `SocialAccount.provider_email`은 provider email snapshot이다.
 - `provider + provider_user_id`가 소셜 계정의 1차 식별자다.
 
@@ -218,7 +234,7 @@ BenefitClaim
 - id
 - code
 - user nullable
-- phone_hash nullable
+- phone_hash nullable, required when code = "welcome_signup"
 - email_hash nullable
 - social_identity_hash nullable
 - claimed_at
@@ -230,6 +246,7 @@ MVP 정책:
 
 ```text
 code = "welcome_signup"
+phone_hash is not null
 unique(code, phone_hash)
 ```
 
@@ -265,6 +282,8 @@ SocialAccount 비활성화/익명화
 - 초기 형식은 `user_{random8}` 계열로 둔다.
 - 사용자는 마이페이지에서 변경할 수 있다.
 - 변경은 30일에 1회로 제한한다.
+- 변경 제한은 `User.username_changed_at`으로 검증한다.
+- 최초 자동 생성 시점에는 `username_changed_at`을 null로 둘 수 있고, 사용자가 직접 변경한 시점에 값을 기록한다.
 - `username`은 unique이다.
 
 ## Deferred From Phase 0B
