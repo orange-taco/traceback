@@ -5,16 +5,16 @@
 ## 재개 체크포인트
 
 - 진행 단계: Phase 0 — Foundation
-- 현재 브랜치: `phase-0-foundation`
-- 현재 작업 슬라이스: Phase 0A — scaffold
-- 슬라이스 목표: Django/DRF/PostgreSQL 프로젝트와 환경 설정, `/api/v1` 및 health check 기반 구성
-- 변경 파일 예산: 이번 설정 기반 슬라이스는 사용자 승인으로 30개 제한 예외
-- 관련 명세: `phase-0-completion.md`, `api-spec.md` 공통 규약/health check, `domain-model.md` 공통 원칙
+- 현재 브랜치: `phase-0b-account-auth`
+- 현재 작업 슬라이스: Phase 0B — account/auth and common API foundation
+- 슬라이스 목표: custom User/Auth 모델, 소셜 계정 연결 기반, 이메일/비밀번호 토큰 기반, 혜택 중복 방지 ledger, request ID, 공통 오류 응답, pagination, 관리자 REST 인증 baseline 구현
+- 변경 파일 예산: 30개 제한 적용
+- 관련 명세: `phase-0-completion.md`, `phaseB.md`, `api-spec.md` 공통 규약/health check/admin auth, `domain-model.md` User/공통 원칙
 - 현재까지 완료: Bootstrap A — Docker/Compose, Phase 0A Django/DRF scaffold와 DefaultRouter/health check, `uv`/Ruff/mypy/yamllint/pytest/coverage/CI, CodeRabbit/Dependabot/pre-commit, `development` → `main` production ECR/EC2 CD workflow
-- 확인된 결정: Django/DRF/PostgreSQL, `uv` + lockfile, Gunicorn + Uvicorn worker + ASGI, development(local)/staging(AWS)/production(AWS), development 기본 Compose + production 공통 overlay, 로컬 Compose PostgreSQL, AWS EC2 + Docker Compose + managed PostgreSQL, 로컬 파일 저장소와 staging/production S3
-- 미해결/설계 의심: Phase 0 전체 완료 조건 중 공통 오류 응답, pagination, request ID, 관리자 REST 인증, `SiteSetting`, `IdempotencyRecord` 구현이 아직 확인되지 않음. `User`는 기본 `auth.User` 유지 또는 커스텀 User 도입 결정을 Phase 1 전에 확정해야 함
-- 다음 작업: Phase 0B — common API/auth
-- 정확한 다음 행동: `docs/phase-0-completion.md` 기준으로 `User` 결정을 먼저 확정하고, Phase 0B 공통 오류 응답, pagination, request ID, 관리자 REST 인증, 공통 모델을 `development` 대상 PR로 구현한다. Phase 0 완료 전 Phase 1 Catalog를 시작하지 않는다.
+- 확인된 결정: Django/DRF/PostgreSQL, `uv` + lockfile, Gunicorn + Uvicorn worker + ASGI, development(local)/staging(AWS)/production(AWS), development 기본 Compose + production 공통 overlay, 로컬 Compose PostgreSQL, AWS EC2 + Docker Compose + managed PostgreSQL, 로컬 파일 저장소와 staging/production S3, custom User(`AbstractBaseUser` + `PermissionsMixin`, email 로그인), Kakao/Naver `SocialAccount`, `EmailChangeRequest`, `UserToken`, `BenefitClaim`, 관리자 REST 인증(session + `IsAdminUser`), 관리자 REST namespace `/api/v1/admin/`, `SiteSetting` Phase 0B 제외, `IdempotencyRecord` Phase 0B 제외
+- 미해결/설계 의심: Phase 0B 구현이 아직 없음. 공통 오류 응답, pagination, request ID, 관리자 REST 인증 baseline, custom account/auth 모델, 관련 테스트가 필요함. CI workflow에는 명시적 `migrate --noinput`과 `migrate --check`가 포함됐으며 Phase 완료 전 실제 CI 실행 증거가 필요함. `SiteSetting`은 Phase 1 Catalog 또는 Phase 3 Order에서 재검토하고, `IdempotencyRecord`는 Phase 3 Order 전 재결정한다.
+- 다음 작업: Phase 0B 구현
+- 정확한 다음 행동: `docs/phaseB.md`와 `docs/phase-0-completion.md` 기준으로 custom User/Auth foundation, request ID, 공통 오류 응답, pagination, 관리자 REST 인증 baseline, CI migrate 검증과 테스트를 구현한다. Phase 0 완료 전 Phase 1 Catalog를 시작하지 않는다.
 - 마지막 검증: 2026-07-06 Django 5.2.15 설치 확인, `uv run pytest` 통과, `uv run python manage.py check --settings=config.settings.test` 통과. 기본 development 설정의 `manage.py check`는 `DJANGO_SECRET_KEY` 미주입 시 실패.
 
 이 섹션은 세션 재개를 위한 영속 상태다. 새 세션이 추가 질문 없이 다음 행동을 수행할 수 있을 정도로 유지한다.
@@ -105,6 +105,13 @@ Phase 0 결정:
 - 관리자 REST 인증: Django session 인증 + `is_staff`/`is_superuser` + DRF `IsAdminUser`
 - DB: PostgreSQL
 - 관리자 REST API는 Django admin과 별도로 구현하며 Django admin은 운영 보조 수단으로 사용
+- custom User는 `AbstractBaseUser` + `PermissionsMixin` 기반으로 구현하고, email을 로그인 식별자로 사용한다.
+- 초기 소셜 로그인 provider는 Kakao와 Naver만 지원한다.
+- `UserToken` 만료 시간은 이메일 인증 24시간, 비밀번호 설정 1시간, 비밀번호 재설정 1시간으로 둔다.
+- `EmailChangeRequest`는 24시간 뒤 만료하고, 같은 user 기준 10분에 1회 요청을 허용한다. 새 요청 시 기존 미확정 요청은 만료한다.
+- `BenefitClaim`은 HMAC hash ledger로 장기 보관하고 원문 개인정보는 저장하지 않는다.
+- `SiteSetting`은 Phase 0B에서 만들지 않고 Phase 1 Catalog 또는 Phase 3 Order에서 필요한 필드와 노출 API를 재검토한다.
+- `IdempotencyRecord`는 Phase 0B에서 만들지 않고 Phase 3 Order 전 scope/key/request hash/status 계약과 함께 재결정한다.
 
 다음 결정은 해당 Phase 시작 전에 확정한다.
 

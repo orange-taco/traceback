@@ -2,8 +2,8 @@ import os
 
 from django.core.exceptions import ImproperlyConfigured
 
-if not os.getenv("DATABASE_URL"):
-    raise ImproperlyConfigured("DATABASE_URL must be set in production")
+if not os.getenv("TRACEBACK_DATABASE_URL"):
+    raise ImproperlyConfigured("TRACEBACK_DATABASE_URL must be set in production")
 
 from .base import *  # noqa: E402,F403
 

@@ -20,12 +20,14 @@ repos:
         language: system
         pass_filenames: false
         types: [python]
+        stages: [pre-push]
       - id: yamllint
         name: YAML lint
         entry: uv run yamllint .
         language: system
         pass_filenames: false
         types: [yaml]
+        stages: [pre-push]
       - id: django-check
         name: Django system check
         entry: uv run python manage.py check --settings=config.settings.test

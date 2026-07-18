@@ -29,7 +29,7 @@
 - 팀 공유 테스트, 외부 연동, S3 계약 검증은 AWS staging에서 수행한다.
 - staging과 production은 DB, S3 bucket, secret, 배포 권한을 분리한다.
 - staging과 production은 동일한 production image/settings/Compose 계약을 사용하고 주입되는 `.env`/secret 값만 분리한다.
-- staging과 production Compose는 PostgreSQL container를 실행하지 않고 managed PostgreSQL의 `DATABASE_URL`을 주입받는다.
+- staging과 production Compose는 PostgreSQL container를 실행하지 않고 managed PostgreSQL의 `TRACEBACK_DATABASE_URL`을 주입받는다.
 - CI 단위/통합 테스트는 PostgreSQL을 사용하고 외부 S3 호출은 하지 않는다.
 - S3 연동 자체는 별도의 staging 통합 테스트에서 검증한다.
 - 운영 비밀값은 저장소나 Compose 파일에 넣지 않고 배포 플랫폼 secret store에서 주입한다.

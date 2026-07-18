@@ -5,17 +5,10 @@
 Local development uses:
 
 - `uv` for Python dependencies and Django commands
-- locally installed PostgreSQL
+- Docker Compose PostgreSQL
 - `.env` for local application settings
 
 ### Initial setup
-
-Create the PostgreSQL user and database:
-
-```sql
-CREATE USER traceback WITH PASSWORD 'development-only';
-CREATE DATABASE traceback OWNER traceback;
-```
 
 Create the environment and install dependencies:
 
@@ -25,11 +18,31 @@ uv sync --all-groups
 uv run pre-commit install
 ```
 
+Start the local PostgreSQL service:
+
+```sh
+docker compose --env-file .env up -d db
+```
+
+The local database is published on host port `15432` to avoid conflicts with
+locally installed PostgreSQL. Django requires `TRACEBACK_DATABASE_URL` and does
+not fall back to `DATABASE_URL`. Compose uses `TRACEBACK_POSTGRES_*` variables
+for the local database service to avoid collisions with shell-level
+`POSTGRES_*` values.
+
 ### Run the application
+
+Run Django on the host against the Docker Compose database:
 
 ```sh
 uv run --env-file .env python manage.py migrate
 uv run --env-file .env python manage.py runserver
+```
+
+Or run the application container against the Compose database:
+
+```sh
+docker compose --env-file .env up app
 ```
 
 ### Django commands
@@ -51,6 +64,8 @@ uv run mypy .
 uv run yamllint .
 uv run python manage.py check --settings=config.settings.test
 uv run python manage.py makemigrations --check --dry-run --settings=config.settings.test
+uv run python manage.py migrate --settings=config.settings.test
+uv run python manage.py migrate --check --settings=config.settings.test
 ```
 
 Run all Git hooks manually:
@@ -86,7 +101,7 @@ image is built. The running container starts Gunicorn directly; it does not use
 Production `.env` requires at least:
 
 ```env
-DATABASE_URL=postgresql://...
+TRACEBACK_DATABASE_URL=postgresql://...
 DJANGO_SECRET_KEY=...
 DJANGO_ALLOWED_HOSTS=...
 ```
@@ -154,6 +169,12 @@ docker compose --env-file .env \
   -f docker-compose.yml \
   -f docker-compose_prod.yml \
   down
+```
+
+### Stop local development containers
+
+```sh
+docker compose --env-file .env down
 ```
 
 The GitHub deployment workflow builds and pushes the production image, then
