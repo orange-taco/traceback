@@ -9,7 +9,8 @@ services:
       db:
         condition: service_healthy
     environment:
-      TRACEBACK_DATABASE_URL: ${COMPOSE_DATABASE_URL:-postgresql://traceback:development-only@db:5432/traceback}
+      TRACEBACK_DATABASE_URL: "postgresql://${TRACEBACK_POSTGRES_USER:-traceback}:${TRACEBACK_POSTGRES_PASSWORD:-development-only}\
+        @db:5432/${TRACEBACK_POSTGRES_DB:-traceback}"
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY is required}
       DJANGO_SETTINGS_MODULE: config.settings.development
