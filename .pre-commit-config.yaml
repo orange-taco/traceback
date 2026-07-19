@@ -8,11 +8,13 @@ repos:
         name: Ruff lint
         entry: uv run ruff check --fix
         language: system
+        exclude: (^|/)migrations/.*\.py$
         types: [python]
       - id: ruff-format
         name: Ruff format
         entry: uv run ruff format
         language: system
+        exclude: (^|/)migrations/.*\.py$
         types: [python]
       - id: mypy
         name: mypy

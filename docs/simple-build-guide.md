@@ -16,13 +16,15 @@
 ## 문서 사용 방식
 
 1. 새 작업은 이 문서에서 범위와 원칙을 먼저 확인한다.
-2. 필요한 경우에만 기존 상세 문서를 참고한다.
-3. 상세 문서에 있는 컬럼, enum, endpoint는 확정 명세가 아니라 설계 후보로 본다.
-4. 구현 중 선택지가 갈리면 코드로 밀어붙이지 않고 사용자에게 질문한다.
-5. 확정된 결정만 해당 Phase 문서나 코드에 반영한다.
+2. 현재 작업을 빠르게 재개할 때는 [`current/README.md`](./current/README.md)를 확인한다.
+3. 필요한 경우에만 기존 상세 문서를 참고한다.
+4. 상세 문서에 있는 컬럼, enum, endpoint는 확정 명세가 아니라 설계 후보로 본다.
+5. 구현 중 선택지가 갈리면 코드로 밀어붙이지 않고 사용자에게 질문한다.
+6. 확정된 결정만 해당 Phase 문서나 코드에 반영한다.
 
 참고 문서:
 
+- 현재 작업만 보는 요약: [`current/README.md`](./current/README.md)
 - 진행 순서와 체크포인트: [`build-plan.md`](./build-plan.md)
 - Phase 0 완료 기준: [`phase-0-completion.md`](./phase-0-completion.md)
 - 모델 후보와 정합성 아이디어: [`domain-model.md`](./domain-model.md)
