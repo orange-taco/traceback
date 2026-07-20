@@ -22,12 +22,12 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "apps.accounts",
-    "apps.common",
+    "apps.core",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "apps.common.middleware.RequestIDMiddleware",
+    "apps.core.middleware.RequestIDMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -89,6 +89,6 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.SessionAuthentication"
     ],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
-    "DEFAULT_PAGINATION_CLASS": "apps.common.pagination.StandardPageNumberPagination",
-    "EXCEPTION_HANDLER": "apps.common.exception_handlers.custom_exception_handler",
+    "DEFAULT_PAGINATION_CLASS": "apps.core.pagination.StandardPageNumberPagination",
+    "EXCEPTION_HANDLER": "apps.core.exception_handlers.custom_exception_handler",
 }

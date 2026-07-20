@@ -4,7 +4,7 @@
 
 ## 공통 정책
 
-- Base path: `/api/v1`
+- Accounts base path: `/api/accounts`
 - Format: JSON, 금액은 KRW 정수
 - 관리자 인증: Django session + staff/superuser + DRF `IsAdminUser`
 - 리스트 응답: pagination 포함
@@ -12,8 +12,6 @@
 - 생성/승인/취소 등 명령 API는 `Idempotency-Key`를 사용한다.
 - 같은 scope/key와 같은 요청은 기존 결과, 다른 요청은 `409 Conflict`.
 - 고객 명령 token 원문은 응답에만 포함하고 서버에는 hash만 저장한다.
-
-`GET /health`는 인증 없이 서비스 상태를 반환한다. 정상 응답은 `200`과 `{"status": "ok"}`다.
 
 계산 상태 enum:
 

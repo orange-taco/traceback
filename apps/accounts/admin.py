@@ -7,7 +7,7 @@ from .models import BenefitClaim, EmailChangeRequest, SocialAccount, User, UserT
 @admin.register(User)
 class UserAdmin(DjangoUserAdmin):  # type: ignore[type-arg]
     ordering = ("email",)
-    list_display = ("email", "username", "is_active", "is_staff", "date_joined")
+    list_display = ("email", "username", "is_active", "is_staff", "joined_at")
     search_fields = ("email", "username", "name", "phone_e164")
     fieldsets = (
         (None, {"fields": ("email", "password")}),
@@ -36,7 +36,7 @@ class UserAdmin(DjangoUserAdmin):  # type: ignore[type-arg]
                 )
             },
         ),
-        ("Important dates", {"fields": ("last_login", "date_joined", "deleted_at")}),
+        ("Important dates", {"fields": ("last_login", "joined_at", "deleted_at")}),
     )
     add_fieldsets = (
         (
@@ -73,4 +73,4 @@ class UserTokenAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
 class BenefitClaimAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     list_display = ("code", "user", "claim_source", "claimed_at")
     list_filter = ("code", "claim_source")
-    search_fields = ("user__email", "phone_hash", "email_hash", "social_identity_hash")
+    search_fields = ("user__email", "phone_hash")

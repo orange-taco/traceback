@@ -9,7 +9,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.test import APIClient
 from rest_framework.views import APIView
 
-from apps.common.pagination import StandardPageNumberPagination
+from apps.core.pagination import StandardPageNumberPagination
 
 
 class NumberSerializer(serializers.Serializer[dict[str, int]]):
@@ -40,12 +40,15 @@ urlpatterns = [
 
 class RequestIDTests(SimpleTestCase):
     def test_response_includes_supplied_request_id(self) -> None:
-        response = self.client.get("/health", headers={"X-Request-ID": "req-123"})
+        response = self.client.get(
+            "/api/accounts/admin/session",
+            headers={"X-Request-ID": "req-123"},
+        )
 
         self.assertEqual(response["X-Request-ID"], "req-123")
 
     def test_response_generates_request_id_when_missing(self) -> None:
-        response = self.client.get("/health")
+        response = self.client.get("/api/accounts/admin/session")
 
         self.assertTrue(response["X-Request-ID"])
 
@@ -80,7 +83,7 @@ class AdminRESTAuthTests(TestCase):
         self.user_model = get_user_model()
 
     def test_admin_endpoint_rejects_anonymous_users(self) -> None:
-        response = self.client.get("/api/v1/admin/session")
+        response = self.client.get("/api/accounts/admin/session")
 
         self.assertEqual(response.status_code, 403)
 
@@ -88,7 +91,7 @@ class AdminRESTAuthTests(TestCase):
         user = self.user_model.objects.create_user("user@example.com")
         self.client.force_login(user)
 
-        response = self.client.get("/api/v1/admin/session")
+        response = self.client.get("/api/accounts/admin/session")
 
         self.assertEqual(response.status_code, 403)
 
@@ -99,7 +102,7 @@ class AdminRESTAuthTests(TestCase):
         )
         self.client.force_login(staff)
 
-        response = self.client.get("/api/v1/admin/session")
+        response = self.client.get("/api/accounts/admin/session")
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(

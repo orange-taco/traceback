@@ -8,8 +8,8 @@ Phase 1 Catalog는 이 문서의 필수 항목이 통과하고
 
 2026-07-11 기준 Phase 0은 **완료 아님**.
 
-완료된 부분은 Django/DRF scaffold, ASGI entrypoint, `/api/v1/` router,
-`/health`, 기본 CI/품질 도구, Docker/Compose 기반이다.
+완료된 부분은 Django/DRF scaffold, ASGI entrypoint, 기본 CI/품질 도구,
+Docker/Compose 기반이다.
 
 Phase 0 완료를 막는 항목은 custom User/Auth 구현, 공통 API 인프라,
 관리자 REST 인증이다. User/Auth 정책 결정은
@@ -32,8 +32,7 @@ ASGI 운영을 전제로 하므로 Django는 반드시 `5.1` 이상이어야 한
 
 | Area | Completion criteria | Current status |
 | --- | --- | --- |
-| Project scaffold | Django settings split, ASGI entrypoint, DRF installed, `/api/v1/` router mounted | Done |
-| Health check | `GET /health` returns `200 {"status": "ok"}` without auth | Done |
+| Project scaffold | Django settings split, ASGI entrypoint, DRF installed, accounts URL mounted | Done |
 | PostgreSQL | CI migration/test verification uses PostgreSQL; local development documents PostgreSQL migrate path | Done: CI uses PostgreSQL service; local development defaults to Docker Compose PostgreSQL |
 | CI | CI runs install, lint, format check, mypy, Django check, migration drift check, migrate, migration check, tests, Compose config, production image build | Workflow includes explicit `migrate --noinput` and `migrate --check`; pending CI run evidence |
 | Django version | Dependency range keeps Django `>=5.1,<5.3` for ASGI runtime | Done |
@@ -47,9 +46,9 @@ ASGI 운영을 전제로 하므로 Django는 반드시 `5.1` 이상이어야 한
 | Pagination | Shared DRF pagination class and response contract for list APIs | Missing |
 | Request ID | Middleware accepts/generates request ID and exposes it on responses/errors/log context | Missing |
 | Admin REST auth | Session authentication + `IsAdminUser` baseline and tests for anonymous/non-staff/staff access | Missing |
-| API namespace | Public endpoints live under `/api/v1/`; admin REST endpoints use a clear namespace such as `/api/v1/admin/` | Partial |
+| API namespace | Account endpoints live under `/api/accounts/`; admin REST endpoints use `/api/accounts/admin/` | Partial |
 | Secrets/settings | Required secrets fail fast outside test; example env documents local values | Partial |
-| Tests | Focused tests cover health, request ID, errors, pagination, admin auth, common models, migration health | Partial |
+| Tests | Focused tests cover request ID, errors, pagination, admin auth, account models, migration health | Partial |
 | Docs checkpoint | `docs/build-plan.md` checkpoint and completion history match code and validation evidence | Partial |
 
 ## Required Decisions Before Phase 1
@@ -57,7 +56,7 @@ ASGI 운영을 전제로 하므로 Django는 반드시 `5.1` 이상이어야 한
 1. User/Auth model:
    Implement the custom User/Auth decisions recorded in `docs/phaseB.md`.
 2. Admin REST namespace:
-   Use `/api/v1/admin/` for the Phase 0B admin REST authentication baseline.
+   Use `/api/accounts/admin/` for the Phase 0B admin REST authentication baseline.
 3. SiteSetting:
    Deferred from Phase 0B. Revisit before Phase 1 Catalog if public settings are
    needed for home/PDP, and before Phase 3 Order if shipping fee policy is needed.
@@ -82,7 +81,7 @@ Phase 0 must not implement commerce domain behavior beyond common foundation:
 3. Add admin REST authentication baseline:
    session authentication with `IsAdminUser` and tests proving anonymous/non-staff
    users are rejected while staff users are accepted.
-4. Add tests for the missing common behavior, not only `/health`.
+4. Add tests for the missing common behavior.
 5. Update `docs/build-plan.md` checkpoint and completion history only after the
    above is implemented and verified.
 

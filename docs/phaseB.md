@@ -41,7 +41,7 @@ User
 - is_superuser
 - deleted_at nullable
 - last_login
-- date_joined
+- joined_at
 - created_at
 - updated_at
 ```
@@ -78,7 +78,6 @@ SocialAccount
 - is_active
 - linked_at
 - deleted_at nullable
-- anonymized_at nullable
 - created_at
 - updated_at
 ```
@@ -94,7 +93,7 @@ unique(user, provider)
 이메일 snapshot이다. 자동 연결 판단과 감사/디버깅 근거로 사용한다.
 소셜 로그인 lookup은 `is_active = true`이고 `deleted_at is null`인 `SocialAccount`만 대상으로 한다.
 회원 탈퇴 시 `SocialAccount`는 삭제하지 않고 비활성화한다.
-탈퇴 처리에서는 `is_active = false`, `deleted_at = now`, `anonymized_at = now`로 두고,
+탈퇴 처리에서는 `is_active = false`, `deleted_at = now`로 두고,
 `provider_user_id`는 `deleted:{social_account_id}` 형태로 익명화해 unique slot을 해제한다.
 `provider_email`은 null로 지우고 `provider_email_verified = false`로 변경한다.
 탈퇴 후 같은 provider 계정으로 재가입하면 기존 비활성 `SocialAccount`를 재사용하지 않고 새 행을 만든다.
@@ -196,6 +195,9 @@ password_set: 1시간
 password_reset: 1시간
 ```
 
+실제 token 발급/소비 API와 이메일 발송, 클라이언트 연동 flow는
+회원가입/로그인 클라이언트 구현 시점에 구현한다.
+
 ## Phone Verification
 
 - 가입 시 phone은 받지 않는다.
@@ -235,8 +237,6 @@ BenefitClaim
 - code
 - user nullable
 - phone_hash nullable, required when code = "welcome_signup"
-- email_hash nullable
-- social_identity_hash nullable
 - claimed_at
 - claim_source
 - metadata
@@ -250,10 +250,12 @@ phone_hash is not null
 unique(code, phone_hash)
 ```
 
+실제 혜택 지급 API와 클라이언트 연동 flow는 회원가입 클라이언트 구현 시점에 구현한다.
+
 Hash 정책:
 
-- 원문 email/phone/social identity를 혜택 ledger에 저장하지 않는다.
-- 서버 secret pepper를 사용한 HMAC hash를 저장한다.
+- 원문 phone을 혜택 ledger에 저장하지 않는다.
+- 서버 secret pepper를 사용한 phone HMAC hash를 저장한다.
 - 탈퇴 후에도 `BenefitClaim`은 중복 지급 방지 목적의 HMAC hash ledger로 장기 보관한다.
 
 ## Deactivation / Withdrawal

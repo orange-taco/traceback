@@ -27,8 +27,8 @@ Phase 0B 변경분을 리뷰하고 커밋/PR로 올린 뒤 실제 CI 결과를 �
 - request ID middleware
 - 공통 DRF 오류 응답
 - 공통 pagination
-- `/api/v1/admin/` 관리자 REST 인증 baseline
-- 앱별 `urls.py` include 구조. `api_urls.py`와 `admin_urls.py`는 사용하지 않고, staff/admin REST surface는 `apps.console`에서 묶는다.
+- `/api/accounts/admin/` 관리자 REST 인증 baseline
+- Phase 0B 관리자 REST surface는 accounts URL에서 묶는다.
 - 관련 테스트
 - Phase 0B 모델/컬럼 목적 HTML 문서
 
@@ -48,9 +48,9 @@ Phase 0B 변경분을 리뷰하고 커밋/PR로 올린 뒤 실제 CI 결과를 �
 - account enum은 model 내부 class가 아니라 `apps/accounts/enums.py`에 둔다.
 - Django migration 파일은 생성물이므로 Ruff pre-commit check/format 대상에서 제외한다. 스키마 검증은 `makemigrations --check --dry-run`, `migrate`, 테스트로 한다.
 - 관리자 REST 인증은 Django session + DRF `IsAdminUser`를 사용한다.
-- 관리자 REST namespace는 `/api/v1/admin/`이다.
-- 앱의 상위 `urls.py`는 하위 URL 묶음을 `include()`로 연결하고, viewset이 필요한 지점에서만 `DefaultRouter`를 둔다.
-- staff/admin REST URL은 도메인 앱 내부 `staff` 패키지에 넣지 않고 `apps.console` 아래에 둔다. 도메인 모델과 운영자 API surface를 분리하기 위한 결정이다.
+- 관리자 REST namespace는 `/api/accounts/admin/`이다.
+- 앱의 상위 `urls.py`는 실제 하위 URL이 필요한 앱에만 둔다.
+- Phase 0B staff/admin REST URL은 별도 `staff` 패키지 없이 accounts URL에서 시작한다.
 - `SiteSetting`은 Phase 0B에서 만들지 않는다. Phase 1 Catalog 또는 Phase 3 Order에서 재검토한다.
 - `IdempotencyRecord`는 Phase 0B에서 만들지 않는다. Phase 3 Order 전에 재결정한다.
 - `UserToken` 만료:
@@ -59,7 +59,8 @@ Phase 0B 변경분을 리뷰하고 커밋/PR로 올린 뒤 실제 CI 결과를 �
   - password reset: 1시간
 - `EmailChangeRequest`는 24시간 뒤 만료하고 같은 user 기준 10분에 1회 요청을 허용한다.
 - `BenefitClaim`은 원문 개인정보 없이 HMAC hash ledger로 장기 보관한다.
-- `User.deleted_at`, `SocialAccount.deleted_at`, `SocialAccount.anonymized_at` 컬럼은 탈퇴/익명화 정책을 표현하기 위해 유지한다.
+- `UserToken`, `EmailChangeRequest`, `BenefitClaim`의 실제 발급/소비 API와 클라이언트 연동 flow는 클라이언트 구현 시점에 구현한다.
+- `User.deleted_at`, `SocialAccount.deleted_at` 컬럼은 탈퇴/익명화 정책을 표현하기 위해 유지한다.
 - 실제 탈퇴 처리 메서드나 service는 Phase 0B MVP에서 만들지 않는다. 회원 탈퇴 API/운영 플로우가 시작될 때 구현한다.
 
 ## 먼저 확인할 것

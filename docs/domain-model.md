@@ -34,11 +34,11 @@
 
 | 모델 | 주요 필드 | 핵심 규칙 |
 | --- | --- | --- |
-| `User` | `email`, `username`, `username_changed_at`, `name`, `phone_e164`, `phone_verified_at`, `email_verified_at`, `is_active`, `is_staff`, `is_superuser`, `deleted_at`, `last_login`, `date_joined` | custom User, 정규화 email 로그인, 활성·비삭제 User만 로그인 lookup 대상, 탈퇴 시 email 익명화로 재가입 허용, `username` unique 자동 생성, 활성 인증 phone partial unique |
-| `SocialAccount` | `user_id`, `provider(kakao/naver)`, `provider_user_id`, `provider_email`, `provider_email_verified`, `is_active`, `linked_at`, `deleted_at?`, `anonymized_at?` | active 행만 lookup, `(provider, provider_user_id)` unique, `(user_id, provider)` unique, 탈퇴 시 inactive + provider identity/email 익명화 |
+| `User` | `email`, `username`, `username_changed_at`, `name`, `phone_e164`, `phone_verified_at`, `email_verified_at`, `is_active`, `is_staff`, `is_superuser`, `deleted_at`, `last_login`, `joined_at` | custom User, 정규화 email 로그인, 활성·비삭제 User만 로그인 lookup 대상, 탈퇴 시 email 익명화로 재가입 허용, `username` unique 자동 생성, 활성 인증 phone partial unique |
+| `SocialAccount` | `user_id`, `provider(kakao/naver)`, `provider_user_id`, `provider_email`, `provider_email_verified`, `is_active`, `linked_at`, `deleted_at?` | active 행만 lookup, `(provider, provider_user_id)` unique, `(user_id, provider)` unique, 탈퇴 시 inactive + provider identity/email 익명화 |
 | `EmailChangeRequest` | `user_id`, `new_email`, `token_hash`, `expires_at`, `confirmed_at?` | token 원문 저장 금지, 24시간 만료, user당 10분 1회 요청, 새 요청 시 기존 미확정 요청 만료 |
 | `UserToken` | `user_id`, `purpose(email_verify/password_set/password_reset)`, `token_hash`, `expires_at`, `consumed_at?` | token 원문 저장 금지, email verify 24시간, password set/reset 1시간 만료 |
-| `BenefitClaim` | `code`, `user_id?`, `phone_hash?`, `email_hash?`, `social_identity_hash?`, `claimed_at`, `claim_source`, `metadata` | `welcome_signup`은 `phone_hash IS NOT NULL`이며 `(code, phone_hash)` unique, 원문 개인정보 저장 금지, HMAC hash ledger로 장기 보관 |
+| `BenefitClaim` | `code`, `user_id?`, `phone_hash?`, `claimed_at`, `claim_source`, `metadata` | `welcome_signup`은 `phone_hash IS NOT NULL`이며 `(code, phone_hash)` unique, 원문 전화번호 저장 금지, HMAC hash ledger로 장기 보관 |
 | `UserAddress` | `user_id`, 주소 필드, `is_default` | Phase 9+, 사용자당 default 최대 1개 |
 | `Cart` | `user_id?`, `cart_token_hash?`, `status(active/ordered/expired)`, `expires_at?` | token hash partial unique, 회원당 active 최대 1개 |
 | `CartItem` | `cart_id`, `product_variant_id`, `quantity` | `(cart_id, product_variant_id)` unique, `quantity > 0` |
