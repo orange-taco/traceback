@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Phase 0B Model Purpose</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #17202a;
+      --muted: #5d6875;
+      --line: #d9dee7;
+      --head: #eef3f8;
+      --accent: #176b87;
+      --ok: #1f7a4d;
+      --warn: #976a13;
+      --code: #eef2f6;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 32px 20px 56px;
+    }
+
+    header {
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 0 0 10px;
+      font-size: 17px;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 8px 0;
+    }
+
+    .summary {
+      color: var(--muted);
+      max-width: 860px;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+      margin: 20px 0 26px;
+    }
+
+    .meta div,
+    section {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 8px;
+    }
+
+    .meta div {
+      padding: 12px 14px;
+    }
+
+    .label {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    .value {
+      display: block;
+      margin-top: 4px;
+      font-weight: 700;
+    }
+
+    section {
+      margin: 18px 0;
+      overflow: hidden;
+    }
+
+    .section-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 18px;
+      background: var(--head);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section-head p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      max-width: 740px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 4px 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .content {
+      padding: 18px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 9px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      background: #fbfcfd;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      background: var(--code);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+    }
+
+    .purpose {
+      color: var(--text);
+    }
+
+    .why {
+      color: var(--muted);
+    }
+
+    .status-ok {
+      color: var(--ok);
+      font-weight: 700;
+    }
+
+    .status-warn {
+      color: var(--warn);
+      font-weight: 700;
+    }
+
+    .notes {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+    }
+
+    .note {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfd;
+    }
+
+    .note p {
+      color: var(--muted);
+    }
+
+    @media (max-width: 720px) {
+      main {
+        padding: 20px 12px 40px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      table {
+        table-layout: auto;
+        min-width: 760px;
+      }
+
+      .content {
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Phase 0B Model Purpose</h1>
+      <p class="summary">
+        현재 구현된 account/auth foundation 모델의 역할과 컬럼 목적을
+        MVP 요구사항 기준으로 정리한 문서다. 기준 코드는
+        <code>apps/accounts/models.py</code>와
+        <code>apps/accounts/enums.py</code>,
+        <code>apps/accounts/migrations/0001_initial.py</code>다.
+      </p>
+    </header>
+
+    <div class="meta">
+      <div>
+        <span class="label">Phase</span>
+        <span class="value">Phase 0B - account/auth foundation</span>
+      </div>
+      <div>
+        <span class="label">Scope</span>
+        <span class="value">User, social account, email/token, benefit ledger</span>
+      </div>
+      <div>
+        <span class="label">MVP 기준</span>
+        <span class="value">계정 기반과 관리자 인증만 구현</span>
+      </div>
+      <div>
+        <span class="label">Excluded</span>
+        <span class="value">Seller, marketplace, coupon system, commerce flows</span>
+      </div>
+    </div>
+
+    <section>
+      <div class="section-head">
+        <div>
+          <h2>Model Configuration And Enums</h2>
+          <p>
+            이 항목들은 DB 컬럼은 아니지만 custom User와 enum 선택지를 이해하는 데
+            필요한 모델 설정이다.
+          </p>
+        </div>
+        <span class="badge">accounts.models / accounts.enums</span>
+      </div>
+      <div class="content">
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Purpose</th>
+              <th>MVP justification</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>USERNAME_FIELD = "email"</code></td>
+              <td class="purpose">Django 인증에서 email을 로그인 식별자로 사용한다.</td>
+              <td class="why">Phase 0B 결정: username이 아니라 email 로그인을 기준으로 한다.</td>
+            </tr>
+            <tr>
+              <td><code>REQUIRED_FIELDS = []</code></td>
+              <td class="purpose">
+                <code>createsuperuser</code>가 email/password 외 추가 필드를 묻지 않게 한다.
+                DB 컬럼이 아니라 Django custom user 설정이다.
+              </td>
+              <td class="why">
+                <code>USERNAME_FIELD</code>가 email이므로 별도 필수 입력 필드는 없다.
+                username은 manager가 자동 생성한다.
+              </td>
+            </tr>
+            <tr>
+              <td><code>SocialProvider</code></td>
+              <td class="purpose">소셜 provider 선택지. 현재 <code>kakao</code>, <code>naver</code>.</td>
+              <td class="why">Phase 0B 초기 소셜 로그인 범위가 Kakao/Naver다.</td>
+            </tr>
+            <tr>
+              <td><code>UserTokenPurpose</code></td>
+              <td class="purpose">
+                <code>email_verify</code>, <code>password_set</code>,
+                <code>password_reset</code> token 목적을 표현한다.
+              </td>
+              <td class="why">같은 token 모델을 Phase 0B 인증 작업에 재사용한다.</td>
+            </tr>
+            <tr>
+              <td><code>BenefitClaimCode</code></td>
+              <td class="purpose">혜택 ledger의 claim 종류. 현재 <code>welcome_signup</code>.</td>
+              <td class="why">MVP에서 중복 지급을 막아야 하는 혜택은 웰컴 혜택이다.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <div>
+          <h2>User Manager Behavior</h2>
+          <p>
+            <code>UserManager</code>는 DB 컬럼을 추가하지 않지만 User 생성 경로의
+            기본 정합성을 담당한다.
+          </p>
+        </div>
+        <span class="badge">accounts.managers</span>
+      </div>
+      <div class="content">
+        <table>
+          <thead>
+            <tr>
+              <th>Behavior</th>
+              <th>Purpose</th>
+              <th>MVP justification</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>normalize_email()</code></td>
+              <td class="purpose">email 앞뒤 공백을 제거하고 전체 주소를 소문자로 변환한다.</td>
+              <td class="why">Phase 0B 결정: 가입, 로그인, 연결 lookup은 정규화 email 기준이다.</td>
+            </tr>
+            <tr>
+              <td><code>generate_username()</code></td>
+              <td class="purpose">초기 username을 <code>user_{random8}</code> 형태로 자동 생성한다.</td>
+              <td class="why">username은 로그인 ID가 아니며 가입 시 사용자에게 필수로 받지 않는다.</td>
+            </tr>
+            <tr>
+              <td><code>set_password(password)</code></td>
+              <td class="purpose">비밀번호 원문 대신 Django password hash 또는 unusable password를 저장한다.</td>
+              <td class="why">이메일 가입과 소셜 가입 모두 하나의 User 생성 경로에서 안전하게 처리한다.</td>
+            </tr>
+            <tr>
+              <td><code>full_clean(exclude=["password"])</code></td>
+              <td class="purpose">
+                저장 전에 email 형식, 길이, unique, model constraints를 검증한다.
+                password hash 필드는 Django auth 규칙에 맡기기 위해 제외한다.
+              </td>
+              <td class="why">
+                manager로 생성되는 User가 Phase 0B 모델 제약을 DB 저장 전부터 만족하게 한다.
+                최종 정합성은 여전히 DB constraint가 보장한다.
+              </td>
+            </tr>
+            <tr>
+              <td><code>create_superuser()</code></td>
+              <td class="purpose">superuser 생성 시 <code>is_staff</code>와 <code>is_superuser</code>를 강제한다.</td>
+              <td class="why">관리자 REST baseline과 Django admin 접근이 staff/superuser 권한에 의존한다.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <div>
+          <h2>Common Timestamp Columns</h2>
+          <p>
+            <code>TimestampedModel</code>은 공통 abstract model이다.
+            시간대 결정이 아니라 생성/수정 시각을 반복 없이 남기기 위한 구조다.
+          </p>
+        </div>
+        <span class="badge">apps.common.models</span>
+      </div>
+      <div class="content">
+        <table>
+          <thead>
+            <tr>
+              <th>Column</th>
+              <th>Purpose</th>
+              <th>MVP justification</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>created_at</code></td>
+              <td class="purpose">행이 처음 생성된 시각을 기록한다.</td>
+              <td class="why">계정, 소셜 연결, 혜택 claim의 운영 이력 확인에 필요하다.</td>
+            </tr>
+            <tr>
+              <td><code>updated_at</code></td>
+              <td class="purpose">행이 마지막으로 변경된 시각을 기록한다.</td>
+              <td class="why">탈퇴/익명화, 소셜 연결 상태 변경 같은 운영 변경 이력을 추적한다.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <div>
+          <h2>User</h2>
+          <p>
+            서비스 대표 계정이다. 이메일 로그인, Django 권한, 탈퇴 익명화,
+            이메일/전화 인증 상태를 담는다.
+          </p>
+        </div>
+        <span class="badge">accounts.User</span>
+      </div>
+      <div class="content">
+        <table>
+          <thead>
+            <tr>
+              <th>Column</th>
+              <th>Purpose</th>
+              <th>MVP justification</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>id</code></td>
+              <td class="purpose">내부 primary key.</td>
+              <td class="why">모든 관계형 모델의 기본 식별자다.</td>
+            </tr>
+            <tr>
+              <td><code>email</code></td>
+              <td class="purpose">로그인 식별자이자 서비스 대표 이메일.</td>
+              <td class="why">Phase 0B 결정: custom User는 email로 로그인한다.</td>
+            </tr>
+            <tr>
+              <td><code>password</code></td>
+              <td class="purpose">Django password hash. 원문 비밀번호는 저장하지 않는다.</td>
+              <td class="why">이메일/비밀번호 가입과 관리자 로그인 baseline에 필요하다.</td>
+            </tr>
+            <tr>
+              <td><code>username</code></td>
+              <td class="purpose">로그인 ID가 아닌 화면 표시용 unique handle.</td>
+              <td class="why">Phase 0B username 정책: 자동 생성하고 unique로 둔다.</td>
+            </tr>
+            <tr>
+              <td><code>username_changed_at</code></td>
+              <td class="purpose">사용자가 username을 직접 변경한 마지막 시각.</td>
+              <td class="why">30일 1회 변경 제한을 검증하기 위한 최소 상태다.</td>
+            </tr>
+            <tr>
+              <td><code>name</code></td>
+              <td class="purpose">사용자가 나중에 설정할 수 있는 실명 또는 표시 이름.</td>
+              <td class="why">가입 시 필수는 아니지만 주문/마이페이지 계정 정보에 필요하다.</td>
+            </tr>
+            <tr>
+              <td><code>phone_e164</code></td>
+              <td class="purpose">SMS 인증 후 저장되는 정규화 전화번호.</td>
+              <td class="why">웰컴 혜택 중복 방지를 phone 기준으로 처리하기 위한 기반이다.</td>
+            </tr>
+            <tr>
+              <td><code>phone_verified_at</code></td>
+              <td class="purpose">전화번호 인증 완료 시각.</td>
+              <td class="why">인증된 phone만 혜택 지급 기준으로 삼기 위해 필요하다.</td>
+            </tr>
+            <tr>
+              <td><code>email_verified_at</code></td>
+              <td class="purpose">대표 이메일 인증 완료 시각.</td>
+              <td class="why">소셜 자동 연결은 email 인증 여부가 account pre-hijacking 방어 기준이다.</td>
+            </tr>
+            <tr>
+              <td><code>is_active</code></td>
+              <td class="purpose">로그인 가능한 활성 계정 여부.</td>
+              <td class="why">탈퇴 계정과 정지 계정을 로그인 lookup에서 제외한다.</td>
+            </tr>
+            <tr>
+              <td><code>is_staff</code></td>
+              <td class="purpose">Django admin과 관리자 REST 접근 가능 여부.</td>
+              <td class="why">Phase 0B 관리자 REST baseline은 staff 권한을 사용한다.</td>
+            </tr>
+            <tr>
+              <td><code>is_superuser</code></td>
+              <td class="purpose">Django permission 전체 권한 플래그.</td>
+              <td class="why">Django 권한 체계를 그대로 사용하기 위한 필수 상속 필드다.</td>
+            </tr>
+            <tr>
+              <td><code>deleted_at</code></td>
+              <td class="purpose">soft delete와 익명화 처리 시각.</td>
+              <td class="why">탈퇴 후 같은 이메일/전화번호 재가입을 허용하면서 감사 흔적을 남긴다.</td>
+            </tr>
+            <tr>
+              <td><code>last_login</code></td>
+              <td class="purpose">마지막 로그인 시각.</td>
+              <td class="why">Django auth 기본 운영 정보로 계정 보안 확인에 사용한다.</td>
+            </tr>
+            <tr>
+              <td><code>date_joined</code></td>
+              <td class="purpose">가입 시각.</td>
+              <td class="why">가입/혜택/운영 문의 기준 시각으로 필요하다.</td>
+            </tr>
+            <tr>
+              <td><code>created_at</code>, <code>updated_at</code></td>
+              <td class="purpose">생성/수정 시각.</td>
+              <td class="why">운영 감사와 데이터 변경 추적을 위한 공통 필드다.</td>
+            </tr>
+            <tr>
+              <td><code>groups</code>, <code>user_permissions</code></td>
+              <td class="purpose">Django group/permission 관계.</td>
+              <td class="why">seller 권한은 만들지 않고 Django 권한 체계로 관리자 권한을 시작한다.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <div>
+          <h2>SocialAccount</h2>
+          <p>
+            Kakao/Naver 계정과 내부 User를 연결하는 모델이다.
+            provider identity를 1차 식별자로 보고, 탈퇴 시 비활성화/익명화한다.
+          </p>
+        </div>
+        <span class="badge">accounts.SocialAccount</span>
+      </div>
+      <div class="content">
+        <table>
+          <thead>
+            <tr>
+              <th>Column</th>
+              <th>Purpose</th>
+              <th>MVP justification</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>user_id</code></td>
+              <td class="purpose">연결된 내부 User.</td>
+              <td class="why">소셜 로그인 결과를 서비스 계정 하나로 귀속한다.</td>
+            </tr>
+            <tr>
+              <td><code>provider</code></td>
+              <td class="purpose">소셜 provider. 현재 <code>kakao</code>, <code>naver</code>.</td>
+              <td class="why">Phase 0B 초기 소셜 범위가 Kakao/Naver다.</td>
+            </tr>
+            <tr>
+              <td><code>provider_user_id</code></td>
+              <td class="purpose">provider가 제공한 사용자 식별자.</td>
+              <td class="why">소셜 계정의 가장 안정적인 lookup key다.</td>
+            </tr>
+            <tr>
+              <td><code>provider_email</code></td>
+              <td class="purpose">로그인 시점 provider email snapshot.</td>
+              <td class="why">자동 연결 판단과 운영 디버깅 근거이며 대표 이메일은 아니다.</td>
+            </tr>
+            <tr>
+              <td><code>provider_email_verified</code></td>
+              <td class="purpose">provider email 인증 여부 snapshot.</td>
+              <td class="why">기존 email 계정과 자동 연결할 때 보안 조건으로 사용한다.</td>
+            </tr>
+            <tr>
+              <td><code>is_active</code></td>
+              <td class="purpose">현재 로그인 lookup에 사용할 수 있는 연결인지 표시.</td>
+              <td class="why">탈퇴/해제된 소셜 연결을 재사용하지 않기 위해 필요하다.</td>
+            </tr>
+            <tr>
+              <td><code>linked_at</code></td>
+              <td class="purpose">소셜 연결 시각.</td>
+              <td class="why">계정 연결 이력과 사용자 문의 대응에 필요하다.</td>
+            </tr>
+            <tr>
+              <td><code>deleted_at</code></td>
+              <td class="purpose">소셜 연결 비활성화 시각.</td>
+              <td class="why">탈퇴 시 hard delete하지 않는 정책을 표현한다.</td>
+            </tr>
+            <tr>
+              <td><code>anonymized_at</code></td>
+              <td class="purpose">provider identity/email 익명화 시각.</td>
+              <td class="why">unique slot 해제와 개인정보 최소 보관을 동시에 만족한다.</td>
+            </tr>
+            <tr>
+              <td><code>created_at</code>, <code>updated_at</code></td>
+              <td class="purpose">생성/수정 시각.</td>
+              <td class="why">소셜 연결 상태 변경 이력을 추적한다.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <div>
+          <h2>EmailChangeRequest</h2>
+          <p>
+            대표 이메일 변경을 새 이메일 인증 완료 전까지 보류하는 요청 모델이다.
+            원문 token은 저장하지 않고 hash만 저장한다.
+          </p>
+        </div>
+        <span class="badge">accounts.EmailChangeRequest</span>
+      </div>
+      <div class="content">
+        <table>
+          <thead>
+            <tr>
+              <th>Column</th>
+              <th>Purpose</th>
+              <th>MVP justification</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>user_id</code></td>
+              <td class="purpose">이메일 변경을 요청한 User.</td>
+              <td class="why">대표 이메일은 계정에 귀속되는 값이다.</td>
+            </tr>
+            <tr>
+              <td><code>new_email</code></td>
+              <td class="purpose">변경하려는 새 대표 이메일.</td>
+              <td class="why">인증 완료 전까지 기존 <code>User.email</code>을 유지하기 위해 별도 보관한다.</td>
+            </tr>
+            <tr>
+              <td><code>token_hash</code></td>
+              <td class="purpose">이메일 인증 링크 token의 hash.</td>
+              <td class="why">원문 token 저장 없이 one-time 확인을 처리한다.</td>
+            </tr>
+            <tr>
+              <td><code>expires_at</code></td>
+              <td class="purpose">요청 만료 시각.</td>
+              <td class="why">Phase 0B 결정: 이메일 변경 요청은 24시간 뒤 만료한다.</td>
+            </tr>
+            <tr>
+              <td><code>confirmed_at</code></td>
+              <td class="purpose">새 이메일 인증 완료 시각.</td>
+              <td class="why">재사용 방지와 확정 여부 판단에 필요하다.</td>
+            </tr>
+            <tr>
+              <td><code>created_at</code></td>
+              <td class="purpose">요청 생성 시각.</td>
+              <td class="why">같은 user 기준 10분 1회 재요청 제한을 검증한다.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <div>
+          <h2>UserToken</h2>
+          <p>
+            이메일 인증, 비밀번호 설정, 비밀번호 재설정처럼 user-bound one-time
+            token이 필요한 작업을 공통으로 표현한다.
+          </p>
+        </div>
+        <span class="badge">accounts.UserToken</span>
+      </div>
+      <div class="content">
+        <table>
+          <thead>
+            <tr>
+              <th>Column</th>
+              <th>Purpose</th>
+              <th>MVP justification</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>user_id</code></td>
+              <td class="purpose">token이 귀속된 User.</td>
+              <td class="why">토큰 작업은 특정 계정에 대해 수행된다.</td>
+            </tr>
+            <tr>
+              <td><code>purpose</code></td>
+              <td class="purpose"><code>email_verify</code>, <code>password_set</code>, <code>password_reset</code> 구분.</td>
+              <td class="why">같은 token 구조를 여러 인증 작업에 재사용한다.</td>
+            </tr>
+            <tr>
+              <td><code>token_hash</code></td>
+              <td class="purpose">one-time token hash.</td>
+              <td class="why">원문 token을 DB에 저장하지 않기 위한 보안 기준이다.</td>
+            </tr>
+            <tr>
+              <td><code>expires_at</code></td>
+              <td class="purpose">token 만료 시각.</td>
+              <td class="why">email verify 24시간, password set/reset 1시간 정책을 강제한다.</td>
+            </tr>
+            <tr>
+              <td><code>consumed_at</code></td>
+              <td class="purpose">token 사용 완료 시각.</td>
+              <td class="why">one-time token 재사용을 막는다.</td>
+            </tr>
+            <tr>
+              <td><code>created_at</code></td>
+              <td class="purpose">token 생성 시각.</td>
+              <td class="why">운영 문의와 token 발급 이력 확인에 필요하다.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <div>
+          <h2>BenefitClaim</h2>
+          <p>
+            웰컴 혜택 중복 지급을 막는 ledger다. 원문 개인정보는 저장하지 않고
+            서버 secret pepper 기반 HMAC hash 값만 저장한다.
+          </p>
+        </div>
+        <span class="badge">accounts.BenefitClaim</span>
+      </div>
+      <div class="content">
+        <table>
+          <thead>
+            <tr>
+              <th>Column</th>
+              <th>Purpose</th>
+              <th>MVP justification</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>code</code></td>
+              <td class="purpose">혜택 종류. 현재 <code>welcome_signup</code>.</td>
+              <td class="why">MVP 중복 방지 대상은 웰컴 혜택이다.</td>
+            </tr>
+            <tr>
+              <td><code>user_id</code></td>
+              <td class="purpose">혜택을 받은 User. nullable.</td>
+              <td class="why">탈퇴 후에도 ledger는 남기되 User 참조는 끊길 수 있어야 한다.</td>
+            </tr>
+            <tr>
+              <td><code>phone_hash</code></td>
+              <td class="purpose">전화번호 HMAC hash.</td>
+              <td class="why">웰컴 혜택은 SMS 인증 phone 기준으로 1회만 지급한다.</td>
+            </tr>
+            <tr>
+              <td><code>email_hash</code></td>
+              <td class="purpose">이메일 HMAC hash. 현재 보조 감사 정보.</td>
+              <td class="why">원문 저장 없이 부정 이용 분석 근거를 확장할 수 있다.</td>
+            </tr>
+            <tr>
+              <td><code>social_identity_hash</code></td>
+              <td class="purpose">소셜 identity HMAC hash. 현재 보조 감사 정보.</td>
+              <td class="why">가입 경로별 중복 시도 분석에 원문 없이 사용할 수 있다.</td>
+            </tr>
+            <tr>
+              <td><code>claimed_at</code></td>
+              <td class="purpose">혜택 claim 시각.</td>
+              <td class="why">고객 문의와 부정 이용 조사 시점 기준이다.</td>
+            </tr>
+            <tr>
+              <td><code>claim_source</code></td>
+              <td class="purpose">혜택 지급 트리거 출처.</td>
+              <td class="why">MVP 정책상 SMS 인증 완료 후 지급됨을 운영상 확인한다.</td>
+            </tr>
+            <tr>
+              <td><code>metadata</code></td>
+              <td class="purpose">비식별 부가 정보.</td>
+              <td class="why">부정 이용 대응에 필요한 최소 운영 정보를 구조적으로 남긴다.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <div>
+          <h2>Constraints And Indexes</h2>
+          <p>모델 목적을 실제 DB 제약과 연결해서 확인한다.</p>
+        </div>
+        <span class="badge">migration 0001</span>
+      </div>
+      <div class="content notes">
+        <div class="note">
+          <h3>User phone partial unique</h3>
+          <p>
+            <code>phone_e164</code>는 인증 완료 및 미탈퇴 User 기준으로 unique다.
+            탈퇴 시 phone을 제거하므로 같은 번호 재가입은 가능하다.
+          </p>
+          <p class="status-ok">MVP 필요: 웰컴 혜택 중복 지급 방지.</p>
+        </div>
+        <div class="note">
+          <h3>Social identity unique</h3>
+          <p>
+            <code>(provider, provider_user_id)</code>와
+            <code>(user, provider)</code>가 unique다.
+            한 provider 계정은 하나의 내부 User에만 연결된다.
+          </p>
+          <p class="status-ok">MVP 필요: Kakao/Naver 로그인 계정 연결 안정성.</p>
+        </div>
+        <div class="note">
+          <h3>Benefit welcome unique</h3>
+          <p>
+            <code>welcome_signup</code>은 <code>phone_hash</code>가 필수이며
+            <code>(code, phone_hash)</code>가 unique다.
+          </p>
+          <p class="status-ok">MVP 필요: phone 기준 1회 지급 정책.</p>
+        </div>
+        <div class="note">
+          <h3>Token lookup indexes</h3>
+          <p>
+            <code>token_hash</code>, user/purpose/consumed/expires 조합 index를 둔다.
+            token 검증과 미사용 token 조회를 빠르게 하기 위한 운영상 최소 index다.
+          </p>
+          <p class="status-ok">MVP 필요: 이메일 인증과 비밀번호 token flow.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <div>
+          <h2>Deferred On Purpose</h2>
+          <p>지금 만들면 미래 확장용에 가까워 Phase 0B에서 제외한 모델이다.</p>
+        </div>
+        <span class="badge">not implemented</span>
+      </div>
+      <div class="content notes">
+        <div class="note">
+          <h3>SiteSetting</h3>
+          <p>
+            공개 설정, 배송 정책, 고객 노출 요구가 명확해지는 Phase 1 Catalog
+            또는 Phase 3 Order에서 필요한 필드만 다시 확정한다.
+          </p>
+          <p class="status-warn">현재 제외: Phase 0B MVP 요구가 아님.</p>
+        </div>
+        <div class="note">
+          <h3>IdempotencyRecord</h3>
+          <p>
+            주문 생성, 결제 confirm, webhook, 관리자 재고 조정 같은 command API가
+            시작되는 Phase 3 전 scope/key/request hash 계약과 함께 구현한다.
+          </p>
+          <p class="status-warn">현재 제외: 아직 멱등 command API가 없음.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

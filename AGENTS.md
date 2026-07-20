@@ -17,6 +17,7 @@ This repository implements the TRACEBACK commerce backend.
 - Start Phase 1 only after Phase 0 completion criteria are satisfied and recorded.
 - If Phase 0 is incomplete, continue Phase 0 work instead of starting Catalog work.
 - Keep the resume checkpoint aligned with the real code state before stopping work.
+- After finishing development work, update `docs/current/README.md` so a new session can see the current state, next action, completed scope, and remaining validation without reading the full docs set.
 
 ## Branching
 
@@ -31,3 +32,11 @@ This repository implements the TRACEBACK commerce backend.
 - Follow the 30-file slice limit unless the user explicitly approves an exception.
 - Update only the docs affected by the code or phase decision.
 - If implementation reveals a design issue, record it in `docs/build-plan.md` before treating the work as complete.
+
+## Model Documentation
+
+- Models are the most important implementation artifact; after model work, document the purpose of each model and column in a readable artifact.
+- The artifact can be Markdown or HTML, but it must be easy to scan in a new session.
+- Each column purpose must be justified by the minimal MVP scope or an explicit requirement.
+- If a column is only for future expansion and not required now, do not add it; record the deferred idea in the relevant docs instead.
+- Keep the model-purpose document aligned with the actual migrations before stopping work.

@@ -4,18 +4,21 @@
 
 ## 재개 체크포인트
 
+빠른 재개 요약은 [`current/README.md`](./current/README.md)에 둔다.
+이 섹션은 완료 판정과 이력까지 포함하는 기준 체크포인트다.
+
 - 진행 단계: Phase 0 — Foundation
-- 현재 브랜치: `phase-0b-account-auth`
+- 현재 브랜치: `phase-0b-common-api-auth`
 - 현재 작업 슬라이스: Phase 0B — account/auth and common API foundation
 - 슬라이스 목표: custom User/Auth 모델, 소셜 계정 연결 기반, 이메일/비밀번호 토큰 기반, 혜택 중복 방지 ledger, request ID, 공통 오류 응답, pagination, 관리자 REST 인증 baseline 구현
 - 변경 파일 예산: 30개 제한 적용
-- 관련 명세: `phase-0-completion.md`, `phaseB.md`, `api-spec.md` 공통 규약/health check/admin auth, `domain-model.md` User/공통 원칙
+- 관련 명세: `phase-0-completion.md`, `phaseB.md`, `api-spec.md` 공통 규약/health check/admin auth, `domain-model.md` User/공통 원칙, `current/phase-0b-model-purpose.html` 모델/컬럼 목적
 - 현재까지 완료: Bootstrap A — Docker/Compose, Phase 0A Django/DRF scaffold와 DefaultRouter/health check, `uv`/Ruff/mypy/yamllint/pytest/coverage/CI, CodeRabbit/Dependabot/pre-commit, `development` → `main` production ECR/EC2 CD workflow
 - 확인된 결정: Django/DRF/PostgreSQL, `uv` + lockfile, Gunicorn + Uvicorn worker + ASGI, development(local)/staging(AWS)/production(AWS), development 기본 Compose + production 공통 overlay, 로컬 Compose PostgreSQL, AWS EC2 + Docker Compose + managed PostgreSQL, 로컬 파일 저장소와 staging/production S3, custom User(`AbstractBaseUser` + `PermissionsMixin`, email 로그인), Kakao/Naver `SocialAccount`, `EmailChangeRequest`, `UserToken`, `BenefitClaim`, 관리자 REST 인증(session + `IsAdminUser`), 관리자 REST namespace `/api/v1/admin/`, `SiteSetting` Phase 0B 제외, `IdempotencyRecord` Phase 0B 제외
-- 미해결/설계 의심: Phase 0B 구현이 아직 없음. 공통 오류 응답, pagination, request ID, 관리자 REST 인증 baseline, custom account/auth 모델, 관련 테스트가 필요함. CI workflow에는 명시적 `migrate --noinput`과 `migrate --check`가 포함됐으며 Phase 완료 전 실제 CI 실행 증거가 필요함. `SiteSetting`은 Phase 1 Catalog 또는 Phase 3 Order에서 재검토하고, `IdempotencyRecord`는 Phase 3 Order 전 재결정한다.
-- 다음 작업: Phase 0B 구현
-- 정확한 다음 행동: `docs/phaseB.md`와 `docs/phase-0-completion.md` 기준으로 custom User/Auth foundation, request ID, 공통 오류 응답, pagination, 관리자 REST 인증 baseline, CI migrate 검증과 테스트를 구현한다. Phase 0 완료 전 Phase 1 Catalog를 시작하지 않는다.
-- 마지막 검증: 2026-07-06 Django 5.2.15 설치 확인, `uv run pytest` 통과, `uv run python manage.py check --settings=config.settings.test` 통과. 기본 development 설정의 `manage.py check`는 `DJANGO_SECRET_KEY` 미주입 시 실패.
+- 미해결/설계 의심: Phase 0B 로컬 구현은 완료됐지만 커밋/PR과 실제 CI 실행 증거가 아직 없음. PostgreSQL 실환경 migrate/test와 production image build는 이번 세션에서 아직 재검증하지 않음. `User.deleted_at`, `SocialAccount.deleted_at`, `SocialAccount.anonymized_at` 컬럼은 탈퇴/익명화 정책을 표현하기 위해 유지하되 실제 탈퇴 처리 메서드/service는 회원 탈퇴 API/운영 플로우가 시작될 때 구현한다. `SiteSetting`은 Phase 1 Catalog 또는 Phase 3 Order에서 재검토하고, `IdempotencyRecord`는 Phase 3 Order 전 재결정한다.
+- 다음 작업: Phase 0B diff 리뷰 후 커밋/PR 생성 및 실제 CI 결과 확인
+- 정확한 다음 행동: 변경 파일 28개 범위에서 custom User/Auth foundation, UserManager `full_clean` validation, account enum 분리, request ID, 공통 오류 응답, pagination, 관리자 REST 인증 baseline, `apps.console` 기반 staff/admin REST URL surface, migration Ruff pre-commit 제외, 모델/컬럼 목적 HTML 문서 구현 diff를 리뷰한다. 필요하면 PostgreSQL 환경에서 migrate/test를 재검증한 뒤 커밋/PR을 만들고 CI migration 검증 증거를 확보한다. Phase 0 완료 전 Phase 1 Catalog를 시작하지 않는다.
+- 마지막 검증: 2026-07-19 `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check .` 통과, `uv run ruff check apps/accounts/migrations/0001_initial.py` 통과, `uv run mypy .` 통과, `DJANGO_SETTINGS_MODULE=config.settings.test uv run python manage.py makemigrations --check --dry-run` 통과, `uv run pytest` 17개 통과, `uv run pre-commit validate-config` 통과, `uv run pre-commit run ruff-check --files apps/accounts/migrations/0001_initial.py apps/accounts/models.py` 통과, `uv run pre-commit run ruff-format --files apps/accounts/migrations/0001_initial.py apps/accounts/models.py` 통과. 2026-07-18 `uv run ruff format --check .` 통과, `DJANGO_SETTINGS_MODULE=config.settings.test uv run python manage.py check` 통과, `/tmp/traceback-phase0b-check.sqlite` 기준 `migrate --noinput` 및 `migrate --check` 통과, `uv run yamllint .` 통과, development Compose config 통과, `APP_IMAGE=traceback:test` 주입 기준 production overlay Compose config 통과. 기본 development 설정의 `manage.py check`는 `DJANGO_SECRET_KEY`/`TRACEBACK_DATABASE_URL` 미주입 시 실패.
 
 이 섹션은 세션 재개를 위한 영속 상태다. 새 세션이 추가 질문 없이 다음 행동을 수행할 수 있을 정도로 유지한다.
 
