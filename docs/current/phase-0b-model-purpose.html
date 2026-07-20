@@ -391,7 +391,7 @@
             시간대 결정이 아니라 생성/수정 시각을 반복 없이 남기기 위한 구조다.
           </p>
         </div>
-        <span class="badge">apps.common.models</span>
+        <span class="badge">apps.core.models</span>
       </div>
       <div class="content">
         <table>
@@ -510,7 +510,7 @@
               <td class="why">Django auth 기본 운영 정보로 계정 보안 확인에 사용한다.</td>
             </tr>
             <tr>
-              <td><code>date_joined</code></td>
+              <td><code>joined_at</code></td>
               <td class="purpose">가입 시각.</td>
               <td class="why">가입/혜택/운영 문의 기준 시각으로 필요하다.</td>
             </tr>
@@ -589,11 +589,6 @@
               <td><code>deleted_at</code></td>
               <td class="purpose">소셜 연결 비활성화 시각.</td>
               <td class="why">탈퇴 시 hard delete하지 않는 정책을 표현한다.</td>
-            </tr>
-            <tr>
-              <td><code>anonymized_at</code></td>
-              <td class="purpose">provider identity/email 익명화 시각.</td>
-              <td class="why">unique slot 해제와 개인정보 최소 보관을 동시에 만족한다.</td>
             </tr>
             <tr>
               <td><code>created_at</code>, <code>updated_at</code></td>
@@ -752,16 +747,6 @@
               <td><code>phone_hash</code></td>
               <td class="purpose">전화번호 HMAC hash.</td>
               <td class="why">웰컴 혜택은 SMS 인증 phone 기준으로 1회만 지급한다.</td>
-            </tr>
-            <tr>
-              <td><code>email_hash</code></td>
-              <td class="purpose">이메일 HMAC hash. 현재 보조 감사 정보.</td>
-              <td class="why">원문 저장 없이 부정 이용 분석 근거를 확장할 수 있다.</td>
-            </tr>
-            <tr>
-              <td><code>social_identity_hash</code></td>
-              <td class="purpose">소셜 identity HMAC hash. 현재 보조 감사 정보.</td>
-              <td class="why">가입 경로별 중복 시도 분석에 원문 없이 사용할 수 있다.</td>
             </tr>
             <tr>
               <td><code>claimed_at</code></td>

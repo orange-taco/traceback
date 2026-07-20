@@ -244,7 +244,7 @@ MVP라도 다음 원칙은 유지한다.
 목표:
 
 - Django/DRF/PostgreSQL 기반을 만든다.
-- `/api/v1` 기준과 `/health`를 둔다.
+- 계정 API는 `/api/accounts` 기준으로 시작한다.
 - 공통 오류 응답, pagination, request ID, 관리자 인증을 얇게 만든다.
 - Custom User/Auth 기반을 만든다.
 - Kakao/Naver 소셜 계정 연결, 이메일 변경 요청, 사용자 토큰, 혜택 중복 방지 ledger의 최소 모델을 만든다.
@@ -261,7 +261,7 @@ MVP라도 다음 원칙은 유지한다.
 확정된 Phase 0B 기준:
 
 - User는 `AbstractBaseUser` + `PermissionsMixin` 기반 custom User를 사용하고 email로 로그인한다.
-- 관리자 REST API는 `/api/v1/admin/` namespace와 Django session + `IsAdminUser`를 기준으로 한다.
+- 관리자 REST API는 `/api/accounts/admin/` namespace와 Django session + `IsAdminUser`를 기준으로 한다.
 - `UserToken`은 이메일 인증 24시간, 비밀번호 설정 1시간, 비밀번호 재설정 1시간 뒤 만료한다.
 - `EmailChangeRequest`는 24시간 뒤 만료하고 같은 user 기준 10분에 1회 요청을 허용한다.
 - `BenefitClaim`은 원문 개인정보 없이 HMAC hash ledger로 장기 보관한다.
