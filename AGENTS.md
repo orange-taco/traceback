@@ -33,6 +33,13 @@ This repository implements the TRACEBACK commerce backend.
 - Update only the docs affected by the code or phase decision.
 - If implementation reveals a design issue, record it in `docs/build-plan.md` before treating the work as complete.
 
+## Frontend Work
+
+- Frontend implementation lives in `../traceback-client`, even when the user gives the instruction from this backend repository session.
+- Before starting frontend work, read `../traceback-client/AGENTS.md` and follow the client-side rules there.
+- Check the branch and working tree in both repositories when a task crosses backend and frontend boundaries.
+- Do not create frontend files inside this backend repository unless the user explicitly asks for backend-served assets.
+
 ## Model Documentation
 
 - Models are the most important implementation artifact; after model work, document the purpose of each model and column in a readable artifact.
