@@ -13,6 +13,14 @@
 - 같은 scope/key와 같은 요청은 기존 결과, 다른 요청은 `409 Conflict`.
 - 고객 명령 token 원문은 응답에만 포함하고 서버에는 hash만 저장한다.
 
+DRF view convention:
+
+- 2개 이상의 mixin/action 조합으로 자연스럽게 표현되는 resource API는 `ViewSet`을 사용한다.
+- 단일 행위 endpoint로만 표현되는 API는 `APIView`를 사용한다.
+- 새 코드에서 `@api_view`, `GenericAPIView`, `ListAPIView`, `RetrieveAPIView` 등 나머지 view 형태는 사용하지 않는다.
+- account/auth 계열처럼 로그인, 로그아웃, 이메일 인증, 비밀번호 재설정, 소셜 완료는 기본적으로 `APIView` 대상이다.
+- catalog/admin resource처럼 목록/상세/생성/수정/삭제 중 2개 이상이 필요한 경우 `ViewSet` 대상이다.
+
 계산 상태 enum:
 
 - `order_status`: `pending`, `expired`, `paid`, `preparing`, `partially_shipped`, `shipped`, `delivered`, `cancelled`, `partially_returned`, `returned`
@@ -20,6 +28,28 @@
 - `fulfillment_status`: `unfulfilled`, `preparing`, `partially_shipped`, `shipped`, `delivered`
 
 ## 고객 API
+
+### Account
+
+Account API는 Phase 0C에서 클라이언트 연동 전에 별도 기준 확정이 필요하다.
+회원 기능은 선택 흐름이며 Store, Cart, Checkout, Order Tracking은 비회원도 사용할 수 있어야 한다.
+
+확정된 기준:
+
+- Phase 0C account API는 email/password 가입과 로그인을 먼저 구현한다.
+- 이메일 인증은 필요하지만 사용할 이메일 발송 시스템을 아직 정하지 않았으므로 endpoint 구현 전 발송 방식을 결정한다.
+- password set은 기존 비밀번호가 없는 사용자도 사용할 수 있어야 한다.
+- password reset은 이메일 링크 기반으로 구현한다.
+
+구현 전 추가로 확정할 기준:
+
+- signup, sign in의 요청/응답 필드와 실패 응답 정책
+- 이메일 인증 전/후 허용할 기능 범위
+- 이메일 인증과 welcome benefit 지급 조건의 관계
+- 소셜 로그인과 social auto-linking을 email/password first 흐름 뒤에 어떻게 연결할지
+- password reset/password set token 발급 응답과 실제 발송 방식
+
+위 기준이 확정되기 전에는 고객 account endpoint를 추가하지 않는다.
 
 ### Catalog
 

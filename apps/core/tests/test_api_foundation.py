@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from typing import Any, cast
+
 from django.contrib.auth import get_user_model
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import path
 from rest_framework import serializers
-from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.test import APIClient
 from rest_framework.views import APIView
@@ -23,13 +24,16 @@ class ValidationProbeView(APIView):
         raise serializers.ValidationError({"field": ["invalid"]})
 
 
-class NumberListView(ListAPIView):  # type: ignore[type-arg]
+class NumberListView(APIView):
     permission_classes = [AllowAny]
-    serializer_class = NumberSerializer
     pagination_class = StandardPageNumberPagination
 
-    def get_queryset(self):  # type: ignore[no-untyped-def]
-        return [{"value": value} for value in range(3)]
+    def get(self, request):  # type: ignore[no-untyped-def]
+        data = [{"value": value} for value in range(3)]
+        paginator = self.pagination_class()
+        page: Any = paginator.paginate_queryset(cast(Any, data), request, view=self)
+        serializer = NumberSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
 urlpatterns = [

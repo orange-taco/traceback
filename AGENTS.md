@@ -32,6 +32,16 @@ This repository implements the TRACEBACK commerce backend.
 - Follow the 30-file slice limit unless the user explicitly approves an exception.
 - Update only the docs affected by the code or phase decision.
 - If implementation reveals a design issue, record it in `docs/build-plan.md` before treating the work as complete.
+- Remove temporary implementation notes from docs or `AGENTS.md` once the implemented code makes them obsolete.
+- Do not let planning-only instructions become permanent rules unless they still guide future work.
+
+## Decision Points
+
+- When implementation reaches an undecided product, API, model, UX, security, or infrastructure choice, do not silently choose unless the choice is low-risk and already implied by existing docs.
+- Present 2-3 concrete options with the implementation impact and tradeoff of each option.
+- Recommend one option when there is a clear engineering reason, but wait for the user's selection before implementing the decision.
+- After the user chooses, record the decision in the relevant doc only if it will guide future work.
+- If a decision note becomes unnecessary after implementation, remove or collapse it instead of leaving stale planning text.
 
 ## Frontend Work
 
