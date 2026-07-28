@@ -121,6 +121,7 @@ Phase 0 완료로 기록하기 전에는 `docs/phase-0-completion.md`의 command
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check apps/accounts/views.py apps/accounts/urls.py apps/core/tests/test_api_foundation.py`
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run mypy apps/accounts apps/core`
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run pytest`
+  - `git diff --check`
 - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check .`
 - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check apps/accounts/migrations/0001_initial.py`
 - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff format --check .`
@@ -139,6 +140,7 @@ Phase 0 완료로 기록하기 전에는 `docs/phase-0-completion.md`의 command
 
 아직 못 돌린 검증:
 
+- PostgreSQL 실환경 migrate/test
 - production image build
 - 실제 GitHub Actions CI
 
