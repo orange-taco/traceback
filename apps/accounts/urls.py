@@ -1,8 +1,12 @@
 from django.urls import path
 from django.urls.resolvers import URLPattern
 
-from .views import admin_session_status
+from .views import AdminSessionStatusView
 
 urlpatterns: list[URLPattern] = [
-    path("admin/session", admin_session_status, name="admin-session-status"),
+    path(
+        "admin/session",
+        AdminSessionStatusView.as_view(),
+        name="admin-session-status",
+    ),
 ]

@@ -8,17 +8,17 @@
 이 섹션은 완료 판정과 이력까지 포함하는 기준 체크포인트다.
 
 - 진행 단계: Phase 0 — Foundation
-- 현재 브랜치: `phase-0b-common-api-auth`
-- 현재 작업 슬라이스: Phase 0B — account/auth and common API foundation
-- 슬라이스 목표: custom User/Auth 모델, 소셜 계정 연결 기반, 이메일/비밀번호 토큰 기반, 혜택 중복 방지 ledger, request ID, 공통 오류 응답, pagination, 관리자 REST 인증 baseline 구현
+- 현재 브랜치: `phase-0c-account-api-plan`
+- 현재 작업 슬라이스: Phase 0C — account API surface
+- 슬라이스 목표: DRF view convention을 확정하고, email/password first 기준으로 고객 account API 구현 순서를 정한다.
 - 변경 파일 예산: 30개 제한 적용
-- 관련 명세: `phase-0-completion.md`, `phaseB.md`, `api-spec.md` 공통 규약/admin auth, `domain-model.md` User/공통 원칙, `current/phase-0b-model-purpose.html` 모델/컬럼 목적
-- 현재까지 완료: Bootstrap A — Docker/Compose, Phase 0A Django/DRF scaffold와 API namespace, `uv`/Ruff/mypy/yamllint/pytest/coverage/CI, CodeRabbit/Dependabot/pre-commit, `development` → `main` production ECR/EC2 CD workflow
-- 확인된 결정: Django/DRF/PostgreSQL, `uv` + lockfile, Gunicorn + Uvicorn worker + ASGI, development(local)/staging(AWS)/production(AWS), development 기본 Compose + production 공통 overlay, 로컬 Compose PostgreSQL, AWS EC2 + Docker Compose + managed PostgreSQL, 로컬 파일 저장소와 staging/production S3, custom User(`AbstractBaseUser` + `PermissionsMixin`, email 로그인), Kakao/Naver `SocialAccount`, `EmailChangeRequest`, `UserToken`, `BenefitClaim`, 관리자 REST 인증(session + `IsAdminUser`), 관리자 REST namespace `/api/accounts/admin/`, `SiteSetting` Phase 0B 제외, `IdempotencyRecord` Phase 0B 제외
-- 미해결/설계 의심: Phase 0B 로컬 구현은 완료됐지만 커밋/PR과 실제 CI 실행 증거가 아직 없음. PostgreSQL 실환경 migrate/test와 production image build는 이번 세션에서 아직 재검증하지 않음. `User.deleted_at`, `SocialAccount.deleted_at` 컬럼은 탈퇴/익명화 정책을 표현하기 위해 유지하되 실제 탈퇴 처리 메서드/service는 회원 탈퇴 API/운영 플로우가 시작될 때 구현한다. `UserToken`, `EmailChangeRequest`, `BenefitClaim`의 실제 발급/소비 API와 클라이언트 연동 flow는 클라이언트 구현 시점에 구현한다. `SiteSetting`은 Phase 1 Catalog 또는 Phase 3 Order에서 재검토하고, `IdempotencyRecord`는 Phase 3 Order 전 재결정한다.
-- 다음 작업: Phase 0B diff 리뷰 후 커밋/PR 생성 및 실제 CI 결과 확인
-- 정확한 다음 행동: 변경 파일 28개 범위에서 custom User/Auth foundation, UserManager `full_clean` validation, account enum 분리, request ID, 공통 오류 응답, pagination, 관리자 REST 인증 baseline, accounts 기반 staff/admin REST URL surface, migration Ruff pre-commit 제외, 모델/컬럼 목적 HTML 문서 구현 diff를 리뷰한다. 필요하면 PostgreSQL 환경에서 migrate/test를 재검증한 뒤 커밋/PR을 만들고 CI migration 검증 증거를 확보한다. Phase 0 완료 전 Phase 1 Catalog를 시작하지 않는다.
-- 마지막 검증: 2026-07-20 `DJANGO_SETTINGS_MODULE=config.settings.test UV_CACHE_DIR=/tmp/traceback-uv-cache uv run python manage.py makemigrations --check --dry-run` 통과, `DJANGO_SETTINGS_MODULE=config.settings.test UV_CACHE_DIR=/tmp/traceback-uv-cache uv run python manage.py check` 통과, `DJANGO_SETTINGS_MODULE=config.settings.test UV_CACHE_DIR=/tmp/traceback-uv-cache uv run python manage.py migrate --noinput` 통과, `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check apps/accounts/models.py apps/accounts/admin.py apps/accounts/urls.py apps/core/models.py apps/core/apps.py apps/core/tests/test_api_foundation.py config/settings/base.py config/urls.py` 통과, `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run pytest` 15개 통과. 2026-07-19 `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check .` 통과, `uv run mypy .` 통과, `uv run pre-commit validate-config` 통과. 기본 development 설정의 `manage.py check`는 `DJANGO_SECRET_KEY`/`TRACEBACK_DATABASE_URL` 미주입 시 실패.
+- 관련 명세: `phase-0-completion.md`, `phaseB.md`, `api-spec.md` account 공통 규약, `domain-model.md` User/공통 원칙, `current/phase-0b-model-purpose.html` 모델/컬럼 목적
+- 현재까지 완료: Bootstrap A — Docker/Compose, Phase 0A Django/DRF scaffold와 API namespace, `uv`/Ruff/mypy/yamllint/pytest/coverage/CI, CodeRabbit/Dependabot/pre-commit, `development` → `main` production ECR/EC2 CD workflow, Phase 0B custom User/Auth foundation와 공통 API foundation
+- 확인된 결정: Django/DRF/PostgreSQL, `uv` + lockfile, Gunicorn + Uvicorn worker + ASGI, development(local)/staging(AWS)/production(AWS), development 기본 Compose + production 공통 overlay, 로컬 Compose PostgreSQL, AWS EC2 + Docker Compose + managed PostgreSQL, 로컬 파일 저장소와 staging/production S3, custom User(`AbstractBaseUser` + `PermissionsMixin`, email 로그인), Kakao/Naver `SocialAccount`, `EmailChangeRequest`, `UserToken`, `BenefitClaim`, 관리자 REST 인증(session + `IsAdminUser`), 관리자 REST namespace `/api/accounts/admin/`, `SiteSetting` Phase 0B 제외, `IdempotencyRecord` Phase 0B 제외, DRF view convention은 2개 이상 mixin/action 조합이면 `ViewSet`, 단일 행위 endpoint이면 `APIView`, 그 외 view 형태는 새 코드에서 사용하지 않음, Phase 0C account API는 email/password 가입과 로그인을 먼저 구현, 이메일 인증 발송 시스템은 미정, password set은 기존 비밀번호가 없는 사용자도 허용, password reset은 이메일 링크 기반
+- 미해결/설계 의심: PostgreSQL 실환경 migrate/test와 production image build는 이번 세션에서 아직 재검증하지 않음. `User.deleted_at`, `SocialAccount.deleted_at` 컬럼은 탈퇴/익명화 정책을 표현하기 위해 유지하되 실제 탈퇴 처리 메서드/service는 회원 탈퇴 API/운영 플로우가 시작될 때 구현한다. `UserToken`, `EmailChangeRequest`, `BenefitClaim`의 실제 발급/소비 API와 클라이언트 연동 flow는 클라이언트 구현 시점에 구현한다. `SiteSetting`은 Phase 1 Catalog 또는 Phase 3 Order에서 재검토하고, `IdempotencyRecord`는 Phase 3 Order 전 재결정한다.
+- 다음 작업: email/password first 기준으로 signup/sign in API 요청/응답, 실패 응답 정책, 이메일 인증 전 허용 범위를 확정한다.
+- 정확한 다음 행동: `api-spec.md` 또는 별도 account auth 설계 문서에 signup/sign in contract를 확정한다. 이메일 인증 endpoint는 발송 시스템 결정 후 구현하고, 소셜 로그인/social auto-linking은 email/password first 흐름 뒤에 별도 결정한다. Phase 0 완료 전 Phase 1 Catalog를 시작하지 않는다.
+- 마지막 검증: Phase 0B commit `6a0b3d4`, PR #5 merge commit `489ed3b`. 2026-07-23 `DJANGO_SETTINGS_MODULE=config.settings.test UV_CACHE_DIR=/tmp/traceback-uv-cache uv run python manage.py makemigrations --check --dry-run` 통과, `DJANGO_SETTINGS_MODULE=config.settings.test UV_CACHE_DIR=/tmp/traceback-uv-cache uv run python manage.py migrate --noinput` 통과. 2026-07-28 Phase 0C DRF convention slice는 `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check apps/accounts/views.py apps/accounts/urls.py apps/core/tests/test_api_foundation.py`, `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run mypy apps/accounts apps/core`, `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run pytest`, `git diff --check` 통과. 테스트 설정은 in-memory SQLite라 `showmigrations`는 프로세스마다 초기화된다. 기본 development 설정의 `manage.py check`는 `DJANGO_SECRET_KEY`/`TRACEBACK_DATABASE_URL` 미주입 시 실패.
 
 이 섹션은 세션 재개를 위한 영속 상태다. 새 세션이 추가 질문 없이 다음 행동을 수행할 수 있을 정도로 유지한다.
 
@@ -29,6 +29,7 @@
 | 슬라이스 | 완료 커밋/PR | 검증 증거 | 설계 변경 |
 | --- | --- | --- | --- |
 | Bootstrap A — Docker/Compose | `45bd637` | development/production `docker compose config`, development/production app target 빌드, `git diff --check` | 없음 |
+| Phase 0B — account/auth and common API foundation | PR #5 / `6a0b3d4` | local checks and tests recorded in `docs/current/README.md`; merge commit `489ed3b` | custom User/Auth foundation, account common models, request ID, common error response, pagination, admin session baseline |
 
 완료 판정:
 

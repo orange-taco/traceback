@@ -6,17 +6,19 @@
 ## 지금 상태
 
 - 진행 단계: Phase 0 - Foundation
-- 현재 브랜치: `phase-0b-common-api-auth`
-- 현재 슬라이스: Phase 0B - account/auth and common API foundation
-- 현재 코드 상태: Phase 0B 로컬 구현과 테스트는 완료됐고, 커밋/PR/실제 CI 증거는 아직 없음
+- 현재 브랜치: `phase-0c-account-api-plan`
+- 현재 슬라이스: Phase 0C - account API surface
+- 현재 코드 상태: Phase 0B account/auth foundation은 `development`에 merge됨. DRF view convention을 확정했고 기존 `/api/accounts/admin/session`은 `APIView` 기반으로 정리됨. 고객 signup/sign in/social/email 인증 API는 아직 구현하지 않음
 - 파일 예산: 한 슬라이스 최대 30개
 - Phase 1 Catalog 시작 금지: Phase 0 완료 기준이 통과하고 `docs/build-plan.md` 완료 이력에 기록되기 전까지 Catalog 작업을 시작하지 않는다.
 
 ## 다음 작업
 
-Phase 0B 변경분을 리뷰하고 커밋/PR로 올린 뒤 실제 CI 결과를 확인한다.
+Phase 0C의 다음 작은 슬라이스는 email/password first 기준으로 signup/sign in API
+계약을 확정하는 것이다. 이메일 인증은 필요하지만 사용할 이메일 발송 시스템이 아직
+정해지지 않았으므로, 인증 endpoint는 발송 방식 결정 후 구현한다.
 
-현재 구현된 범위:
+Phase 0B에서 구현된 범위:
 
 - custom User/Auth 모델
 - account enum 분리: `SocialProvider`, `UserTokenPurpose`, `BenefitClaimCode`
@@ -32,12 +34,22 @@ Phase 0B 변경분을 리뷰하고 커밋/PR로 올린 뒤 실제 CI 결과를 �
 - 관련 테스트
 - Phase 0B 모델/컬럼 목적 HTML 문서
 
-남은 작업:
+완료된 Phase 0C 범위:
 
-- 변경 diff 리뷰
-- 필요하면 PostgreSQL 환경에서 migrate/test 재검증
-- 커밋 또는 PR 생성
-- CI migration 검증 증거 확인
+- DRF convention 문서화
+- 기존 function-based account view 제거
+- `/api/accounts/admin/session`을 `APIView`로 전환
+- 고객 account API 구현 전 확정해야 할 기준 문서화
+
+다음 슬라이스 후보:
+
+- signup/sign in의 필수 입력, 응답 필드, 실패 응답 정책 결정
+- 이메일 인증 발송 시스템 결정
+- email verification과 welcome benefit 지급 조건 결정
+- social login과 social auto-linking은 email/password first 흐름 뒤에 별도 결정
+- password set은 기존 비밀번호가 없는 사용자도 허용
+- password reset은 이메일 링크 기반으로 구현
+- 기준 확정 후 가장 작은 account API endpoint부터 구현
 
 ## 이미 결정된 것
 
@@ -49,6 +61,12 @@ Phase 0B 변경분을 리뷰하고 커밋/PR로 올린 뒤 실제 CI 결과를 �
 - Django migration 파일은 생성물이므로 Ruff pre-commit check/format 대상에서 제외한다. 스키마 검증은 `makemigrations --check --dry-run`, `migrate`, 테스트로 한다.
 - 관리자 REST 인증은 Django session + DRF `IsAdminUser`를 사용한다.
 - 관리자 REST namespace는 `/api/accounts/admin/`이다.
+- DRF view convention:
+  - 2개 이상의 mixin/action 조합으로 자연스럽게 표현되는 resource API는 `ViewSet`을 사용한다.
+  - 단일 행위 endpoint로만 표현되는 API는 `APIView`를 사용한다.
+  - `@api_view`, `GenericAPIView`, `ListAPIView`, `RetrieveAPIView` 등 나머지 view 형태는 새 코드에서 사용하지 않는다.
+  - account/auth처럼 로그인, 로그아웃, 이메일 인증, 비밀번호 재설정, 소셜 완료는 resource CRUD가 아니므로 기본적으로 `APIView` 대상이다.
+  - catalog/admin resource처럼 목록/상세/생성/수정/삭제 중 2개 이상이 필요한 경우 `ViewSet` 대상이다.
 - 앱의 상위 `urls.py`는 실제 하위 URL이 필요한 앱에만 둔다.
 - Phase 0B staff/admin REST URL은 별도 `staff` 패키지 없이 accounts URL에서 시작한다.
 - `SiteSetting`은 Phase 0B에서 만들지 않는다. Phase 1 Catalog 또는 Phase 3 Order에서 재검토한다.
@@ -59,6 +77,10 @@ Phase 0B 변경분을 리뷰하고 커밋/PR로 올린 뒤 실제 CI 결과를 �
   - password reset: 1시간
 - `EmailChangeRequest`는 24시간 뒤 만료하고 같은 user 기준 10분에 1회 요청을 허용한다.
 - `BenefitClaim`은 원문 개인정보 없이 HMAC hash ledger로 장기 보관한다.
+- Phase 0C account API는 email/password 가입과 로그인을 먼저 구현한다.
+- 이메일 인증은 필요하지만 사용할 이메일 발송 시스템을 아직 정하지 않았다.
+- password set은 기존 비밀번호가 없는 사용자도 사용할 수 있어야 한다.
+- password reset은 이메일 링크 기반으로 구현한다.
 - `UserToken`, `EmailChangeRequest`, `BenefitClaim`의 실제 발급/소비 API와 클라이언트 연동 flow는 클라이언트 구현 시점에 구현한다.
 - `User.deleted_at`, `SocialAccount.deleted_at` 컬럼은 탈퇴/익명화 정책을 표현하기 위해 유지한다.
 - 실제 탈퇴 처리 메서드나 service는 Phase 0B MVP에서 만들지 않는다. 회원 탈퇴 API/운영 플로우가 시작될 때 구현한다.
@@ -73,7 +95,8 @@ git status --short --branch
 
 이미 사용자 변경이 있으면 보존한다.
 
-현재 작업 중 변경 파일 수는 신규 파일 포함 28개다. 30-file slice limit 안에 있다.
+현재 작업 브랜치는 `phase-0c-account-api-plan`이다. 다음 코드 작업을 계속하기 전에
+이 브랜치 이름을 유지할지, 구현 브랜치로 새로 나눌지 확인한다.
 
 ## 필요한 경우만 읽을 문서
 
@@ -92,6 +115,13 @@ Phase 0 완료로 기록하기 전에는 `docs/phase-0-completion.md`의 command
 
 마지막 로컬 검증:
 
+- Phase 0B commit: `6a0b3d4`
+- Phase 0B merge: PR #5, merge commit `489ed3b`
+- Phase 0C DRF convention slice:
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check apps/accounts/views.py apps/accounts/urls.py apps/core/tests/test_api_foundation.py`
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run mypy apps/accounts apps/core`
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run pytest`
+  - `git diff --check`
 - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check .`
 - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check apps/accounts/migrations/0001_initial.py`
 - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff format --check .`
@@ -110,6 +140,7 @@ Phase 0 완료로 기록하기 전에는 `docs/phase-0-completion.md`의 command
 
 아직 못 돌린 검증:
 
+- PostgreSQL 실환경 migrate/test
 - production image build
 - 실제 GitHub Actions CI
 
