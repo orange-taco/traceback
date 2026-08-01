@@ -6,17 +6,29 @@
 ## 지금 상태
 
 - 진행 단계: Phase 0 - Foundation
-- 현재 브랜치: `phase-0c-account-api-plan`
+- 현재 브랜치: `phase-0c-account-auth-contract`
 - 현재 슬라이스: Phase 0C - account API surface
-- 현재 코드 상태: Phase 0B account/auth foundation은 `development`에 merge됨. DRF view convention을 확정했고 기존 `/api/accounts/admin/session`은 `APIView` 기반으로 정리됨. 고객 signup/sign in/social/email 인증 API는 아직 구현하지 않음
+- 현재 코드 상태: Phase 0B account/auth foundation은 `development`에 merge됨. PR #6도 `development`에 merge되어 DRF view convention과 account auth 결정 지점 문서화가 반영됨. 고객 signup/sign in/social/email 인증 API는 아직 구현하지 않음
+- 프론트 상태: `../traceback-client` 컨벤션은 `AGENTS.md`에 정리 완료. React Router v8 기준이며, 프론트 작업 전 반드시 `../traceback-client/AGENTS.md`, `docs/brand-concept.md`, `docs/wireframe.md`를 읽는다.
 - 파일 예산: 한 슬라이스 최대 30개
 - Phase 1 Catalog 시작 금지: Phase 0 완료 기준이 통과하고 `docs/build-plan.md` 완료 이력에 기록되기 전까지 Catalog 작업을 시작하지 않는다.
 
 ## 다음 작업
 
-Phase 0C의 다음 작은 슬라이스는 email/password first 기준으로 signup/sign in API
-계약을 확정하는 것이다. 이메일 인증은 필요하지만 사용할 이메일 발송 시스템이 아직
+Phase 0C의 다음 작은 슬라이스는 MVP 화면 QA가 가능하도록 backend + frontend를
+함께 자르는 account auth vertical slice를 설계하는 것이다. 먼저 email/password first
+기준으로 signup/sign in/session/logout contract를 2-3가지 선택지로 제안하고 사용자의
+선택을 받은 뒤 구현한다. 이메일 인증은 필요하지만 사용할 이메일 발송 시스템이 아직
 정해지지 않았으므로, 인증 endpoint는 발송 방식 결정 후 구현한다.
+
+다음 세션에서 바로 해야 할 일:
+
+1. 백엔드와 클라이언트 작업트리를 각각 확인한다.
+2. 클라이언트 작업이 포함되면 `../traceback-client/AGENTS.md`와 관련 docs를 먼저 읽는다.
+3. signup/sign in/session/logout contract를 2-3가지 옵션으로 제안한다.
+4. 선택된 contract만 문서화하고 구현한다.
+5. 구현 후 백엔드 테스트와 프론트 typecheck/build, Playwright 또는 in-app browser QA를 수행한다.
+6. 프론트 QA는 Design / UX / Function으로 나누어 사용자 확인을 받는다.
 
 Phase 0B에서 구현된 범위:
 
@@ -40,10 +52,12 @@ Phase 0B에서 구현된 범위:
 - 기존 function-based account view 제거
 - `/api/accounts/admin/session`을 `APIView`로 전환
 - 고객 account API 구현 전 확정해야 할 기준 문서화
+- 프론트 컨벤션은 `../traceback-client/AGENTS.md`에 정리 완료
 
 다음 슬라이스 후보:
 
 - signup/sign in의 필수 입력, 응답 필드, 실패 응답 정책 결정
+- session/logout API를 signup/sign in과 같은 MVP QA 단위에 포함할지 결정
 - 이메일 인증 발송 시스템 결정
 - email verification과 welcome benefit 지급 조건 결정
 - social login과 social auto-linking은 email/password first 흐름 뒤에 별도 결정
@@ -95,8 +109,9 @@ git status --short --branch
 
 이미 사용자 변경이 있으면 보존한다.
 
-현재 작업 브랜치는 `phase-0c-account-api-plan`이다. 다음 코드 작업을 계속하기 전에
-이 브랜치 이름을 유지할지, 구현 브랜치로 새로 나눌지 확인한다.
+현재 백엔드 작업 브랜치는 `phase-0c-account-auth-contract`이다. 클라이언트는 마지막
+확인 기준 `migrate-react-router-v8` 브랜치이며 `.gitignore` 수정이 남아 있었다. 프론트
+작업을 시작하기 전 해당 변경이 사용자 작업인지 확인하고 보존한다.
 
 ## 필요한 경우만 읽을 문서
 
