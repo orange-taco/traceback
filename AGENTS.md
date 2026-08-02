@@ -12,9 +12,9 @@ This repository implements the TRACEBACK commerce backend.
 
 ## User-Readable Rules
 
-- Keep `AGENTS_USER.md` as the Korean, user-readable companion to this AI-facing rule file.
-- Whenever `AGENTS.md` changes in a way that affects how work is planned, confirmed, implemented, verified, or reported, update `AGENTS_USER.md` in the same slice.
-- Do not copy implementation-only prompt wording into `AGENTS_USER.md`; explain the practical user-facing convention instead.
+- Keep `AGENTS_korea.md` as the Korean, user-readable companion to this AI-facing rule file.
+- Whenever `AGENTS.md` changes in a way that affects how work is planned, confirmed, implemented, verified, or reported, update `AGENTS_korea.md` in the same slice.
+- Do not copy implementation-only prompt wording into `AGENTS_korea.md`; explain the practical user-facing convention instead.
 
 ## Phase Checks
 
@@ -30,6 +30,7 @@ This repository implements the TRACEBACK commerce backend.
 - Create task branches from `development`.
 - Use branch names that make the phase obvious, such as `phase-0-foundation` or `phase-1-catalog`.
 - Do not do feature work directly on `main` or `development`.
+- When creating a PR, use `development` as the base branch unless the user explicitly instructs otherwise.
 - Before switching or creating branches, check for existing user changes and preserve them.
 
 ## Change Scope
