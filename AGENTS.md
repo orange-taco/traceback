@@ -10,6 +10,12 @@ This repository implements the TRACEBACK commerce backend.
 4. Verify the current branch and working tree before changing files.
 5. Do not assume a phase is complete from conversation context alone.
 
+## User-Readable Rules
+
+- Keep `AGENTS_USER.md` as the Korean, user-readable companion to this AI-facing rule file.
+- Whenever `AGENTS.md` changes in a way that affects how work is planned, confirmed, implemented, verified, or reported, update `AGENTS_USER.md` in the same slice.
+- Do not copy implementation-only prompt wording into `AGENTS_USER.md`; explain the practical user-facing convention instead.
+
 ## Phase Checks
 
 - Treat `docs/simple-build-guide.md` and `docs/build-plan.md` as the phase scope authority.
@@ -37,7 +43,10 @@ This repository implements the TRACEBACK commerce backend.
 
 ## Decision Points
 
-- When implementation reaches an undecided product, API, model, UX, security, or infrastructure choice, do not silently choose unless the choice is low-risk and already implied by existing docs.
+- Continue implementation without stopping for user confirmation unless the decision falls into one of these categories: PR review handling, business/product choice, technical stack/architecture choice, or external integration that the user must perform directly.
+- Treat business/product choices broadly: product behavior, API contract, model semantics, UX policy, security policy, and operational policy require confirmation when they change or decide business meaning.
+- Treat technical choices broadly: framework, library, architecture, infrastructure, persistence, authentication mechanism, deployment, and integration pattern changes require confirmation when they are not already implied by existing docs.
+- If a choice is low-risk and already implied by existing docs, make the call, implement it, and record it only when it will guide future work.
 - Present 2-3 concrete options with the implementation impact and tradeoff of each option.
 - Recommend one option when there is a clear engineering reason, but wait for the user's selection before implementing the decision.
 - After the user chooses, record the decision in the relevant doc only if it will guide future work.

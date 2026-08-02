@@ -31,25 +31,93 @@ DRF view convention:
 
 ### Account
 
-Account API는 Phase 0C에서 클라이언트 연동 전에 별도 기준 확정이 필요하다.
 회원 기능은 선택 흐름이며 Store, Cart, Checkout, Order Tracking은 비회원도 사용할 수 있어야 한다.
 
 확정된 기준:
 
-- Phase 0C account API는 email/password 가입과 로그인을 먼저 구현한다.
+- 고객 account 인증은 Django session cookie를 사용한다.
+- email/password 가입과 로그인 성공은 같은 session을 생성한다.
+- 가입 직후 로그인과 구매를 허용한다.
+- 이메일 미인증이어도 로그인과 구매를 허용한다.
 - 이메일 인증은 필요하지만 사용할 이메일 발송 시스템을 아직 정하지 않았으므로 endpoint 구현 전 발송 방식을 결정한다.
 - password set은 기존 비밀번호가 없는 사용자도 사용할 수 있어야 한다.
 - password reset은 이메일 링크 기반으로 구현한다.
+- social login도 성공하면 같은 session cookie와 session 응답 계약을 사용한다.
+
+공통 user 응답:
+
+```json
+{
+  "id": 1,
+  "email": "customer@example.com",
+  "username": "user_abc12345",
+  "email_verified": false
+}
+```
+
+#### `POST /api/accounts/signup`
+
+- 요청: `email`, `password`
+- 성공: `201`
+- 규칙:
+  - email은 앞뒤 공백 제거 후 소문자로 정규화한다.
+  - password는 Django 기본 password validators를 통과해야 한다.
+  - 같은 email을 가진 User가 있으면 `400`.
+  - 성공 시 Django session을 생성한다.
+- 응답:
+
+```json
+{
+  "authenticated": true,
+  "user": {
+    "id": 1,
+    "email": "customer@example.com",
+    "username": "user_abc12345",
+    "email_verified": false
+  }
+}
+```
+
+#### `POST /api/accounts/login`
+
+- 요청: `email`, `password`
+- 성공: `200`
+- 규칙:
+  - email은 앞뒤 공백 제거 후 소문자로 정규화한다.
+  - 실패 응답은 email 존재 여부를 드러내지 않는다.
+  - 성공 시 Django session을 생성한다.
+- 응답: signup과 같은 session 응답.
+
+#### `GET /api/accounts/session`
+
+- 요청: 없음
+- 성공: `200`
+- 규칙:
+  - 인증 여부와 현재 user를 반환한다.
+  - anonymous도 `200`으로 응답한다.
+  - CSRF cookie를 설정한다.
+- anonymous 응답:
+
+```json
+{
+  "authenticated": false,
+  "user": null
+}
+```
+
+#### `POST /api/accounts/logout`
+
+- 요청: 없음
+- 성공: `204`
+- 규칙:
+  - 현재 session을 제거한다.
+  - browser 호출은 session/CSRF cookie 계약을 따른다.
 
 구현 전 추가로 확정할 기준:
 
-- signup, sign in의 요청/응답 필드와 실패 응답 정책
-- 이메일 인증 전/후 허용할 기능 범위
 - 이메일 인증과 welcome benefit 지급 조건의 관계
 - 소셜 로그인과 social auto-linking을 email/password first 흐름 뒤에 어떻게 연결할지
 - password reset/password set token 발급 응답과 실제 발송 방식
-
-위 기준이 확정되기 전에는 고객 account endpoint를 추가하지 않는다.
 
 ### Catalog
 

@@ -8,25 +8,24 @@
 - 진행 단계: Phase 0 - Foundation
 - 현재 브랜치: `phase-0c-account-auth-contract`
 - 현재 슬라이스: Phase 0C - account API surface
-- 현재 코드 상태: Phase 0B account/auth foundation은 `development`에 merge됨. PR #6도 `development`에 merge되어 DRF view convention과 account auth 결정 지점 문서화가 반영됨. 고객 signup/sign in/social/email 인증 API는 아직 구현하지 않음
+- 현재 코드 상태: Phase 0B account/auth foundation은 `development`에 merge됨. PR #6도 `development`에 merge되어 DRF view convention과 account auth 결정 지점 문서화가 반영됨. 0C-1 email/password session API는 이 브랜치에서 구현됨. 고객 social/email verification/password reset API는 아직 구현하지 않음
 - 프론트 상태: `../traceback-client` 컨벤션은 `AGENTS.md`에 정리 완료. React Router v8 기준이며, 프론트 작업 전 반드시 `../traceback-client/AGENTS.md`, `docs/brand-concept.md`, `docs/wireframe.md`를 읽는다.
 - 파일 예산: 한 슬라이스 최대 30개
 - Phase 1 Catalog 시작 금지: Phase 0 완료 기준이 통과하고 `docs/build-plan.md` 완료 이력에 기록되기 전까지 Catalog 작업을 시작하지 않는다.
 
 ## 다음 작업
 
-Phase 0C의 다음 작은 슬라이스는 MVP 화면 QA가 가능하도록 backend + frontend를
-함께 자르는 account auth vertical slice를 설계하는 것이다. 먼저 email/password first
-기준으로 signup/sign in/session/logout contract를 2-3가지 선택지로 제안하고 사용자의
-선택을 받은 뒤 구현한다. 이메일 인증은 필요하지만 사용할 이메일 발송 시스템이 아직
-정해지지 않았으므로, 인증 endpoint는 발송 방식 결정 후 구현한다.
+Phase 0C의 현재 브랜치에는 email/password first 기준의 backend session API가
+구현되어 있다. 다음 작은 슬라이스는 social login 서버 계약과 구현이다. Kakao/Naver
+OAuth start/callback, provider user lookup, `SocialAccount` 생성/재사용, session login,
+성공/실패 frontend redirect 계약을 확정한 뒤 구현한다.
 
 다음 세션에서 바로 해야 할 일:
 
 1. 백엔드와 클라이언트 작업트리를 각각 확인한다.
 2. 클라이언트 작업이 포함되면 `../traceback-client/AGENTS.md`와 관련 docs를 먼저 읽는다.
-3. signup/sign in/session/logout contract를 2-3가지 옵션으로 제안한다.
-4. 선택된 contract만 문서화하고 구현한다.
+3. social login을 Kakao만 먼저 자를지 Kakao/Naver를 같은 슬라이스에 넣을지 결정한다.
+4. social start/callback, 성공/실패 redirect, auto-linking 실패 응답 정책을 문서화하고 구현한다.
 5. 구현 후 백엔드 테스트와 프론트 typecheck/build, Playwright 또는 in-app browser QA를 수행한다.
 6. 프론트 QA는 Design / UX / Function으로 나누어 사용자 확인을 받는다.
 
@@ -53,17 +52,26 @@ Phase 0B에서 구현된 범위:
 - `/api/accounts/admin/session`을 `APIView`로 전환
 - 고객 account API 구현 전 확정해야 할 기준 문서화
 - 프론트 컨벤션은 `../traceback-client/AGENTS.md`에 정리 완료
+- email/password session API backend 구현:
+  - `POST /api/accounts/signup`
+  - `POST /api/accounts/login`
+  - `GET /api/accounts/session`
+  - `POST /api/accounts/logout`
+  - 공통 user 응답 `{id, email, username, email_verified}`
+  - signup/login 성공 시 Django session cookie 생성
+  - session 조회 시 anonymous도 `200`으로 `{authenticated:false, user:null}` 반환
+  - login 실패는 email 존재 여부를 드러내지 않는 공통 오류 반환
 
 다음 슬라이스 후보:
 
-- signup/sign in의 필수 입력, 응답 필드, 실패 응답 정책 결정
-- session/logout API를 signup/sign in과 같은 MVP QA 단위에 포함할지 결정
+- Kakao social login backend vertical slice
+- Naver social login backend vertical slice
+- social login 성공/실패 frontend redirect 연동
 - 이메일 인증 발송 시스템 결정
 - email verification과 welcome benefit 지급 조건 결정
-- social login과 social auto-linking은 email/password first 흐름 뒤에 별도 결정
 - password set은 기존 비밀번호가 없는 사용자도 허용
 - password reset은 이메일 링크 기반으로 구현
-- 기준 확정 후 가장 작은 account API endpoint부터 구현
+- account auth frontend signup/login/session/logout 연동
 
 ## 이미 결정된 것
 
@@ -92,6 +100,11 @@ Phase 0B에서 구현된 범위:
 - `EmailChangeRequest`는 24시간 뒤 만료하고 같은 user 기준 10분에 1회 요청을 허용한다.
 - `BenefitClaim`은 원문 개인정보 없이 HMAC hash ledger로 장기 보관한다.
 - Phase 0C account API는 email/password 가입과 로그인을 먼저 구현한다.
+- 고객 account 인증은 Django session cookie를 사용한다.
+- email/password signup/login 성공 시 같은 session 응답을 반환하고 session cookie를 생성한다.
+- `GET /api/accounts/session`은 anonymous도 200으로 반환하며 CSRF cookie를 설정한다.
+- `POST /api/accounts/logout`은 현재 session을 제거하고 204를 반환한다.
+- social login도 성공 시 같은 session cookie와 session 응답 계약을 사용한다.
 - 이메일 인증은 필요하지만 사용할 이메일 발송 시스템을 아직 정하지 않았다.
 - password set은 기존 비밀번호가 없는 사용자도 사용할 수 있어야 한다.
 - password reset은 이메일 링크 기반으로 구현한다.
@@ -137,6 +150,11 @@ Phase 0 완료로 기록하기 전에는 `docs/phase-0-completion.md`의 command
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run mypy apps/accounts apps/core`
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run pytest`
   - `git diff --check`
+- Phase 0C-1 email/password session API:
+  - `DJANGO_SETTINGS_MODULE=config.settings.test TRACEBACK_DATABASE_URL=sqlite:///:memory: UV_CACHE_DIR=/tmp/traceback-uv-cache uv run pytest`
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check apps/accounts/serializers.py apps/accounts/views.py apps/accounts/urls.py apps/core/tests/test_account_auth_api.py`
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff format --check apps/accounts/serializers.py apps/accounts/views.py apps/accounts/urls.py apps/core/tests/test_account_auth_api.py`
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run mypy apps/accounts apps/core`
 - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check .`
 - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check apps/accounts/migrations/0001_initial.py`
 - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff format --check .`
