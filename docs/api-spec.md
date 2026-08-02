@@ -20,6 +20,8 @@ DRF view convention:
 - 새 코드에서 `@api_view`, `GenericAPIView`, `ListAPIView`, `RetrieveAPIView` 등 나머지 view 형태는 사용하지 않는다.
 - account/auth 계열처럼 로그인, 로그아웃, 이메일 인증, 비밀번호 재설정, 소셜 완료는 기본적으로 `APIView` 대상이다.
 - catalog/admin resource처럼 목록/상세/생성/수정/삭제 중 2개 이상이 필요한 경우 `ViewSet` 대상이다.
+- `APIView`는 CDRF의 기본 구조처럼 class attribute로 필요한 `permission_classes`, `authentication_classes`, `serializer_class`, `response_serializer_class`를 먼저 드러내고 HTTP method handler를 둔다.
+- 응답 shape는 view의 ad hoc dict helper가 아니라 serializer 또는 serializer가 소비하는 명시적 DTO를 SSOT로 둔다.
 
 계산 상태 enum:
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any
 
 from django.contrib.auth import authenticate, password_validation
@@ -7,6 +8,15 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from .models import User
+
+
+@dataclass(frozen=True)
+class AccountSession:
+    user: User | None
+
+    @property
+    def authenticated(self) -> bool:
+        return self.user is not None
 
 
 class AccountUserSerializer(serializers.ModelSerializer[User]):
@@ -18,6 +28,11 @@ class AccountUserSerializer(serializers.ModelSerializer[User]):
 
     def get_email_verified(self, obj: User) -> bool:
         return obj.email_verified_at is not None
+
+
+class AccountSessionSerializer(serializers.Serializer[AccountSession]):
+    authenticated = serializers.BooleanField()
+    user = AccountUserSerializer(allow_null=True)
 
 
 class SignupSerializer(serializers.Serializer[User]):
@@ -79,3 +94,9 @@ class LoginSerializer(serializers.Serializer[dict[str, Any]]):
         attrs["email"] = email
         attrs["user"] = user
         return attrs
+
+    def get_user(self) -> User:
+        user = self.validated_data["user"]
+        if not isinstance(user, User):
+            raise TypeError("LoginSerializer validated data is missing a User.")
+        return user

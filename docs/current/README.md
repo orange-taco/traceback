@@ -89,6 +89,8 @@ Phase 0B에서 구현된 범위:
   - `@api_view`, `GenericAPIView`, `ListAPIView`, `RetrieveAPIView` 등 나머지 view 형태는 새 코드에서 사용하지 않는다.
   - account/auth처럼 로그인, 로그아웃, 이메일 인증, 비밀번호 재설정, 소셜 완료는 resource CRUD가 아니므로 기본적으로 `APIView` 대상이다.
   - catalog/admin resource처럼 목록/상세/생성/수정/삭제 중 2개 이상이 필요한 경우 `ViewSet` 대상이다.
+  - `APIView`는 class attribute로 필요한 `permission_classes`, `authentication_classes`, `serializer_class`, `response_serializer_class`를 먼저 드러내고 HTTP method handler를 둔다.
+  - 응답 shape는 view의 ad hoc dict helper가 아니라 serializer 또는 serializer가 소비하는 명시적 DTO를 SSOT로 둔다.
 - 앱의 상위 `urls.py`는 실제 하위 URL이 필요한 앱에만 둔다.
 - Phase 0B staff/admin REST URL은 별도 `staff` 패키지 없이 accounts URL에서 시작한다.
 - `SiteSetting`은 Phase 0B에서 만들지 않는다. Phase 1 Catalog 또는 Phase 3 Order에서 재검토한다.
@@ -155,6 +157,10 @@ Phase 0 완료로 기록하기 전에는 `docs/phase-0-completion.md`의 command
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check apps/accounts/serializers.py apps/accounts/views.py apps/accounts/urls.py apps/core/tests/test_account_auth_api.py`
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff format --check apps/accounts/serializers.py apps/accounts/views.py apps/accounts/urls.py apps/core/tests/test_account_auth_api.py`
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run mypy apps/accounts apps/core`
+- Phase 0C-1 APIView/session serializer cleanup:
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check apps/accounts/serializers.py apps/accounts/views.py apps/core/tests/test_account_auth_api.py`
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run mypy apps/accounts apps/core`
+  - `DJANGO_SETTINGS_MODULE=config.settings.test TRACEBACK_DATABASE_URL=sqlite:///:memory: UV_CACHE_DIR=/tmp/traceback-uv-cache uv run pytest apps/core/tests/test_account_auth_api.py apps/core/tests/test_api_foundation.py`
 - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check .`
 - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check apps/accounts/migrations/0001_initial.py`
 - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff format --check .`
