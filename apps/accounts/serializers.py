@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.contrib.auth import password_validation
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import IntegrityError
 from rest_framework import serializers
 from rest_framework.fields import get_error_detail
 
@@ -27,7 +28,10 @@ class SignupSerializer(serializers.ModelSerializer[User]):
         email = User.objects.normalize_email(value)
         email_exists = User.objects.filter(email=email).exists()
         if email_exists:
-            raise serializers.ValidationError("This email is already registered.")
+            raise serializers.ValidationError(
+                "This email is already registered.",
+                code="duplicate_email",
+            )
         return email
 
     def validate_password(self, value: str) -> str:
@@ -39,7 +43,12 @@ class SignupSerializer(serializers.ModelSerializer[User]):
         return value
 
     def create(self, validated_data: dict[str, str]) -> User:
-        return User.objects.create_user(
-            email=validated_data["email"],
-            password=validated_data["password"],
-        )
+        try:
+            return User.objects.create_user(
+                email=validated_data["email"],
+                password=validated_data["password"],
+            )
+        except IntegrityError as exc:
+            raise serializers.ValidationError(
+                {"email": ["This email is already registered."]},
+            ) from exc

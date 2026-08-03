@@ -9,22 +9,21 @@
 - 현재 브랜치: `phase-0c-account-auth-contract`
 - 현재 슬라이스: Phase 0C - account API surface
 - 현재 코드 상태: Phase 0B account/auth foundation은 `development`에 merge됨. PR #6도 `development`에 merge되어 DRF view convention과 account auth 결정 지점 문서화가 반영됨. 0C-1 email/password JWT account API는 이 브랜치에서 구현됨. 고객 social/email verification/password reset API는 아직 구현하지 않음
-- 프론트 상태: `../traceback-client` 컨벤션은 `AGENTS.md`에 정리 완료. React Router v8 기준이며, 프론트 작업 전 반드시 `../traceback-client/AGENTS.md`, `docs/brand-concept.md`, `docs/wireframe.md`를 읽는다.
+- 프론트 상태: `../traceback-client` 컨벤션은 `AGENTS.md`에 정리 완료. React Router v8 기준이며, 프론트 작업 전 반드시 `../traceback-client/AGENTS.md`, `../traceback-client/docs/brand-concept.md`, `../traceback-client/docs/wireframe.md`를 읽는다.
 - 파일 예산: 한 슬라이스 최대 30개
 - Phase 1 Catalog 시작 금지: Phase 0 완료 기준이 통과하고 `docs/build-plan.md` 완료 이력에 기록되기 전까지 Catalog 작업을 시작하지 않는다.
 
 ## 다음 작업
 
 Phase 0C의 현재 브랜치에는 email/password first 기준의 backend JWT account API가
-구현되어 있다. 다음 작은 슬라이스는 social login 서버 계약과 구현이다. Kakao/Naver
-OAuth start/callback, provider user lookup, `SocialAccount` 생성/재사용, JWT 발급,
-성공/실패 frontend redirect 계약을 확정한 뒤 구현한다.
+구현되어 있다. Social login은 provider 도메인/redirect URI 등록이 가능해질 때까지
+보류한다. 그 전에는 email/password JWT account frontend 연동을 진행할 수 있다.
 
 다음 세션에서 바로 해야 할 일:
 
 1. 백엔드와 클라이언트 작업트리를 각각 확인한다.
 2. 클라이언트 작업이 포함되면 `../traceback-client/AGENTS.md`와 관련 docs를 먼저 읽는다.
-3. social login을 Kakao만 먼저 자를지 Kakao/Naver를 같은 슬라이스에 넣을지 결정한다.
+3. provider 도메인/redirect URI 등록이 가능해지면 social login을 Kakao부터 구현할지 결정한다.
 4. social start/callback, 성공/실패 redirect, auto-linking 실패 응답 정책을 문서화하고 구현한다.
 5. 구현 후 백엔드 테스트와 프론트 typecheck/build, Playwright 또는 in-app browser QA를 수행한다.
 6. 프론트 QA는 Design / UX / Function으로 나누어 사용자 확인을 받는다.
@@ -62,7 +61,7 @@ Phase 0B에서 구현된 범위:
 
 다음 슬라이스 후보:
 
-- Kakao social login backend vertical slice
+- Kakao social login backend vertical slice. provider 도메인/redirect URI 등록 전까지 보류
 - Naver social login backend vertical slice
 - social login 성공/실패 frontend redirect 연동
 - 이메일 인증 발송 시스템 결정
@@ -172,6 +171,11 @@ Phase 0 완료로 기록하기 전에는 `docs/phase-0-completion.md`의 command
   - `DJANGO_SETTINGS_MODULE=config.settings.test TRACEBACK_DATABASE_URL=sqlite:///:memory: UV_CACHE_DIR=/tmp/traceback-uv-cache uv run python manage.py makemigrations --check --dry-run`
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv lock --check`
   - `git diff --check`
+- PR #7 review follow-up:
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check .`
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff format --check .`
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run mypy .`
+  - `DJANGO_SETTINGS_MODULE=config.settings.test TRACEBACK_DATABASE_URL=sqlite:///:memory: UV_CACHE_DIR=/tmp/traceback-uv-cache uv run pytest`
 - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check .`
 - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check apps/accounts/migrations/0001_initial.py`
 - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff format --check .`
