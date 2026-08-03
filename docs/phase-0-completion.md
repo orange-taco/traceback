@@ -45,7 +45,7 @@ ASGI 운영을 전제로 하므로 Django는 반드시 `5.1` 이상이어야 한
 | Error response | DRF exception handler returns stable `code`, `message`, `details`, `request_id` contract | Missing |
 | Pagination | Shared DRF pagination class and response contract for list APIs | Missing |
 | Request ID | Middleware accepts/generates request ID and exposes it on responses/errors/log context | Missing |
-| Admin REST auth | Session authentication + `IsAdminUser` baseline and tests for anonymous/non-staff/staff access | Missing |
+| Admin REST auth | JWT authentication + `IsAdminUser` baseline and tests for anonymous/non-staff/staff access | Missing |
 | API namespace | Account endpoints live under `/api/accounts/`; admin REST endpoints use `/api/accounts/admin/` | Partial |
 | Secrets/settings | Required secrets fail fast outside test; example env documents local values | Partial |
 | Tests | Focused tests cover request ID, errors, pagination, admin auth, account models, migration health | Partial |
@@ -79,7 +79,7 @@ Phase 0 must not implement commerce domain behavior beyond common foundation:
 2. Add request/response infrastructure:
    request ID middleware, DRF exception handler, and shared pagination.
 3. Add admin REST authentication baseline:
-   session authentication with `IsAdminUser` and tests proving anonymous/non-staff
+   JWT authentication with `IsAdminUser` and tests proving anonymous/non-staff
    users are rejected while staff users are accepted.
 4. Add tests for the missing common behavior.
 5. Update `docs/build-plan.md` checkpoint and completion history only after the

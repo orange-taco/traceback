@@ -6,7 +6,7 @@
 
 - Accounts base path: `/api/accounts`
 - Format: JSON, 금액은 KRW 정수
-- 관리자 인증: Django session + staff/superuser + DRF `IsAdminUser`
+- 관리자 인증: JWT Bearer token + staff/superuser + DRF `IsAdminUser`
 - 리스트 응답: pagination 포함
 - 오류 응답: `code`, `message`, `details`, `request_id`
 - 생성/승인/취소 등 명령 API는 `Idempotency-Key`를 사용한다.
@@ -15,13 +15,12 @@
 
 DRF view convention:
 
-- 2개 이상의 mixin/action 조합으로 자연스럽게 표현되는 resource API는 `ViewSet`을 사용한다.
-- 단일 행위 endpoint로만 표현되는 API는 `APIView`를 사용한다.
-- 새 코드에서 `@api_view`, `GenericAPIView`, `ListAPIView`, `RetrieveAPIView` 등 나머지 view 형태는 사용하지 않는다.
-- account/auth 계열처럼 로그인, 로그아웃, 이메일 인증, 비밀번호 재설정, 소셜 완료는 기본적으로 `APIView` 대상이다.
-- catalog/admin resource처럼 목록/상세/생성/수정/삭제 중 2개 이상이 필요한 경우 `ViewSet` 대상이다.
-- `APIView`는 CDRF의 기본 구조처럼 class attribute로 필요한 `permission_classes`, `authentication_classes`, `serializer_class`, `response_serializer_class`를 먼저 드러내고 HTTP method handler를 둔다.
-- 응답 shape는 view의 ad hoc dict helper가 아니라 serializer 또는 serializer가 소비하는 명시적 DTO를 SSOT로 둔다.
+- Resource API는 `GenericViewSet` + mixin 조합으로 만들고 router에 등록한다. mixin method를 오버라이드하면 DRF 원본 흐름(`get_serializer`, `perform_*`, pagination, headers)을 유지한다.
+- Signup, token obtain, token refresh, callback처럼 resource CRUD가 아닌 단일 행위 API는 `GenericAPIView` 또는 해당 DRF 제공 view를 사용한다.
+- 새 코드에서 `@api_view`, `APIView`, `ListAPIView`, `RetrieveAPIView`, `@action`은 사용하지 않는다.
+- `GenericAPIView`는 class attribute(`permission_classes`, `authentication_classes`, `serializer_class`)를 먼저 두고, `serializer_class` 대상은 `self.get_serializer(...)`로 생성한다.
+- Serializer는 `ModelSerializer`를 우선 사용한다. plain `Serializer`는 모델과 직접 매핑되지 않는 입력에만 사용한다. `Meta.fields`는 한 줄에 하나씩 명시한다.
+- 응답 body가 있으면 serializer를 통과한다. DRF 제공 view는 제공 serializer와 응답 구조를 그대로 우선 사용한다.
 
 계산 상태 enum:
 
@@ -37,25 +36,14 @@ DRF view convention:
 
 확정된 기준:
 
-- 고객 account 인증은 Django session cookie를 사용한다.
-- email/password 가입과 로그인 성공은 같은 session을 생성한다.
-- 가입 직후 로그인과 구매를 허용한다.
+- 고객 account 인증은 JWT Bearer token을 사용한다.
+- email/password token obtain 성공은 access/refresh token pair를 발급한다.
+- 가입 직후 token obtain과 구매를 허용한다.
 - 이메일 미인증이어도 로그인과 구매를 허용한다.
 - 이메일 인증은 필요하지만 사용할 이메일 발송 시스템을 아직 정하지 않았으므로 endpoint 구현 전 발송 방식을 결정한다.
 - password set은 기존 비밀번호가 없는 사용자도 사용할 수 있어야 한다.
 - password reset은 이메일 링크 기반으로 구현한다.
-- social login도 성공하면 같은 session cookie와 session 응답 계약을 사용한다.
-
-공통 user 응답:
-
-```json
-{
-  "id": 1,
-  "email": "customer@example.com",
-  "username": "user_abc12345",
-  "email_verified": false
-}
-```
+- social login도 성공하면 같은 access/refresh token pair를 발급한다.
 
 #### `POST /api/accounts/signup`
 
@@ -65,55 +53,39 @@ DRF view convention:
   - email은 앞뒤 공백 제거 후 소문자로 정규화한다.
   - password는 Django 기본 password validators를 통과해야 한다.
   - 같은 email을 가진 User가 있으면 `400`.
-  - 성공 시 Django session을 생성한다.
-- 응답:
+  - 성공 시 token은 발급하지 않는다. client는 token obtain을 별도로 호출한다.
+- 응답 body: 없음.
 
-```json
-{
-  "authenticated": true,
-  "user": {
-    "id": 1,
-    "email": "customer@example.com",
-    "username": "user_abc12345",
-    "email_verified": false
-  }
-}
-```
-
-#### `POST /api/accounts/login`
+#### `POST /api/accounts/token/obtain`
 
 - 요청: `email`, `password`
 - 성공: `200`
 - 규칙:
   - email은 앞뒤 공백 제거 후 소문자로 정규화한다.
-  - 실패 응답은 email 존재 여부를 드러내지 않는다.
-  - 성공 시 Django session을 생성한다.
-- 응답: signup과 같은 session 응답.
-
-#### `GET /api/accounts/session`
-
-- 요청: 없음
-- 성공: `200`
-- 규칙:
-  - 인증 여부와 현재 user를 반환한다.
-  - anonymous도 `200`으로 응답한다.
-  - CSRF cookie를 설정한다.
-- anonymous 응답:
+  - 실패 응답은 SimpleJWT 기본 `no_active_account` 오류를 사용하며 email 존재 여부를 드러내지 않는다.
+  - 성공 시 access/refresh token pair를 발급한다.
+- 응답:
 
 ```json
 {
-  "authenticated": false,
-  "user": null
+  "access": "jwt-access-token",
+  "refresh": "jwt-refresh-token"
 }
 ```
 
-#### `POST /api/accounts/logout`
+#### `POST /api/accounts/token/refresh`
 
-- 요청: 없음
-- 성공: `204`
+- 요청: `refresh`
+- 성공: `200`
 - 규칙:
-  - 현재 session을 제거한다.
-  - browser 호출은 session/CSRF cookie 계약을 따른다.
+  - 유효한 refresh token으로 새 access token을 발급한다.
+- 응답:
+
+```json
+{
+  "access": "jwt-access-token"
+}
+```
 
 구현 전 추가로 확정할 기준:
 
@@ -205,7 +177,7 @@ Cart item 응답은 `id`, `variant_id`, `display_name`, `unit_price`, `quantity`
 
 ## 관리자 API
 
-모든 관리자 API는 session 인증과 `IsAdminUser`를 요구한다. 각 Phase 시작 전 요청/응답 세부 필드를 확정한다.
+모든 관리자 API는 JWT 인증과 `IsAdminUser`를 요구한다. 각 Phase 시작 전 요청/응답 세부 필드를 확정한다.
 
 ### Product / Inventory
 

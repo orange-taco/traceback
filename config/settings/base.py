@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from pathlib import Path
 
 import dj_database_url
@@ -14,6 +15,7 @@ ALLOWED_HOSTS = [
 ]
 
 INSTALLED_APPS = [
+    "rest_framework_simplejwt",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -86,9 +88,14 @@ AUTH_USER_MODEL = "accounts.User"
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.SessionAuthentication"
+        "rest_framework_simplejwt.authentication.JWTAuthentication"
     ],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
     "DEFAULT_PAGINATION_CLASS": "apps.core.pagination.StandardPageNumberPagination",
     "EXCEPTION_HANDLER": "apps.core.exception_handlers.custom_exception_handler",
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
 }

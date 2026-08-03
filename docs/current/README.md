@@ -8,16 +8,16 @@
 - 진행 단계: Phase 0 - Foundation
 - 현재 브랜치: `phase-0c-account-auth-contract`
 - 현재 슬라이스: Phase 0C - account API surface
-- 현재 코드 상태: Phase 0B account/auth foundation은 `development`에 merge됨. PR #6도 `development`에 merge되어 DRF view convention과 account auth 결정 지점 문서화가 반영됨. 0C-1 email/password session API는 이 브랜치에서 구현됨. 고객 social/email verification/password reset API는 아직 구현하지 않음
+- 현재 코드 상태: Phase 0B account/auth foundation은 `development`에 merge됨. PR #6도 `development`에 merge되어 DRF view convention과 account auth 결정 지점 문서화가 반영됨. 0C-1 email/password JWT account API는 이 브랜치에서 구현됨. 고객 social/email verification/password reset API는 아직 구현하지 않음
 - 프론트 상태: `../traceback-client` 컨벤션은 `AGENTS.md`에 정리 완료. React Router v8 기준이며, 프론트 작업 전 반드시 `../traceback-client/AGENTS.md`, `docs/brand-concept.md`, `docs/wireframe.md`를 읽는다.
 - 파일 예산: 한 슬라이스 최대 30개
 - Phase 1 Catalog 시작 금지: Phase 0 완료 기준이 통과하고 `docs/build-plan.md` 완료 이력에 기록되기 전까지 Catalog 작업을 시작하지 않는다.
 
 ## 다음 작업
 
-Phase 0C의 현재 브랜치에는 email/password first 기준의 backend session API가
+Phase 0C의 현재 브랜치에는 email/password first 기준의 backend JWT account API가
 구현되어 있다. 다음 작은 슬라이스는 social login 서버 계약과 구현이다. Kakao/Naver
-OAuth start/callback, provider user lookup, `SocialAccount` 생성/재사용, session login,
+OAuth start/callback, provider user lookup, `SocialAccount` 생성/재사용, JWT 발급,
 성공/실패 frontend redirect 계약을 확정한 뒤 구현한다.
 
 다음 세션에서 바로 해야 할 일:
@@ -40,7 +40,7 @@ Phase 0B에서 구현된 범위:
 - request ID middleware
 - 공통 DRF 오류 응답
 - 공통 pagination
-- `/api/accounts/admin/` 관리자 REST 인증 baseline
+- 관리자 REST 인증 정책 baseline
 - Phase 0B 관리자 REST surface는 accounts URL에서 묶는다.
 - 관련 테스트
 - Phase 0B 모델/컬럼 목적 HTML 문서
@@ -49,18 +49,16 @@ Phase 0B에서 구현된 범위:
 
 - DRF convention 문서화
 - 기존 function-based account view 제거
-- `/api/accounts/admin/session`을 `APIView`로 전환
+- 관리자 REST 인증은 JWT Bearer token + `IsAdminUser` 기준으로 정리
 - 고객 account API 구현 전 확정해야 할 기준 문서화
 - 프론트 컨벤션은 `../traceback-client/AGENTS.md`에 정리 완료
-- email/password session API backend 구현:
+- email/password JWT account API backend 구현:
   - `POST /api/accounts/signup`
-  - `POST /api/accounts/login`
-  - `GET /api/accounts/session`
-  - `POST /api/accounts/logout`
-  - 공통 user 응답 `{id, email, username, email_verified}`
-  - signup/login 성공 시 Django session cookie 생성
-  - session 조회 시 anonymous도 `200`으로 `{authenticated:false, user:null}` 반환
-  - login 실패는 email 존재 여부를 드러내지 않는 공통 오류 반환
+  - `POST /api/accounts/token/obtain`
+  - `POST /api/accounts/token/refresh`
+  - signup 성공 시 `201`과 빈 응답 반환
+  - token obtain 성공 시 JWT access/refresh token pair 반환
+  - token obtain 실패는 SimpleJWT 기본 `no_active_account` 오류 반환
 
 다음 슬라이스 후보:
 
@@ -71,7 +69,7 @@ Phase 0B에서 구현된 범위:
 - email verification과 welcome benefit 지급 조건 결정
 - password set은 기존 비밀번호가 없는 사용자도 허용
 - password reset은 이메일 링크 기반으로 구현
-- account auth frontend signup/login/session/logout 연동
+- account auth frontend signup/token obtain/token refresh 연동
 
 ## 이미 결정된 것
 
@@ -79,18 +77,18 @@ Phase 0B에서 구현된 범위:
 - custom User는 `AbstractBaseUser` + `PermissionsMixin` 기반이고 email로 로그인한다.
 - `User.REQUIRED_FIELDS = []`는 DB 컬럼이 아니라 Django custom user 설정이다. `createsuperuser`가 email/password 외 추가 필드를 묻지 않게 하며, username은 manager가 자동 생성한다.
 - `UserManager.create_user()`는 저장 전에 `full_clean(exclude=["password"])`를 실행한다. manager 경로의 User 생성은 모델 필드/unique/constraint validation을 먼저 통과해야 한다.
+- `UserManager.get_by_natural_key()`는 email을 앞뒤 공백 제거 후 소문자로 정규화하고 `deleted_at is null`인 사용자만 로그인 lookup 대상으로 삼는다.
 - account enum은 model 내부 class가 아니라 `apps/accounts/enums.py`에 둔다.
 - Django migration 파일은 생성물이므로 Ruff pre-commit check/format 대상에서 제외한다. 스키마 검증은 `makemigrations --check --dry-run`, `migrate`, 테스트로 한다.
-- 관리자 REST 인증은 Django session + DRF `IsAdminUser`를 사용한다.
-- 관리자 REST namespace는 `/api/accounts/admin/`이다.
+- 관리자 REST 인증은 JWT Bearer token + DRF `IsAdminUser`를 사용한다.
+- 관리자 REST namespace는 `/api/accounts/admin/`이다. 실제 admin resource endpoint는 해당 Phase에서 추가한다.
 - DRF view convention:
-  - 2개 이상의 mixin/action 조합으로 자연스럽게 표현되는 resource API는 `ViewSet`을 사용한다.
-  - 단일 행위 endpoint로만 표현되는 API는 `APIView`를 사용한다.
-  - `@api_view`, `GenericAPIView`, `ListAPIView`, `RetrieveAPIView` 등 나머지 view 형태는 새 코드에서 사용하지 않는다.
-  - account/auth처럼 로그인, 로그아웃, 이메일 인증, 비밀번호 재설정, 소셜 완료는 resource CRUD가 아니므로 기본적으로 `APIView` 대상이다.
-  - catalog/admin resource처럼 목록/상세/생성/수정/삭제 중 2개 이상이 필요한 경우 `ViewSet` 대상이다.
-  - `APIView`는 class attribute로 필요한 `permission_classes`, `authentication_classes`, `serializer_class`, `response_serializer_class`를 먼저 드러내고 HTTP method handler를 둔다.
-  - 응답 shape는 view의 ad hoc dict helper가 아니라 serializer 또는 serializer가 소비하는 명시적 DTO를 SSOT로 둔다.
+  - Resource API는 `GenericViewSet` + mixin 조합으로 만들고 router에 등록한다. mixin method를 오버라이드하면 DRF 원본 흐름(`get_serializer`, `perform_*`, pagination, headers)을 유지한다.
+  - Signup, token obtain, token refresh, callback처럼 resource CRUD가 아닌 단일 행위 API는 `GenericAPIView` 또는 해당 DRF 제공 view를 사용한다.
+  - 새 코드에서 `@api_view`, `APIView`, `ListAPIView`, `RetrieveAPIView`, `@action`은 사용하지 않는다.
+  - `GenericAPIView`는 class attribute(`permission_classes`, `authentication_classes`, `serializer_class`)를 먼저 두고, `serializer_class` 대상은 `self.get_serializer(...)`로 생성한다.
+  - Serializer는 `ModelSerializer`를 우선 사용한다. plain `Serializer`는 모델과 직접 매핑되지 않는 입력에만 사용한다. `Meta.fields`는 한 줄에 하나씩 명시한다.
+  - 응답 body가 있으면 serializer를 통과한다. DRF 제공 view는 제공 serializer와 응답 구조를 그대로 우선 사용한다.
 - 앱의 상위 `urls.py`는 실제 하위 URL이 필요한 앱에만 둔다.
 - Phase 0B staff/admin REST URL은 별도 `staff` 패키지 없이 accounts URL에서 시작한다.
 - `SiteSetting`은 Phase 0B에서 만들지 않는다. Phase 1 Catalog 또는 Phase 3 Order에서 재검토한다.
@@ -102,11 +100,12 @@ Phase 0B에서 구현된 범위:
 - `EmailChangeRequest`는 24시간 뒤 만료하고 같은 user 기준 10분에 1회 요청을 허용한다.
 - `BenefitClaim`은 원문 개인정보 없이 HMAC hash ledger로 장기 보관한다.
 - Phase 0C account API는 email/password 가입과 로그인을 먼저 구현한다.
-- 고객 account 인증은 Django session cookie를 사용한다.
-- email/password signup/login 성공 시 같은 session 응답을 반환하고 session cookie를 생성한다.
-- `GET /api/accounts/session`은 anonymous도 200으로 반환하며 CSRF cookie를 설정한다.
-- `POST /api/accounts/logout`은 현재 session을 제거하고 204를 반환한다.
-- social login도 성공 시 같은 session cookie와 session 응답 계약을 사용한다.
+- 고객 account 인증은 JWT Bearer token을 사용한다.
+- email/password signup은 `201`과 빈 응답을 반환한다.
+- email/password token obtain/refresh는 SimpleJWT 제공 view를 그대로 사용한다.
+- token obtain 성공 시 JWT access/refresh token pair를 반환한다.
+- `POST /api/accounts/token/refresh`는 refresh token으로 새 access token을 반환한다.
+- social login도 성공 시 JWT access/refresh token pair를 반환한다.
 - 이메일 인증은 필요하지만 사용할 이메일 발송 시스템을 아직 정하지 않았다.
 - password set은 기존 비밀번호가 없는 사용자도 사용할 수 있어야 한다.
 - password reset은 이메일 링크 기반으로 구현한다.
@@ -152,15 +151,27 @@ Phase 0 완료로 기록하기 전에는 `docs/phase-0-completion.md`의 command
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run mypy apps/accounts apps/core`
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run pytest`
   - `git diff --check`
-- Phase 0C-1 email/password session API:
+- Phase 0C-1 email/password JWT account API:
   - `DJANGO_SETTINGS_MODULE=config.settings.test TRACEBACK_DATABASE_URL=sqlite:///:memory: UV_CACHE_DIR=/tmp/traceback-uv-cache uv run pytest`
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check apps/accounts/serializers.py apps/accounts/views.py apps/accounts/urls.py apps/core/tests/test_account_auth_api.py`
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff format --check apps/accounts/serializers.py apps/accounts/views.py apps/accounts/urls.py apps/core/tests/test_account_auth_api.py`
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run mypy apps/accounts apps/core`
-- Phase 0C-1 APIView/session serializer cleanup:
-  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check apps/accounts/serializers.py apps/accounts/views.py apps/core/tests/test_account_auth_api.py`
+- Phase 0C-1 GenericAPIView convention alignment:
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check apps/accounts/models.py apps/accounts/serializers.py apps/accounts/views.py apps/core/tests/test_account_auth_api.py apps/core/tests/test_api_foundation.py`
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff format --check apps/accounts/models.py apps/accounts/serializers.py apps/accounts/views.py apps/core/tests/test_account_auth_api.py apps/core/tests/test_api_foundation.py`
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run mypy apps/accounts apps/core`
   - `DJANGO_SETTINGS_MODULE=config.settings.test TRACEBACK_DATABASE_URL=sqlite:///:memory: UV_CACHE_DIR=/tmp/traceback-uv-cache uv run pytest apps/core/tests/test_account_auth_api.py apps/core/tests/test_api_foundation.py`
+  - `git diff --check`
+- Phase 0C-1 JWT auth transition:
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check apps/accounts/managers.py apps/accounts/serializers.py apps/accounts/views.py apps/accounts/urls.py apps/core/tests/test_account_auth_api.py apps/core/tests/test_api_foundation.py config/settings/base.py config/settings/test.py`
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff format --check apps/accounts/managers.py apps/accounts/serializers.py apps/accounts/views.py apps/accounts/urls.py apps/core/tests/test_account_auth_api.py apps/core/tests/test_api_foundation.py config/settings/base.py config/settings/test.py`
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run mypy apps/accounts apps/core config/settings/base.py config/settings/test.py`
+  - `DJANGO_SETTINGS_MODULE=config.settings.test TRACEBACK_DATABASE_URL=sqlite:///:memory: UV_CACHE_DIR=/tmp/traceback-uv-cache uv run pytest apps/core/tests/test_account_auth_api.py apps/core/tests/test_api_foundation.py`
+  - `DJANGO_SETTINGS_MODULE=config.settings.test TRACEBACK_DATABASE_URL=sqlite:///:memory: UV_CACHE_DIR=/tmp/traceback-uv-cache uv run pytest`
+  - `DJANGO_SETTINGS_MODULE=config.settings.test TRACEBACK_DATABASE_URL=sqlite:///:memory: UV_CACHE_DIR=/tmp/traceback-uv-cache uv run python manage.py check`
+  - `DJANGO_SETTINGS_MODULE=config.settings.test TRACEBACK_DATABASE_URL=sqlite:///:memory: UV_CACHE_DIR=/tmp/traceback-uv-cache uv run python manage.py makemigrations --check --dry-run`
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv lock --check`
+  - `git diff --check`
 - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check .`
 - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check apps/accounts/migrations/0001_initial.py`
 - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff format --check .`
