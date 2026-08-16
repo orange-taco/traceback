@@ -6,6 +6,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from .enums import SocialProvider
+from .providers.kakao import KakaoOAuthClient
 from .serializers import (
     JWTTokenPairSerializer,
     KakaoAuthorizationStartSerializer,
@@ -13,7 +15,8 @@ from .serializers import (
     KakaoCallbackSerializer,
     SignupSerializer,
 )
-from .social import KakaoOAuthClient, complete_kakao_login, issue_jwt_pair
+from .services.social_login import complete_social_login
+from .tokens import issue_jwt_pair
 
 
 class SignupView(GenericAPIView[Any]):
@@ -58,6 +61,6 @@ class KakaoCallbackView(GenericAPIView[Any]):
         profile = KakaoOAuthClient().fetch_profile_for_code(
             code=serializer.validated_data["code"],
         )
-        user = complete_kakao_login(profile)
+        user = complete_social_login(provider=SocialProvider.KAKAO, profile=profile)
         response_serializer = self.response_serializer_class(issue_jwt_pair(user))
         return Response(response_serializer.data)

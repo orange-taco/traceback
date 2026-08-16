@@ -9,7 +9,8 @@ from rest_framework.test import APIClient
 
 from apps.accounts.enums import SocialProvider
 from apps.accounts.models import SocialAccount
-from apps.accounts.social import KakaoOAuthClient, KakaoProfile
+from apps.accounts.providers.kakao import KakaoOAuthClient
+from apps.accounts.services.social_login import SocialProfile
 
 
 class CustomerAccountAuthAPITests(TestCase):
@@ -216,7 +217,7 @@ class CustomerAccountAuthAPITests(TestCase):
     def test_kakao_callback_creates_social_user_and_returns_jwt_pair(self) -> None:
         with mock.patch(
             "apps.accounts.views.KakaoOAuthClient.fetch_profile_for_code",
-            return_value=KakaoProfile(
+            return_value=SocialProfile(
                 provider_user_id="12345",
                 email=" KAKAO@Example.COM ",
                 email_verified=True,
@@ -260,7 +261,7 @@ class CustomerAccountAuthAPITests(TestCase):
 
         with mock.patch(
             "apps.accounts.views.KakaoOAuthClient.fetch_profile_for_code",
-            return_value=KakaoProfile(
+            return_value=SocialProfile(
                 provider_user_id="12345",
                 email="kakao@example.com",
                 email_verified=True,
@@ -292,7 +293,7 @@ class CustomerAccountAuthAPITests(TestCase):
 
         with mock.patch(
             "apps.accounts.views.KakaoOAuthClient.fetch_profile_for_code",
-            return_value=KakaoProfile(
+            return_value=SocialProfile(
                 provider_user_id="12345",
                 email="kakao@example.com",
                 email_verified=True,
@@ -326,7 +327,7 @@ class CustomerAccountAuthAPITests(TestCase):
 
         with mock.patch(
             "apps.accounts.views.KakaoOAuthClient.fetch_profile_for_code",
-            return_value=KakaoProfile(
+            return_value=SocialProfile(
                 provider_user_id="12345",
                 email="kakao@example.com",
                 email_verified=True,
@@ -349,7 +350,7 @@ class CustomerAccountAuthAPITests(TestCase):
     def test_kakao_callback_requires_verified_provider_email(self) -> None:
         with mock.patch(
             "apps.accounts.views.KakaoOAuthClient.fetch_profile_for_code",
-            return_value=KakaoProfile(
+            return_value=SocialProfile(
                 provider_user_id="12345",
                 email=None,
                 email_verified=False,
@@ -369,7 +370,7 @@ class CustomerAccountAuthAPITests(TestCase):
 
         with mock.patch(
             "apps.accounts.views.KakaoOAuthClient.fetch_profile_for_code",
-            return_value=KakaoProfile(
+            return_value=SocialProfile(
                 provider_user_id="12345",
                 email="kakao@example.com",
                 email_verified=False,
@@ -395,7 +396,7 @@ class CustomerAccountAuthAPITests(TestCase):
     )
     def test_kakao_oauth_client_exchanges_code_and_normalizes_profile(self) -> None:
         with mock.patch(
-            "apps.accounts.social._post_form",
+            "apps.accounts.providers.kakao._post_form",
             side_effect=[
                 {"access_token": "provider-access-token"},
                 {
@@ -412,7 +413,7 @@ class CustomerAccountAuthAPITests(TestCase):
 
         self.assertEqual(
             profile,
-            KakaoProfile(
+            SocialProfile(
                 provider_user_id="12345",
                 email="kakao@example.com",
                 email_verified=True,
