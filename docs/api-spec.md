@@ -44,6 +44,9 @@ DRF view convention:
 - password set은 기존 비밀번호가 없는 사용자도 사용할 수 있어야 한다.
 - password reset은 이메일 링크 기반으로 구현한다.
 - social login도 성공하면 같은 access/refresh token pair를 발급한다.
+- Kakao Login은 frontend callback route가 받은 authorization `code`를 backend에
+  전달하고, backend가 Kakao token/user 조회 후 JWT pair를 JSON으로 반환한다.
+  JWT를 redirect URL query에 직접 싣지 않는다.
 
 #### `POST /api/accounts/signup`
 
@@ -87,10 +90,53 @@ DRF view convention:
 }
 ```
 
+#### `GET /api/accounts/social/kakao/start`
+
+- 요청 query: `state?`
+- 성공: `200`
+- 설정:
+  - `KAKAO_REST_API_KEY` 필수
+  - `KAKAO_REDIRECT_URI` 필수
+  - `KAKAO_CLIENT_SECRET`은 Kakao Developers에서 client secret을 켠 경우 필수
+- 규칙:
+  - Kakao authorization URL을 생성해 반환한다.
+  - scope는 `account_email`을 요청한다.
+  - `state`가 있으면 Kakao authorization URL에 그대로 포함한다.
+  - 설정이 없으면 `503 kakao_not_configured`.
+- 응답:
+
+```json
+{
+  "authorization_url": "https://kauth.kakao.com/oauth/authorize?..."
+}
+```
+
+#### `POST /api/accounts/social/kakao/callback`
+
+- 요청: `code`
+- 성공: `200`
+- 규칙:
+  - backend가 Kakao token endpoint에 authorization code를 교환한다.
+  - backend가 Kakao user info endpoint에서 provider user ID와 account email을 조회한다.
+  - Kakao email이 없으면 `400 provider_email_required`.
+  - Kakao email이 verified가 아니면 `400 provider_email_unverified`.
+  - `provider + provider_user_id`에 해당하는 active `SocialAccount`가 있으면 해당 User로 로그인한다.
+  - 기존 email/password User가 있고 `User.email_verified_at`이 있으면 Kakao `SocialAccount`를 자동 연결하고 로그인한다.
+  - 기존 email/password User가 있지만 `User.email_verified_at`이 없으면 자동 연결하지 않고 `409 social_account_linking_required`.
+  - 기존 User가 없으면 unusable password를 가진 User를 만들고 Kakao email을 verified로 저장한다.
+  - 성공 시 access/refresh token pair를 발급한다.
+- 응답:
+
+```json
+{
+  "access": "jwt-access-token",
+  "refresh": "jwt-refresh-token"
+}
+```
+
 구현 전 추가로 확정할 기준:
 
 - 이메일 인증과 welcome benefit 지급 조건의 관계
-- 소셜 로그인과 social auto-linking을 email/password first 흐름 뒤에 어떻게 연결할지
 - password reset/password set token 발급 응답과 실제 발송 방식
 
 ### Catalog

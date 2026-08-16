@@ -52,3 +52,27 @@ class SignupSerializer(serializers.ModelSerializer[User]):
             raise serializers.ValidationError(
                 {"email": ["This email is already registered."]},
             ) from exc
+
+
+class KakaoAuthorizationStartSerializer(serializers.Serializer[dict[str, str]]):
+    state = serializers.CharField(
+        allow_blank=True,
+        max_length=255,
+        required=False,
+    )
+
+
+class KakaoAuthorizationURLSerializer(serializers.Serializer[dict[str, str]]):
+    authorization_url = serializers.URLField()
+
+
+class KakaoCallbackSerializer(serializers.Serializer[dict[str, str]]):
+    code = serializers.CharField(
+        max_length=1024,
+        trim_whitespace=True,
+    )
+
+
+class JWTTokenPairSerializer(serializers.Serializer[dict[str, str]]):
+    access = serializers.CharField()
+    refresh = serializers.CharField()

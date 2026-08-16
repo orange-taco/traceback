@@ -9,7 +9,7 @@
 - 진행 단계: Phase 0 - Foundation
 - 현재 브랜치: `phase-0c-account-auth-contract`
 - 현재 슬라이스: Phase 0C - account API surface
-- 현재 코드 상태: Phase 0B account/auth foundation은 `development`에 merge됨. PR #6도 `development`에 merge되어 DRF view convention과 account auth 결정 지점 문서화가 반영됨. 0C-1 email/password JWT account API는 이 브랜치에서 구현됨. 고객 social/email verification/password reset API는 아직 구현하지 않음
+- 현재 코드 상태: Phase 0B account/auth foundation은 `development`에 merge됨. PR #6도 `development`에 merge되어 DRF view convention과 account auth 결정 지점 문서화가 반영됨. 0C-1 email/password JWT account API는 이 브랜치에서 구현됨. 같은 브랜치에서 Kakao social login backend를 이어서 구현 중임. 고객 email verification/password reset API는 아직 구현하지 않음
 - 프론트 상태: `../traceback-client`는 현재 초기 storefront/wireframe 상태이고 account auth 연동은 아직 없음. 현재 확인 기준으로 client repo에는 `AGENTS.md`가 없으므로, 프론트 작업 전 client-side 작업 규칙 파일을 만들거나 복구한 뒤 `../traceback-client/docs/brand-concept.md`, `../traceback-client/docs/wireframe.md`와 함께 읽는다.
 - 파일 예산: 한 슬라이스 최대 30개
 - Phase 1 Catalog 시작 금지: Phase 0 완료 기준이 통과하고 `docs/build-plan.md` 완료 이력에 기록되기 전까지 Catalog 작업을 시작하지 않는다.
@@ -17,19 +17,17 @@
 ## 다음 작업
 
 Phase 0C의 현재 브랜치에는 email/password first 기준의 backend JWT account API가
-구현되어 있다. 이 PR은 문서 정합성을 맞춘 뒤 마무리한다.
-
-다음 구현 순서는 social login backend를 먼저 자르고, 그 다음 client account 연동으로
-간다. 초기 social provider 범위는 기존 결정대로 Kakao/Naver이며, 다음 슬라이스는
-Kakao부터 시작한다. Google은 현재 Phase 0 결정 범위에 없으므로 추가하려면 별도
-범위 결정이 필요하다.
+구현되어 있다. email/password와 Kakao auto-linking 정책을 한 번에 검증하기 위해
+Kakao social login backend도 같은 PR에서 진행한다. 초기 social provider 범위는 기존
+결정대로 Kakao/Naver이며, 이번 slice는 Kakao만 구현한다. Google은 현재 Phase 0 결정
+범위에 없으므로 추가하려면 별도 범위 결정이 필요하다.
 
 다음 세션에서 바로 해야 할 일:
 
-1. 이 브랜치에서 stale 문서 문구를 정리하고 PR #7을 마무리한다.
-2. 다음 백엔드 브랜치를 `development`에서 만들고 Kakao social login backend vertical slice를 시작한다.
-3. Kakao Developers 설정값을 확인한다: REST API key, client secret 사용 여부, backend callback URL, frontend 성공/실패 redirect URL.
-4. `api-spec.md`에 Kakao start/callback path, provider env var, 성공/실패 redirect, existing email auto-linking 실패 응답 정책을 기록하고 구현한다.
+1. 이 브랜치에서 Kakao social login backend 구현과 검증을 마무리한다.
+2. Kakao Developers 설정값을 확인한다: REST API key, client secret 사용 여부, frontend callback URL.
+3. `GET /api/accounts/social/kakao/start`와 `POST /api/accounts/social/kakao/callback` 계약이 `api-spec.md`와 일치하는지 확인한다.
+4. email/password User와 Kakao SocialAccount auto-linking 테스트를 통과시킨다.
 5. Kakao backend 검증 후 client 작업 규칙 파일을 정리하고 `../traceback-client`에서 social/email account 연동을 진행한다.
 6. 프론트 QA는 Design / UX / Function으로 나누어 사용자 확인을 받는다.
 
@@ -63,10 +61,15 @@ Phase 0B에서 구현된 범위:
   - signup 성공 시 `201`과 빈 응답 반환
   - token obtain 성공 시 JWT access/refresh token pair 반환
   - token obtain 실패는 SimpleJWT 기본 `no_active_account` 오류 반환
+- Kakao social login backend 구현 중:
+  - `GET /api/accounts/social/kakao/start`
+  - `POST /api/accounts/social/kakao/callback`
+  - 성공 시 JWT access/refresh token pair 반환
+  - verified email 기존 User만 자동 연결
+  - 미인증 기존 email User는 자동 연결 거부
 
 다음 슬라이스 후보:
 
-- Kakao social login backend vertical slice
 - Naver social login backend vertical slice
 - social login 성공/실패 frontend redirect 연동
 - client 작업 규칙 파일 생성/복구
@@ -184,6 +187,16 @@ Phase 0 완료로 기록하기 전에는 `docs/phase-0-completion.md`의 command
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check .`
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff format --check .`
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run mypy .`
+  - `DJANGO_SETTINGS_MODULE=config.settings.test TRACEBACK_DATABASE_URL=sqlite:///:memory: UV_CACHE_DIR=/tmp/traceback-uv-cache uv run pytest`
+- 2026-08-16 Phase 0C Kakao social login backend:
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check apps/accounts/serializers.py apps/accounts/social.py apps/accounts/views.py apps/accounts/urls.py apps/core/tests/test_account_auth_api.py config/settings/base.py`
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff format --check apps/accounts/serializers.py apps/accounts/social.py apps/accounts/views.py apps/accounts/urls.py apps/core/tests/test_account_auth_api.py config/settings/base.py`
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run mypy apps/accounts apps/core/tests/test_account_auth_api.py config/settings/base.py`
+  - `DJANGO_SETTINGS_MODULE=config.settings.test TRACEBACK_DATABASE_URL=sqlite:///:memory: UV_CACHE_DIR=/tmp/traceback-uv-cache uv run python manage.py makemigrations --check --dry-run`
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check .`
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff format --check .`
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run mypy .`
+  - `DJANGO_SETTINGS_MODULE=config.settings.test TRACEBACK_DATABASE_URL=sqlite:///:memory: UV_CACHE_DIR=/tmp/traceback-uv-cache uv run python manage.py check`
   - `DJANGO_SETTINGS_MODULE=config.settings.test TRACEBACK_DATABASE_URL=sqlite:///:memory: UV_CACHE_DIR=/tmp/traceback-uv-cache uv run pytest`
 - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check .`
 - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check apps/accounts/migrations/0001_initial.py`

@@ -12,7 +12,7 @@ Phase 1 Catalog는 이 문서의 필수 항목이 통과하고
 Docker/Compose 기반, custom User/Auth foundation, 공통 API 인프라,
 관리자 REST 인증 baseline, email/password JWT account API다.
 
-Phase 0 완료 전에는 PR #7 merge, Kakao social login backend slice,
+Phase 0 완료 전에는 PR #7의 email/password JWT API와 Kakao social login backend,
 필요한 frontend account 연동, PostgreSQL 실환경 migrate/test,
 production image build 검증을 마무리해야 한다. Phase 1 Catalog는 이 문서의
 필수 항목이 통과하고 `docs/build-plan.md` 완료 이력에 기록된 뒤 시작한다.
@@ -39,7 +39,7 @@ ASGI 운영을 전제로 하므로 Django는 반드시 `5.1` 이상이어야 한
 | CI | CI runs install, lint, format check, mypy, Django check, migration drift check, migrate, migration check, tests, Compose config, production image build | Workflow exists; PR #7 Quality/Test/CodeRabbit passed; final Phase 0 CI evidence still pending |
 | Django version | Dependency range keeps Django `>=5.1,<5.3` for ASGI runtime | Done |
 | User | Implement decided custom User before commerce migrations | Done in Phase 0B |
-| SocialAccount | Support initial Kakao/Naver social account linking model and constraints | Model foundation done; Kakao/Naver OAuth endpoint flows pending |
+| SocialAccount | Support initial Kakao/Naver social account linking model and constraints | Model foundation done; Kakao OAuth endpoint flow in PR #7; Naver pending |
 | Email/token flows | Email change request and user token baseline for verification/password flows | Model foundation done; email delivery and endpoint flows pending |
 | BenefitClaim | Record welcome benefit claims by HMAC phone hash to prevent duplicate issuance | Model foundation done; actual claim issuance flow pending |
 | SiteSetting | Explicitly defer until Catalog/Order needs concrete public settings or shipping policy | Deferred |
@@ -79,13 +79,12 @@ Phase 0 must not implement commerce domain behavior beyond common foundation:
 
 ## Missed Items To Resolve Before Phase 1
 
-1. Merge PR #7 after final document and validation checks.
-2. Implement Kakao social login backend start/callback and JWT issuance contract.
-3. Create or restore `../traceback-client/AGENTS.md` before frontend work, then
+1. Complete and merge PR #7 after Kakao backend validation checks.
+2. Create or restore `../traceback-client/AGENTS.md` before frontend work, then
    implement client account/social auth integration.
-4. Run PostgreSQL real migrate/test and production image build before marking
+3. Run PostgreSQL real migrate/test and production image build before marking
    Phase 0 complete.
-5. Update `docs/build-plan.md` completion history only after the above is
+4. Update `docs/build-plan.md` completion history only after the above is
    implemented and verified.
 
 ## Phase 0 Completion Command Set
