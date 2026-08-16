@@ -1,7 +1,8 @@
 # Current Work
 
-이 문서는 새 세션에서 현재 작업을 빠르게 이어가기 위한 최소 컨텍스트다.
-세부 설계나 완료 판정이 필요할 때만 상위 `docs/` 문서를 추가로 읽는다.
+이 문서는 새 세션에서 현재 작업을 빠르게 이어가기 위한 단일 진입점이다.
+먼저 이 문서로 현재 상태와 다음 행동을 확인하고, 세부 설계나 완료 판정이
+필요할 때만 아래 "필요한 경우만 읽을 문서"에서 해당 문서를 추가로 읽는다.
 
 ## 지금 상태
 
@@ -9,23 +10,27 @@
 - 현재 브랜치: `phase-0c-account-auth-contract`
 - 현재 슬라이스: Phase 0C - account API surface
 - 현재 코드 상태: Phase 0B account/auth foundation은 `development`에 merge됨. PR #6도 `development`에 merge되어 DRF view convention과 account auth 결정 지점 문서화가 반영됨. 0C-1 email/password JWT account API는 이 브랜치에서 구현됨. 고객 social/email verification/password reset API는 아직 구현하지 않음
-- 프론트 상태: `../traceback-client` 컨벤션은 `AGENTS.md`에 정리 완료. React Router v8 기준이며, 프론트 작업 전 반드시 `../traceback-client/AGENTS.md`, `../traceback-client/docs/brand-concept.md`, `../traceback-client/docs/wireframe.md`를 읽는다.
+- 프론트 상태: `../traceback-client`는 현재 초기 storefront/wireframe 상태이고 account auth 연동은 아직 없음. 현재 확인 기준으로 client repo에는 `AGENTS.md`가 없으므로, 프론트 작업 전 client-side 작업 규칙 파일을 만들거나 복구한 뒤 `../traceback-client/docs/brand-concept.md`, `../traceback-client/docs/wireframe.md`와 함께 읽는다.
 - 파일 예산: 한 슬라이스 최대 30개
 - Phase 1 Catalog 시작 금지: Phase 0 완료 기준이 통과하고 `docs/build-plan.md` 완료 이력에 기록되기 전까지 Catalog 작업을 시작하지 않는다.
 
 ## 다음 작업
 
 Phase 0C의 현재 브랜치에는 email/password first 기준의 backend JWT account API가
-구현되어 있다. Social login은 provider 도메인/redirect URI 등록이 가능해질 때까지
-보류한다. 그 전에는 email/password JWT account frontend 연동을 진행할 수 있다.
+구현되어 있다. 이 PR은 문서 정합성을 맞춘 뒤 마무리한다.
+
+다음 구현 순서는 social login backend를 먼저 자르고, 그 다음 client account 연동으로
+간다. 초기 social provider 범위는 기존 결정대로 Kakao/Naver이며, 다음 슬라이스는
+Kakao부터 시작한다. Google은 현재 Phase 0 결정 범위에 없으므로 추가하려면 별도
+범위 결정이 필요하다.
 
 다음 세션에서 바로 해야 할 일:
 
-1. 백엔드와 클라이언트 작업트리를 각각 확인한다.
-2. 클라이언트 작업이 포함되면 `../traceback-client/AGENTS.md`와 관련 docs를 먼저 읽는다.
-3. provider 도메인/redirect URI 등록이 가능해지면 social login을 Kakao부터 구현할지 결정한다.
-4. social start/callback, 성공/실패 redirect, auto-linking 실패 응답 정책을 문서화하고 구현한다.
-5. 구현 후 백엔드 테스트와 프론트 typecheck/build, Playwright 또는 in-app browser QA를 수행한다.
+1. 이 브랜치에서 stale 문서 문구를 정리하고 PR #7을 마무리한다.
+2. 다음 백엔드 브랜치를 `development`에서 만들고 Kakao social login backend vertical slice를 시작한다.
+3. Kakao Developers 설정값을 확인한다: REST API key, client secret 사용 여부, backend callback URL, frontend 성공/실패 redirect URL.
+4. `api-spec.md`에 Kakao start/callback path, provider env var, 성공/실패 redirect, existing email auto-linking 실패 응답 정책을 기록하고 구현한다.
+5. Kakao backend 검증 후 client 작업 규칙 파일을 정리하고 `../traceback-client`에서 social/email account 연동을 진행한다.
 6. 프론트 QA는 Design / UX / Function으로 나누어 사용자 확인을 받는다.
 
 Phase 0B에서 구현된 범위:
@@ -50,7 +55,7 @@ Phase 0B에서 구현된 범위:
 - 기존 function-based account view 제거
 - 관리자 REST 인증은 JWT Bearer token + `IsAdminUser` 기준으로 정리
 - 고객 account API 구현 전 확정해야 할 기준 문서화
-- 프론트 컨벤션은 `../traceback-client/AGENTS.md`에 정리 완료
+- client account auth 연동은 아직 시작하지 않음
 - email/password JWT account API backend 구현:
   - `POST /api/accounts/signup`
   - `POST /api/accounts/token/obtain`
@@ -61,14 +66,15 @@ Phase 0B에서 구현된 범위:
 
 다음 슬라이스 후보:
 
-- Kakao social login backend vertical slice. provider 도메인/redirect URI 등록 전까지 보류
+- Kakao social login backend vertical slice
 - Naver social login backend vertical slice
 - social login 성공/실패 frontend redirect 연동
+- client 작업 규칙 파일 생성/복구
+- account auth frontend signup/token obtain/token refresh 연동
 - 이메일 인증 발송 시스템 결정
 - email verification과 welcome benefit 지급 조건 결정
 - password set은 기존 비밀번호가 없는 사용자도 허용
 - password reset은 이메일 링크 기반으로 구현
-- account auth frontend signup/token obtain/token refresh 연동
 
 ## 이미 결정된 것
 
@@ -123,18 +129,21 @@ git status --short --branch
 이미 사용자 변경이 있으면 보존한다.
 
 현재 백엔드 작업 브랜치는 `phase-0c-account-auth-contract`이다. 클라이언트는 마지막
-확인 기준 `migrate-react-router-v8` 브랜치이며 `.gitignore` 수정이 남아 있었다. 프론트
-작업을 시작하기 전 해당 변경이 사용자 작업인지 확인하고 보존한다.
+확인 기준 `development` 브랜치이고 작업트리는 clean이다. 프론트 작업을 시작하기 전
+다시 작업트리를 확인하고, client repo에 없는 `AGENTS.md`를 만들거나 복구한다.
 
 ## 필요한 경우만 읽을 문서
 
-- Phase 0B 모델/컬럼 목적: [`phase-0b-model-purpose.html`](./phase-0b-model-purpose.html)
-- Phase 0B 상세 결정: [`../phaseB.md`](../phaseB.md)
-- Phase 0 완료 기준: [`../phase-0-completion.md`](../phase-0-completion.md)
-- 전체 체크포인트와 완료 이력: [`../build-plan.md`](../build-plan.md)
-- 전체 구현 원칙: [`../simple-build-guide.md`](../simple-build-guide.md)
-- API 공통 규약 확인이 필요할 때: [`../api-spec.md`](../api-spec.md)
-- User 모델 원칙 확인이 필요할 때: [`../domain-model.md`](../domain-model.md)
+평소에는 이 문서만 읽고 시작한다. 아래 문서는 작업이 해당 영역을 건드릴 때만 연다.
+
+- Phase/완료 판정 기록을 바꿀 때: [`../build-plan.md`](../build-plan.md), [`../phase-0-completion.md`](../phase-0-completion.md)
+- API endpoint, 요청/응답, 오류 계약을 구현할 때: [`../api-spec.md`](../api-spec.md)
+- 모델, migration, 제약 조건을 바꿀 때: [`../domain-model.md`](../domain-model.md), [`phase-0b-model-purpose.html`](./phase-0b-model-purpose.html)
+- Phase 0B 결정 배경이 필요할 때: [`../phaseB.md`](../phaseB.md)
+- 주문/결제/재고 흐름을 구현할 때: [`../order-flow.md`](../order-flow.md)
+- 인프라, 배포, 환경변수를 바꿀 때: [`../infrastructure-decisions.md`](../infrastructure-decisions.md)
+- 명령어 목록이 필요할 때: [`../commands.md`](../commands.md)
+- 전체 원칙을 다시 확인할 때: [`../simple-build-guide.md`](../simple-build-guide.md)
 
 ## 완료 전 검증
 

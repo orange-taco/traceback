@@ -15,23 +15,22 @@
 
 ## 문서 사용 방식
 
-1. 새 작업은 이 문서에서 범위와 원칙을 먼저 확인한다.
-2. 현재 작업을 빠르게 재개할 때는 [`current/README.md`](./current/README.md)를 확인한다.
-3. 필요한 경우에만 기존 상세 문서를 참고한다.
+1. 새 세션은 이 문서로 큰 원칙을 확인한 뒤 [`current/README.md`](./current/README.md)를 연다.
+2. 실제 재개와 다음 행동 판단은 [`current/README.md`](./current/README.md)를 단일 진입점으로 삼는다.
+3. 필요한 경우에만 아래 참고 문서 중 현재 작업 영역에 해당하는 문서를 추가로 읽는다.
 4. 상세 문서에 있는 컬럼, enum, endpoint는 확정 명세가 아니라 설계 후보로 본다.
 5. 구현 중 선택지가 갈리면 코드로 밀어붙이지 않고 사용자에게 질문한다.
 6. 확정된 결정만 해당 Phase 문서나 코드에 반영한다.
 
 참고 문서:
 
-- 현재 작업만 보는 요약: [`current/README.md`](./current/README.md)
-- 진행 순서와 체크포인트: [`build-plan.md`](./build-plan.md)
-- Phase 0 완료 기준: [`phase-0-completion.md`](./phase-0-completion.md)
-- 모델 후보와 정합성 아이디어: [`domain-model.md`](./domain-model.md)
-- 주문/결제/재고 흐름 후보: [`order-flow.md`](./order-flow.md)
-- API 후보: [`api-spec.md`](./api-spec.md)
-- 인프라 결정: [`infrastructure-decisions.md`](./infrastructure-decisions.md)
-- 명령어: [`commands.md`](./commands.md)
+- 현재 작업과 다음 행동: [`current/README.md`](./current/README.md)
+- Phase/완료 판정 기록 변경: [`build-plan.md`](./build-plan.md), [`phase-0-completion.md`](./phase-0-completion.md)
+- API endpoint, 요청/응답, 오류 계약 구현: [`api-spec.md`](./api-spec.md)
+- 모델, migration, 제약 조건 변경: [`domain-model.md`](./domain-model.md)
+- 주문/결제/재고 흐름 구현: [`order-flow.md`](./order-flow.md)
+- 인프라, 배포, 환경변수 변경: [`infrastructure-decisions.md`](./infrastructure-decisions.md)
+- 명령어 목록 확인: [`commands.md`](./commands.md)
 
 ## 구현 원칙
 
