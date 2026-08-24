@@ -22,7 +22,7 @@ Phase 0B는 커머스 도메인 기능을 만들지 않고, 이후 Catalog/Cart/
 - `username`은 자동 생성하고 unique로 둔다.
 - `nickname` 필드는 만들지 않는다.
 - 단일 브랜드 커머스이므로 일반 seller/merchant/vendor 권한은 만들지 않는다.
-- 관리자 권한은 Django의 `is_staff`, `is_superuser`, group/permission 기반을 사용한다.
+- staff 운영 권한은 Django의 `is_staff`, `is_superuser`, group/permission 기반을 활용한다. Django admin은 사용하지 않는다.
 
 필드 방향:
 
@@ -41,7 +41,6 @@ User
 - is_superuser
 - deleted_at nullable
 - last_login
-- joined_at
 - created_at
 - updated_at
 ```

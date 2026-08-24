@@ -64,6 +64,18 @@ AI 실행 지침 전체를 그대로 옮기는 문서가 아니라, 이 저장�
 - MVP에 필요 없는 컬럼은 미리 추가하지 않는다.
 - 실제 migration과 모델 목적 문서는 서로 맞아야 한다.
 
+## 테스트 코드 위치와 분리
+
+- 각 Django app의 테스트는 해당 app 아래 `apps/<app>/tests/`에 둔다.
+- `apps/core/tests`에는 request ID, 공통 오류 응답, pagination, health check, 공통 권한 probe처럼 core 공통 동작만 둔다.
+- API 테스트는 공개 view 단위로 나눈다. 동작이 뚜렷한 `GenericAPIView`는 `test_<대상>_view.py`, `ViewSet`은 `test_<대상>_viewset.py`를 기본으로 한다.
+- SimpleJWT obtain/refresh처럼 한 흐름으로 묶이는 프레임워크 제공 endpoint는 `test_token_views.py`처럼 함께 둘 수 있다.
+- serializer에 custom validation, normalization, 보안상 중요한 read/write 노출 정책이 있으면 `test_<대상>_serializer.py`로 분리한다.
+- 모델과 manager 테스트는 app이 커지기 전까지 `test_models.py`에 둔다.
+- service 테스트는 `test_<대상>_service.py`, 외부 provider/client 테스트는 `test_<대상>_provider.py`에 둔다.
+- 테스트 우선순위는 비즈니스 모델, 제약 조건, 상태 전이, 계산 결과, 동시성, 멱등성이다. 프레임워크가 이미 보장하는 단순 필드를 전부 반복 테스트하지 않는다.
+- View/API 테스트는 status code, 요청/응답 형태, 인증/권한, 중요한 DB side effect를 검증하고, service 테스트에서 이미 다룬 분기를 view 테스트에 모두 중복하지 않는다.
+
 ## 문서 동기화
 
 - `AGENTS.md`가 작업 방식, 확인 기준, 구현 방식, 검증, 보고 방식에 영향을 주도록 바뀌면 이 문서도 함께 갱신한다.

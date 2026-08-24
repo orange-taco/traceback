@@ -375,7 +375,7 @@
             <tr>
               <td><code>create_superuser()</code></td>
               <td class="purpose">superuser 생성 시 <code>is_staff</code>와 <code>is_superuser</code>를 강제한다.</td>
-              <td class="why">관리자 REST baseline과 Django admin 접근이 staff/superuser 권한에 의존한다.</td>
+              <td class="why">향후 staff 운영 기능이 staff/superuser 권한에 의존한다.</td>
             </tr>
           </tbody>
         </table>
@@ -491,8 +491,8 @@
             </tr>
             <tr>
               <td><code>is_staff</code></td>
-              <td class="purpose">Django admin과 관리자 REST 접근 가능 여부.</td>
-              <td class="why">Phase 0B 관리자 REST baseline은 staff 권한을 사용한다.</td>
+              <td class="purpose">staff 운영 기능 접근 가능 여부.</td>
+              <td class="why">향후 DRF staff API 기본 권한 후보인 <code>IsAdminUser</code>가 staff 권한을 확인한다.</td>
             </tr>
             <tr>
               <td><code>is_superuser</code></td>
@@ -510,14 +510,9 @@
               <td class="why">Django auth 기본 운영 정보로 계정 보안 확인에 사용한다.</td>
             </tr>
             <tr>
-              <td><code>joined_at</code></td>
-              <td class="purpose">가입 시각.</td>
-              <td class="why">가입/혜택/운영 문의 기준 시각으로 필요하다.</td>
-            </tr>
-            <tr>
               <td><code>created_at</code>, <code>updated_at</code></td>
               <td class="purpose">생성/수정 시각.</td>
-              <td class="why">운영 감사와 데이터 변경 추적을 위한 공통 필드다.</td>
+              <td class="why">User 생성 시각이 가입 시각 역할을 하며, 운영 감사와 데이터 변경 추적을 위한 공통 필드다.</td>
             </tr>
             <tr>
               <td><code>groups</code>, <code>user_permissions</code></td>

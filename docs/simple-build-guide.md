@@ -46,7 +46,7 @@ TRACEBACK은 하나의 브랜드가 직접 판매하는 구조다.
 - seller별 배송 정책
 - marketplace 권한 구조
 
-필요한 관리자 권한은 Django admin 또는 단순 staff 관리자 API로 시작한다.
+운영자 기능은 `User.is_staff` 기반 staff 화면/API로 시작한다. Django admin은 사용하지 않고, DRF staff API를 만들 때는 기본 권한 후보로 `IsAdminUser`를 사용한다.
 
 ### 2. 이번 배포의 도메인 범위는 먼저 고정한다
 
@@ -59,9 +59,9 @@ PR 단위 구현은 작게 나누더라도, 이번 배포에서 완성할 도메
 - 고객이 상품을 보고 장바구니에 담을 수 있다.
 - 비회원 고객이 주문을 만들고 결제할 수 있다.
 - 결제 성공 후 주문과 재고가 일관되게 반영된다.
-- 관리자는 상품, 재고, 주문의 최소 운영 정보를 확인할 수 있다.
+- staff 사용자는 상품, 재고, 주문의 최소 운영 정보를 확인할 수 있다.
 - 배송 전 전체 취소는 Phase 5에서 처리할 수 있다.
-- 관리자 부분취소와 기본 환불 흐름은 Phase 7에서 처리할 수 있다.
+- staff 부분취소와 기본 환불 흐름은 Phase 7에서 처리할 수 있다.
 
 이번 배포에서 제외하는 범위:
 
@@ -244,7 +244,7 @@ MVP라도 다음 원칙은 유지한다.
 
 - Django/DRF/PostgreSQL 기반을 만든다.
 - 계정 API는 `/api/accounts` 기준으로 시작한다.
-- 공통 오류 응답, pagination, request ID, 관리자 인증을 얇게 만든다.
+- 공통 오류 응답, pagination, request ID, staff 여부 플래그를 얇게 만든다.
 - Custom User/Auth 기반을 만든다.
 - Kakao/Naver 소셜 계정 연결, 이메일 변경 요청, 사용자 토큰, 혜택 중복 방지 ledger의 최소 모델을 만든다.
 - 운영/개발 명령과 CI를 유지한다.
@@ -253,14 +253,14 @@ MVP라도 다음 원칙은 유지한다.
 
 - 커머스 도메인 모델 전체 구현
 - 주문/결제/재고 상세 설계 구현
-- 미래 관리자 API 전체 구현
+- 미래 staff 운영 화면/API 전체 구현
 - `SiteSetting` 구현. 공개 설정이나 배송 정책이 필요해지는 Phase 1 또는 Phase 3에서 다시 확정한다.
-- `IdempotencyRecord` 구현. 주문/결제/관리자 명령 API가 시작되는 Phase 3 전에 다시 확정한다.
+- `IdempotencyRecord` 구현. 주문/결제/staff 명령 API가 시작되는 Phase 3 전에 다시 확정한다.
 
 확정된 Phase 0B 기준:
 
 - User는 `AbstractBaseUser` + `PermissionsMixin` 기반 custom User를 사용하고 email로 로그인한다.
-- 관리자 REST API는 `/api/accounts/admin/` namespace와 JWT Bearer token + `IsAdminUser`를 기준으로 한다.
+- Django admin은 사용하지 않는다. staff 운영 화면/API는 단일 client repo에서 시작한다. DRF staff API 기본 권한 후보는 `User.is_staff`를 확인하는 `IsAdminUser`이며, backend namespace와 세부 권한은 해당 Phase에서 다시 확정한다.
 - `UserToken`은 이메일 인증 24시간, 비밀번호 설정 1시간, 비밀번호 재설정 1시간 뒤 만료한다.
 - `EmailChangeRequest`는 24시간 뒤 만료하고 같은 user 기준 10분에 1회 요청을 허용한다.
 - `BenefitClaim`은 원문 개인정보 없이 HMAC hash ledger로 장기 보관한다.

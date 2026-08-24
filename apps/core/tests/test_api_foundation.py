@@ -38,7 +38,7 @@ class NumberListView(GenericAPIView[Any]):
         return paginator.get_paginated_response(serializer.data)
 
 
-class AdminProbeView(GenericAPIView[Any]):
+class StaffProbeView(GenericAPIView[Any]):
     permission_classes = [IsAdminUser]
 
     def get(self, request):  # type: ignore[no-untyped-def]
@@ -48,7 +48,7 @@ class AdminProbeView(GenericAPIView[Any]):
 urlpatterns = [
     path("probe/error", ValidationProbeView.as_view()),
     path("probe/numbers", NumberListView.as_view()),
-    path("probe/admin", AdminProbeView.as_view()),
+    path("probe/staff", StaffProbeView.as_view()),
 ]
 
 
@@ -92,26 +92,26 @@ class CommonAPIContractTests(SimpleTestCase):
 
 
 @override_settings(ROOT_URLCONF=__name__)
-class AdminRESTAuthTests(TestCase):
+class StaffRESTAuthTests(TestCase):
     def setUp(self) -> None:
         self.api_client = APIClient()
         self.user_model = get_user_model()
 
-    def test_admin_endpoint_rejects_anonymous_users(self) -> None:
-        response = self.api_client.get("/probe/admin")
+    def test_staff_endpoint_rejects_anonymous_users(self) -> None:
+        response = self.api_client.get("/probe/staff")
 
         self.assertEqual(response.status_code, 401)
 
-    def test_admin_endpoint_rejects_non_staff_users(self) -> None:
+    def test_staff_endpoint_rejects_non_staff_users(self) -> None:
         user = self.user_model.objects.create_user("user@example.com")
         token = RefreshToken.for_user(user).access_token
         self.api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
 
-        response = self.api_client.get("/probe/admin")
+        response = self.api_client.get("/probe/staff")
 
         self.assertEqual(response.status_code, 403)
 
-    def test_admin_endpoint_accepts_staff_users(self) -> None:
+    def test_staff_endpoint_accepts_staff_users(self) -> None:
         staff = self.user_model.objects.create_user(
             "staff@example.com",
             is_staff=True,
@@ -119,7 +119,7 @@ class AdminRESTAuthTests(TestCase):
         token = RefreshToken.for_user(staff).access_token
         self.api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
 
-        response = self.api_client.get("/probe/admin")
+        response = self.api_client.get("/probe/staff")
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(

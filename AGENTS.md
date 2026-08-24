@@ -67,3 +67,17 @@ This repository implements the TRACEBACK commerce backend.
 - Each column purpose must be justified by the minimal MVP scope or an explicit requirement.
 - If a column is only for future expansion and not required now, do not add it; record the deferred idea in the relevant docs instead.
 - Keep the model-purpose document aligned with the actual migrations before stopping work.
+
+## Test Organization
+
+- Each Django app owns its tests under `apps/<app>/tests/`. Do not put another app's model, serializer, view, service, or provider tests under `apps/core/tests`.
+- Keep `apps/core/tests` for core cross-cutting behavior only, such as request IDs, common error formatting, pagination, health checks, and shared permission probes.
+- Split API tests by public view surface:
+  - one `test_<resource>_view.py` per `GenericAPIView` when the view has distinct behavior;
+  - one `test_<resource>_viewset.py` per `ViewSet`;
+  - closely coupled framework-provided endpoints may share a file, such as `test_token_views.py` for SimpleJWT obtain/refresh.
+- Split serializer tests by serializer when the serializer has custom behavior, using `test_<serializer_subject>_serializer.py`.
+- Put domain model and manager tests in `test_models.py` unless the app grows enough to justify model-specific files.
+- Put service tests in `test_<service_subject>_service.py` and provider/client tests in `test_<provider_subject>_provider.py`.
+- Prioritize business model behavior, constraints, state transitions, calculations, concurrency, and idempotency. Do not add field-by-field tests for framework behavior unless the project adds custom validation, custom mapping, or security-sensitive read/write exposure.
+- View/API tests should verify the external contract: status code, request/response shape, authentication/permission behavior, and important database side effects. Do not duplicate every service branch in view tests when service tests already cover it.

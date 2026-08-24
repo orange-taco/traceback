@@ -43,14 +43,14 @@ ASGI 운영을 전제로 하므로 Django는 반드시 `5.1` 이상이어야 한
 | Email/token flows | Email change request and user token baseline for verification/password flows | Model foundation done; email delivery and endpoint flows pending |
 | BenefitClaim | Record welcome benefit claims by HMAC phone hash to prevent duplicate issuance | Model foundation done; actual claim issuance flow pending |
 | SiteSetting | Explicitly defer until Catalog/Order needs concrete public settings or shipping policy | Deferred |
-| IdempotencyRecord | Explicitly defer until Order/Payment/admin command APIs introduce idempotent writes | Deferred |
+| IdempotencyRecord | Explicitly defer until Order/Payment/staff command APIs introduce idempotent writes | Deferred |
 | Error response | DRF exception handler returns stable `code`, `message`, `details`, `request_id` contract | Done in Phase 0B |
 | Pagination | Shared DRF pagination class and response contract for list APIs | Done in Phase 0B |
 | Request ID | Middleware accepts/generates request ID and exposes it on responses/errors/log context | Done in Phase 0B |
-| Admin REST auth | JWT authentication + `IsAdminUser` baseline and tests for anonymous/non-staff/staff access | Implemented in PR #7; validation recorded |
-| API namespace | Account endpoints live under `/api/accounts/`; admin REST endpoints use `/api/accounts/admin/` | Current account/auth endpoints done; future admin resources added by owning Phase |
+| Staff API auth | JWT authentication + `IsAdminUser` baseline and tests for anonymous/non-staff/staff access | Implemented as staff permission baseline; Django admin removed |
+| API namespace | Account endpoints live under `/api/accounts/`; staff backend namespace is decided by the owning Phase | Current account/auth endpoints done; future staff resources added by owning Phase |
 | Secrets/settings | Required secrets fail fast outside test; example env documents local values | Mostly done; final production image/env validation pending |
-| Tests | Focused tests cover request ID, errors, pagination, admin auth, account models, migration health | Current local/PR tests passed; PostgreSQL real migrate/test still pending |
+| Tests | Focused tests cover request ID, errors, pagination, staff auth, account models, serializers, social login service, Kakao provider, migration health | Current local/PR tests passed; PostgreSQL real migrate/test still pending |
 | Docs checkpoint | `docs/build-plan.md` checkpoint and completion history match code and validation evidence | Current checkpoint updated; completion history waits for merge/final validation |
 
 ## Required Decisions Before Phase 1
@@ -75,7 +75,7 @@ Phase 0 must not implement commerce domain behavior beyond common foundation:
 - Catalog product models or APIs
 - Cart/order/payment/inventory business flows
 - Seller or marketplace support
-- Future admin API endpoints without a current Phase owner
+- Future staff operation API endpoints without a current Phase owner
 
 ## Missed Items To Resolve Before Phase 1
 

@@ -9,17 +9,14 @@ from rest_framework.response import Response
 from .enums import SocialProvider
 from .providers.kakao import KakaoOAuthClient
 from .serializers import (
-    JWTTokenPairSerializer,
-    KakaoAuthorizationStartSerializer,
-    KakaoAuthorizationURLSerializer,
-    KakaoCallbackSerializer,
+    KakaoOAuthSerializer,
     SignupSerializer,
 )
-from .services.social_login import complete_social_login
+from .services.social_login import complete_social_login, connect_social_account
 from .tokens import issue_jwt_pair
 
 
-class SignupView(GenericAPIView[Any]):
+class EmailSignupView(GenericAPIView[Any]):
     authentication_classes = []
     permission_classes = [AllowAny]
     serializer_class = SignupSerializer
@@ -31,29 +28,9 @@ class SignupView(GenericAPIView[Any]):
         return Response(status=status.HTTP_201_CREATED)
 
 
-class KakaoAuthorizationStartView(GenericAPIView[Any]):
-    authentication_classes = []
+class KakaoOAuthView(GenericAPIView[Any]):
     permission_classes = [AllowAny]
-    serializer_class = KakaoAuthorizationStartSerializer
-    response_serializer_class = KakaoAuthorizationURLSerializer
-
-    def get(self, request: Request) -> Response:
-        serializer = self.get_serializer(data=request.query_params)
-        serializer.is_valid(raise_exception=True)
-        authorization_url = KakaoOAuthClient().authorization_url(
-            state=serializer.validated_data.get("state", ""),
-        )
-        response_serializer = self.response_serializer_class(
-            {"authorization_url": authorization_url},
-        )
-        return Response(response_serializer.data)
-
-
-class KakaoCallbackView(GenericAPIView[Any]):
-    authentication_classes = []
-    permission_classes = [AllowAny]
-    serializer_class = KakaoCallbackSerializer
-    response_serializer_class = JWTTokenPairSerializer
+    serializer_class = KakaoOAuthSerializer
 
     def post(self, request: Request) -> Response:
         serializer = self.get_serializer(data=request.data)
@@ -61,6 +38,13 @@ class KakaoCallbackView(GenericAPIView[Any]):
         profile = KakaoOAuthClient().fetch_profile_for_code(
             code=serializer.validated_data["code"],
         )
+        if request.user.is_authenticated:
+            connect_social_account(
+                provider=SocialProvider.KAKAO,
+                profile=profile,
+                user=request.user,
+            )
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
         user = complete_social_login(provider=SocialProvider.KAKAO, profile=profile)
-        response_serializer = self.response_serializer_class(issue_jwt_pair(user))
-        return Response(response_serializer.data)
+        return Response(issue_jwt_pair(user))

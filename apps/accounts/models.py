@@ -55,17 +55,13 @@ class User(AbstractBaseUser, PermissionsMixin, TimestampedModel):
         default=True,
     )
     is_staff = models.BooleanField(
-        help_text="관리자 사이트와 관리자 API 접근 여부",
+        help_text="staff 기능 접근 여부",
         default=False,
     )
     deleted_at = models.DateTimeField(
         help_text="계정 탈퇴 또는 비활성 처리 시간",
         null=True,
         blank=True,
-    )
-    joined_at = models.DateTimeField(
-        help_text="가입 시간",
-        default=timezone.now,
     )
 
     objects = UserManager()

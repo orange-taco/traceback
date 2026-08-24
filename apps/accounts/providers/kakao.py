@@ -9,7 +9,6 @@ from rest_framework import exceptions, status
 
 from apps.accounts.services.social_login import SocialProfile
 
-KAKAO_AUTHORIZE_URL = "https://kauth.kakao.com/oauth/authorize"
 KAKAO_TOKEN_URL = "https://kauth.kakao.com/oauth/token"
 KAKAO_USER_ME_URL = "https://kapi.kakao.com/v2/user/me"
 
@@ -27,19 +26,6 @@ class KakaoProviderError(exceptions.APIException):
 
 
 class KakaoOAuthClient:
-    def authorization_url(self, *, state: str = "") -> str:
-        rest_api_key = _required_setting("KAKAO_REST_API_KEY")
-        redirect_uri = _required_setting("KAKAO_REDIRECT_URI")
-        query = {
-            "response_type": "code",
-            "client_id": rest_api_key,
-            "redirect_uri": redirect_uri,
-            "scope": "account_email",
-        }
-        if state:
-            query["state"] = state
-        return f"{KAKAO_AUTHORIZE_URL}?{parse.urlencode(query)}"
-
     def fetch_profile_for_code(self, *, code: str) -> SocialProfile:
         access_token = self._exchange_code_for_access_token(code)
         return self._fetch_profile(access_token)

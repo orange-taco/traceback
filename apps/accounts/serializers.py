@@ -11,8 +11,6 @@ from .models import User
 
 class SignupSerializer(serializers.ModelSerializer[User]):
     password = serializers.CharField(
-        max_length=128,
-        min_length=8,
         trim_whitespace=False,
         write_only=True,
     )
@@ -26,16 +24,13 @@ class SignupSerializer(serializers.ModelSerializer[User]):
 
     def validate_email(self, value: str) -> str:
         email = User.objects.normalize_email(value)
-        email_exists = User.objects.filter(email=email).exists()
-        if email_exists:
-            raise serializers.ValidationError(
-                "This email is already registered.",
-                code="duplicate_email",
-            )
+        if User.objects.filter(email=email).exists():
+            raise serializers.ValidationError("This email is already registered.")
         return email
 
     def validate_password(self, value: str) -> str:
-        user = User(email=self.initial_data.get("email", ""))
+        initial_email = self.initial_data.get("email", "")
+        user = User(email=initial_email if isinstance(initial_email, str) else "")
         try:
             password_validation.validate_password(value, user=user)
         except DjangoValidationError as exc:
@@ -54,25 +49,8 @@ class SignupSerializer(serializers.ModelSerializer[User]):
             ) from exc
 
 
-class KakaoAuthorizationStartSerializer(serializers.Serializer[dict[str, str]]):
-    state = serializers.CharField(
-        allow_blank=True,
-        max_length=255,
-        required=False,
-    )
-
-
-class KakaoAuthorizationURLSerializer(serializers.Serializer[dict[str, str]]):
-    authorization_url = serializers.URLField()
-
-
-class KakaoCallbackSerializer(serializers.Serializer[dict[str, str]]):
+class KakaoOAuthSerializer(serializers.Serializer[dict[str, str]]):
     code = serializers.CharField(
         max_length=1024,
         trim_whitespace=True,
     )
-
-
-class JWTTokenPairSerializer(serializers.Serializer[dict[str, str]]):
-    access = serializers.CharField()
-    refresh = serializers.CharField()
