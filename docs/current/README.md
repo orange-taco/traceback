@@ -9,7 +9,7 @@
 - 진행 단계: Phase 0 - Foundation
 - 현재 브랜치: `phase-0c-account-auth-contract`
 - 현재 슬라이스: Phase 0C - account API surface
-- 현재 코드 상태: Phase 0B account/auth foundation은 `development`에 merge됨. PR #6도 `development`에 merge되어 DRF view convention과 account auth 결정 지점 문서화가 반영됨. 0C-1 email/password JWT account API는 이 브랜치에서 구현됨. 같은 브랜치에서 Kakao social login backend를 이어서 구현 중임. `User.joined_at`은 `created_at`과 중복되어 제거했고 `accounts.0002_remove_user_joined_at` migration을 로컬 PostgreSQL에 적용함. Django admin 앱/URL/model admin 등록은 제거했고, `is_staff`는 향후 staff 화면/API 플래그로 남김. DRF staff API 기본 권한 후보는 `IsAdminUser`임. 고객 email verification/password reset API는 아직 구현하지 않음
+- 현재 코드 상태: Phase 0B account/auth foundation은 `development`에 merge됨. PR #6도 `development`에 merge되어 DRF view convention과 account auth 결정 지점 문서화가 반영됨. 0C-1 email/password JWT account API와 Kakao social login backend는 이 브랜치에서 구현됨. `User.joined_at`은 `created_at`과 중복되어 제거했고 `accounts.0002_remove_user_joined_at` migration을 로컬 PostgreSQL에 적용함. Django admin 앱/URL/model admin 등록은 제거했고, `is_staff`는 향후 staff 화면/API 플래그로 남김. DRF staff API 기본 권한 후보는 `IsAdminUser`임. 현재 로컬에는 account auth 코드 리뷰 단순화 변경이 커밋되지 않은 상태로 남아 있음. 고객 email verification/password reset API는 아직 구현하지 않음
 - 로컬 backend 실행 기준: host에서 `uv run manage.py runserver`를 사용하지 않고 Docker Compose로 실행한다. `.env`는 app 컨테이너에 `env_file`로 전달되며, `DJANGO_SETTINGS_MODULE=config.settings.local`과 Compose service name `db:5432`의 `TRACEBACK_DATABASE_URL`을 사용한다.
 - 프론트 상태: `../traceback-client`는 `phase-0c-client-auth` 브랜치에서 account auth 연동 작업을 시작함. client repo에는 `AGENTS.md`가 없어서 `README.md`, `docs/brand-concept.md`, `docs/wireframe.md` 기준으로 진행한다. 현재 로컬 변경은 커밋/푸시하지 않은 상태다.
 - 파일 예산: 한 슬라이스 최대 30개
@@ -17,20 +17,18 @@
 
 ## 다음 작업
 
-Phase 0C의 현재 브랜치에는 email/password first 기준의 backend JWT account API가
-구현되어 있다. email/password와 Kakao auto-linking 정책을 한 번에 검증하기 위해
-Kakao social login backend도 같은 PR에서 진행한다. 초기 social provider 범위는 기존
-결정대로 Kakao/Naver이며, 이번 slice는 Kakao만 구현한다. Google은 현재 Phase 0 결정
-범위에 없으므로 추가하려면 별도 범위 결정이 필요하다.
+Phase 0C의 현재 브랜치에는 email/password first 기준의 backend JWT account API와
+Kakao social login backend가 구현되어 있다. 초기 social provider 범위는 기존 결정대로
+Kakao/Naver이며, 이번 slice는 Kakao만 구현한다. Google은 현재 Phase 0 결정 범위에
+없으므로 추가하려면 별도 범위 결정이 필요하다.
 
 다음 세션에서 바로 해야 할 일:
 
-1. 이 브랜치에서 Kakao social login backend 구현과 검증을 마무리한다.
-2. Kakao Developers 설정값을 확인한다: REST API key, client secret 사용 여부, frontend callback URL.
-3. `POST /api/accounts/social/kakao` 계약이 `api-spec.md`와 일치하는지 확인한다.
-4. email/password User와 Kakao SocialAccount auto-linking 테스트를 통과시킨다.
-5. `../traceback-client`의 `phase-0c-client-auth` 브랜치에서 social/email account 연동 QA를 이어간다.
-6. 프론트 QA는 Design / UX / Function으로 나누어 사용자 확인을 받는다.
+1. 커밋되지 않은 account auth 단순화 변경을 리뷰한다.
+2. 필요하면 이 변경을 별도 커밋/푸시한다.
+3. `POST /api/accounts/social/kakao` 계약이 `api-spec.md`와 일치하는지 최종 확인한다.
+4. `../traceback-client`의 `phase-0c-client-auth` 브랜치에서 social/email account 연동 QA를 이어간다.
+5. 프론트 QA는 Design / UX / Function으로 나누어 사용자 확인을 받는다.
 
 Phase 0B에서 구현된 범위:
 
@@ -62,11 +60,15 @@ Phase 0B에서 구현된 범위:
   - signup 성공 시 `201`과 빈 응답 반환
   - token obtain 성공 시 JWT access/refresh token pair 반환
   - token obtain 실패는 SimpleJWT 기본 `no_active_account` 오류 반환
-- Kakao social login backend 구현 중:
+- Kakao social login backend:
   - `POST /api/accounts/social/kakao`
   - 성공 시 JWT access/refresh token pair 반환
   - verified email 기존 User만 자동 연결
   - 미인증 기존 email User는 자동 연결 거부
+- account auth 코드 리뷰 단순화 로컬 변경:
+  - signup serializer의 password 길이/메시지 상수 제거, Django password validator 기준 사용
+  - provider email 검증 실패는 DRF `ValidationError`, social account 연결 충돌은 `social_login.py` 안의 의미별 409 예외 class로 정리
+  - 테스트 기대값은 status/error shape와 409 social account 정책 code 중심으로 정리
 
 다음 슬라이스 후보:
 
@@ -177,6 +179,12 @@ Phase 0 완료로 기록하기 전에는 `docs/phase-0-completion.md`의 command
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check apps/accounts/serializers.py apps/accounts/services/social_login.py apps/accounts/providers/kakao.py apps/accounts/tests apps/core/tests/test_api_foundation.py`
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff format --check apps/accounts/serializers.py apps/accounts/services/social_login.py apps/accounts/providers/kakao.py apps/accounts/tests apps/core/tests/test_api_foundation.py`
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run mypy apps/accounts apps/core/tests/test_api_foundation.py`
+- 2026-08-27 account auth 코드 리뷰 단순화:
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check apps/accounts/serializers.py apps/accounts/services/social_login.py apps/accounts/views.py apps/accounts/urls.py apps/accounts/tests/test_signup_serializer.py apps/accounts/tests/test_signup_view.py apps/accounts/tests/test_token_views.py apps/accounts/tests/test_social_login_service.py apps/accounts/tests/test_kakao_oauth_view.py`
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff format --check apps/accounts/serializers.py apps/accounts/services/social_login.py apps/accounts/views.py apps/accounts/urls.py apps/accounts/tests/test_signup_serializer.py apps/accounts/tests/test_signup_view.py apps/accounts/tests/test_token_views.py apps/accounts/tests/test_social_login_service.py apps/accounts/tests/test_kakao_oauth_view.py`
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run mypy apps/accounts`
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache DJANGO_SETTINGS_MODULE=config.settings.test TRACEBACK_DATABASE_URL=sqlite:///:memory: uv run pytest apps/accounts/tests` 통과: 58 passed, coverage 97.92%, coverage gate 90%
+  - `git diff --check`
 - Phase 0B commit: `6a0b3d4`
 - Phase 0B merge: PR #5, merge commit `489ed3b`
 - Phase 0C DRF convention slice:

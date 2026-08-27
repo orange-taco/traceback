@@ -11,21 +11,19 @@ from apps.accounts.models import SocialAccount, User
 
 @dataclass(frozen=True)
 class SocialProfile:
+    # Internal DTO normalized by provider clients before account-linking policy runs.
+    # It is not a DRF serializer because it is not an HTTP request/response boundary.
     provider_user_id: str
     email: str | None
     email_verified: bool
 
 
-class SocialLoginError(exceptions.APIException):
-    status_code = status.HTTP_400_BAD_REQUEST
-    default_detail = "Social login failed."
-    default_code = "social_login_failed"
-
-
+# DRF has no built-in 409 Conflict exception. Keep these service-local instead
+# of introducing a shared custom exception hierarchy before it is needed.
 class SocialAccountLinkingRequired(exceptions.APIException):
     status_code = status.HTTP_409_CONFLICT
     default_detail = (
-        "Email verification is required before linking this social account."
+        "This email is already registered. Sign in with email to connect Kakao."
     )
     default_code = "social_account_linking_required"
 
@@ -137,12 +135,12 @@ def connect_social_account(
 
 def _require_verified_provider_email(profile: SocialProfile) -> str:
     if not profile.email:
-        raise SocialLoginError(
+        raise exceptions.ValidationError(
             "Provider account email is required.",
             code="provider_email_required",
         )
     if not profile.email_verified:
-        raise SocialLoginError(
+        raise exceptions.ValidationError(
             "Verified provider account email is required.",
             code="provider_email_unverified",
         )
@@ -164,9 +162,7 @@ def _create_social_account(
             provider_email_verified=profile.email_verified,
         )
     except IntegrityError as exc:
-        raise SocialAccountConflict(
-            "This social account cannot be linked automatically.",
-        ) from exc
+        raise SocialAccountConflict() from exc
 
 
 def _sync_social_email_snapshot(

@@ -156,6 +156,10 @@ class KakaoOAuthViewTests(TestCase):
 
         self.assertEqual(response.status_code, 409)
         self.assertEqual(response.json()["code"], "social_account_linking_required")
+        self.assertEqual(
+            response.json()["message"],
+            "This email is already registered. Sign in with email to connect Kakao.",
+        )
         self.assertFalse(SocialAccount.objects.exists())
 
     @override_settings(
@@ -253,9 +257,10 @@ class KakaoOAuthViewTests(TestCase):
             )
 
         self.assertEqual(missing_email_response.status_code, 400)
+        self.assertEqual(missing_email_response.json()["code"], "invalid")
         self.assertEqual(
-            missing_email_response.json()["code"],
-            "provider_email_required",
+            missing_email_response.json()["details"],
+            {"non_field_errors": ["Provider account email is required."]},
         )
 
         with mock.patch(
@@ -273,8 +278,13 @@ class KakaoOAuthViewTests(TestCase):
             )
 
         self.assertEqual(unverified_email_response.status_code, 400)
+        self.assertEqual(unverified_email_response.json()["code"], "invalid")
         self.assertEqual(
-            unverified_email_response.json()["code"],
-            "provider_email_unverified",
+            unverified_email_response.json()["details"],
+            {
+                "non_field_errors": [
+                    "Verified provider account email is required.",
+                ],
+            },
         )
         self.assertFalse(SocialAccount.objects.exists())

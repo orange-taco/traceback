@@ -45,13 +45,16 @@ class SignupSerializerTests(TestCase):
         )
 
         self.assertFalse(serializer.is_valid())
-        self.assertIn("email", serializer.errors)
+        self.assertEqual(
+            serializer.errors,
+            {"email": ["This email is already registered."]},
+        )
 
     def test_rejects_invalid_password_as_field_error(self) -> None:
         serializer = SignupSerializer(
             data={
                 "email": "test@example.com",
-                "password": "12345678",
+                "password": "Short12345!",
             },
         )
 

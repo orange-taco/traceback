@@ -10,6 +10,7 @@ from .models import User
 
 
 class SignupSerializer(serializers.ModelSerializer[User]):
+    email = serializers.EmailField(validators=[])
     password = serializers.CharField(
         trim_whitespace=False,
         write_only=True,

@@ -41,7 +41,10 @@ class SignupViewTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["code"], "invalid")
-        self.assertIn("email", response.json()["details"])
+        self.assertEqual(
+            response.json()["details"],
+            {"email": ["This email is already registered."]},
+        )
 
     def test_signup_rejects_email_unique_race_as_field_error(self) -> None:
         with mock.patch.object(
@@ -70,7 +73,7 @@ class SignupViewTests(TestCase):
             "/api/accounts/signup",
             {
                 "email": "test@example.com",
-                "password": "12345678",
+                "password": "Short12345!",
             },
             format="json",
         )
@@ -78,4 +81,3 @@ class SignupViewTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["code"], "invalid")
         self.assertIn("password", response.json()["details"])
-        self.assertIsInstance(response.json()["details"]["password"], list)
