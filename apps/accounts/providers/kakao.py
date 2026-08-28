@@ -9,9 +9,6 @@ from rest_framework import exceptions, status
 
 from apps.accounts.services.social_login import SocialProfile
 
-KAKAO_TOKEN_URL = "https://kauth.kakao.com/oauth/token"
-KAKAO_USER_ME_URL = "https://kapi.kakao.com/v2/user/me"
-
 
 class KakaoConfigurationError(exceptions.APIException):
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
@@ -42,7 +39,7 @@ class KakaoOAuthClient:
         client_secret = getattr(settings, "KAKAO_CLIENT_SECRET", "")
         if client_secret:
             payload["client_secret"] = client_secret
-        response_data = _post_form(KAKAO_TOKEN_URL, payload)
+        response_data = _post_form("https://kauth.kakao.com/oauth/token", payload)
         access_token = response_data.get("access_token")
         if not isinstance(access_token, str) or not access_token:
             raise KakaoProviderError(
@@ -52,7 +49,7 @@ class KakaoOAuthClient:
 
     def _fetch_profile(self, access_token: str) -> SocialProfile:
         response_data = _post_form(
-            KAKAO_USER_ME_URL,
+            "https://kapi.kakao.com/v2/user/me",
             {"property_keys": '["kakao_account.email"]'},
             headers={"Authorization": f"Bearer {access_token}"},
         )
@@ -63,8 +60,9 @@ class KakaoOAuthClient:
         if not isinstance(kakao_account, dict):
             kakao_account = {}
         email = kakao_account.get("email")
-        email_verified = bool(kakao_account.get("is_email_verified")) and bool(
-            kakao_account.get("is_email_valid", True),
+        email_verified = (
+            kakao_account.get("is_email_verified") is True
+            and kakao_account.get("is_email_valid") is True
         )
         return SocialProfile(
             provider_user_id=str(provider_user_id),
@@ -100,6 +98,13 @@ def _post_form(
     try:
         with request.urlopen(http_request, timeout=5) as response:
             response_body = response.read().decode()
+    except error.HTTPError as exc:
+        if exc.code == status.HTTP_400_BAD_REQUEST:
+            raise exceptions.ValidationError(
+                "Kakao provider rejected the request.",
+                code="kakao_request_rejected",
+            ) from exc
+        raise KakaoProviderError() from exc
     except (error.URLError, TimeoutError) as exc:
         raise KakaoProviderError() from exc
     try:

@@ -24,10 +24,9 @@ Kakao/Naver이며, 이번 slice는 Kakao만 구현한다. Google은 현재 Phase
 
 다음 세션에서 바로 해야 할 일:
 
-1. Compose CI env 파일 선택 수정안이 반영된 PR #7 Quality 재실행 결과를 확인한다.
-2. `POST /api/accounts/social/kakao` 계약이 `api-spec.md`와 일치하는지 최종 확인한다.
-3. `../traceback-client`의 `phase-0c-client-auth` 브랜치에서 social/email account 연동 QA를 이어간다.
-4. 프론트 QA는 Design / UX / Function으로 나누어 사용자 확인을 받는다.
+1. `POST /api/accounts/social/kakao` 계약이 `api-spec.md`와 일치하는지 최종 확인한다.
+2. `../traceback-client`의 `phase-0c-client-auth` 브랜치에서 social/email account 연동 QA를 이어간다.
+3. 프론트 QA는 Design / UX / Function으로 나누어 사용자 확인을 받는다.
 
 Phase 0B에서 구현된 범위:
 
@@ -188,6 +187,11 @@ Phase 0 완료로 기록하기 전에는 `docs/phase-0-completion.md`의 command
   - `APP_ENV_FILE=.env.example docker compose --env-file .env.example config --quiet` 통과
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run yamllint docker-compose.yml .github/workflows/ci.yml` 통과
   - production overlay config는 로컬 Docker Compose `v2.18.1`이 기존 `!reset` 구문을 지원하지 않아 미검증; GitHub Actions에서 재검증 필요
+- 2026-08-28 Kakao provider 코드 리뷰:
+  - package marker `__init__.py` 9개를 내용 없는 0-byte 파일로 통일
+  - provider endpoint 전역 상수와 단일 사용 JWT helper를 제거하고 호출 위치에 인라인
+  - Kakao HTTP 400은 validation error, HTTP 5xx/network 오류는 502로 분리
+  - `is_email_verified`와 `is_email_valid`가 모두 명시적 `True`일 때만 verified email로 판정
 - Phase 0B commit: `6a0b3d4`
 - Phase 0B merge: PR #5, merge commit `489ed3b`
 - Phase 0C DRF convention slice:

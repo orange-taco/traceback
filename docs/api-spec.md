@@ -107,6 +107,7 @@ DRF view convention:
   - 새 User 생성 또는 기존 User 자동 연결이 필요한 경로에서는 verified Kakao email이 필요하다.
   - 연결이 필요한 경로에서 Kakao email이 없으면 `400 provider_email_required`.
   - 연결이 필요한 경로에서 Kakao email이 verified가 아니면 `400 provider_email_unverified`.
+  - Kakao가 authorization code 교환 요청을 거부하면 `400` validation error를 반환한다.
   - 기존 email/password User가 있고 `User.email_verified_at`이 있으면 Kakao `SocialAccount`를 자동 연결하고 로그인한다.
   - 기존 email/password User가 있지만 `User.email_verified_at`이 없으면 자동 연결하지 않고 `409 social_account_linking_required`.
   - 기존 User가 없으면 unusable password를 가진 User를 만들고 Kakao email을 verified로 저장한다.

@@ -5,6 +5,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .enums import SocialProvider
 from .providers.kakao import KakaoOAuthClient
@@ -13,7 +14,6 @@ from .serializers import (
     SignupSerializer,
 )
 from .services.social_login import complete_social_login, connect_social_account
-from .tokens import issue_jwt_pair
 
 
 class EmailSignupView(GenericAPIView[Any]):
@@ -47,4 +47,10 @@ class KakaoOAuthView(GenericAPIView[Any]):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         user = complete_social_login(provider=SocialProvider.KAKAO, profile=profile)
-        return Response(issue_jwt_pair(user))
+        refresh = RefreshToken.for_user(user)
+        return Response(
+            {
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+            },
+        )

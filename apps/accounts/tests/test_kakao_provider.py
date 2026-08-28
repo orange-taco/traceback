@@ -1,14 +1,14 @@
 from __future__ import annotations
 
+from email.message import Message
 from typing import Any
 from unittest import mock
 from urllib import error
 
 from django.test import SimpleTestCase, override_settings
+from rest_framework import exceptions
 
 from apps.accounts.providers.kakao import (
-    KAKAO_TOKEN_URL,
-    KAKAO_USER_ME_URL,
     KakaoConfigurationError,
     KakaoOAuthClient,
     KakaoProviderError,
@@ -97,7 +97,10 @@ class KakaoOAuthClientTests(SimpleTestCase):
                 email_verified=True,
             ),
         )
-        self.assertEqual(post_form.call_args_list[0].args[0], KAKAO_TOKEN_URL)
+        self.assertEqual(
+            post_form.call_args_list[0].args[0],
+            "https://kauth.kakao.com/oauth/token",
+        )
         self.assertEqual(
             post_form.call_args_list[0].args[1],
             {
@@ -108,7 +111,10 @@ class KakaoOAuthClientTests(SimpleTestCase):
                 "client_secret": "secret",
             },
         )
-        self.assertEqual(post_form.call_args_list[1].args[0], KAKAO_USER_ME_URL)
+        self.assertEqual(
+            post_form.call_args_list[1].args[0],
+            "https://kapi.kakao.com/v2/user/me",
+        )
         self.assertEqual(
             post_form.call_args_list[1].args[1],
             {"property_keys": '["kakao_account.email"]'},
@@ -170,6 +176,28 @@ class KakaoOAuthClientTests(SimpleTestCase):
         KAKAO_REST_API_KEY="rest-key",
         KAKAO_REDIRECT_URI="https://client.example.com/auth/kakao/callback",
     )
+    def test_marks_email_unverified_when_email_validity_is_missing(self) -> None:
+        with mock.patch(
+            "apps.accounts.providers.kakao._post_form",
+            side_effect=[
+                {"access_token": "provider-token"},
+                {
+                    "id": 12345,
+                    "kakao_account": {
+                        "email": "user@example.com",
+                        "is_email_verified": True,
+                    },
+                },
+            ],
+        ):
+            profile = KakaoOAuthClient().fetch_profile_for_code(code="auth-code")
+
+        self.assertFalse(profile.email_verified)
+
+    @override_settings(
+        KAKAO_REST_API_KEY="rest-key",
+        KAKAO_REDIRECT_URI="https://client.example.com/auth/kakao/callback",
+    )
     def test_ignores_invalid_kakao_account_shape(self) -> None:
         with mock.patch(
             "apps.accounts.providers.kakao._post_form",
@@ -220,6 +248,39 @@ class PostFormTests(SimpleTestCase):
         with mock.patch(
             "apps.accounts.providers.kakao.request.urlopen",
             side_effect=error.URLError("down"),
+        ):
+            with self.assertRaises(KakaoProviderError):
+                _post_form("https://provider.example.com/token", {"code": "x"})
+
+    def test_maps_bad_request_to_validation_error(self) -> None:
+        with mock.patch(
+            "apps.accounts.providers.kakao.request.urlopen",
+            side_effect=error.HTTPError(
+                "https://provider.example.com/token",
+                400,
+                "Bad Request",
+                hdrs=Message(),
+                fp=None,
+            ),
+        ):
+            with self.assertRaises(exceptions.ValidationError) as context:
+                _post_form("https://provider.example.com/token", {"code": "x"})
+
+        self.assertEqual(
+            context.exception.get_codes(),
+            ["kakao_request_rejected"],
+        )
+
+    def test_maps_server_error_to_provider_error(self) -> None:
+        with mock.patch(
+            "apps.accounts.providers.kakao.request.urlopen",
+            side_effect=error.HTTPError(
+                "https://provider.example.com/token",
+                500,
+                "Server Error",
+                hdrs=Message(),
+                fp=None,
+            ),
         ):
             with self.assertRaises(KakaoProviderError):
                 _post_form("https://provider.example.com/token", {"code": "x"})
