@@ -9,7 +9,7 @@ services:
       db:
         condition: service_healthy
     env_file:
-      - .env
+      - ${APP_ENV_FILE:-.env}
     healthcheck:
       test: ["CMD", "python", "scripts/healthcheck.py"]
       interval: 10s

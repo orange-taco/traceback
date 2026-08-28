@@ -9,7 +9,7 @@
 - 진행 단계: Phase 0 - Foundation
 - 현재 브랜치: `phase-0c-account-auth-contract`
 - 현재 슬라이스: Phase 0C - account API surface
-- 현재 코드 상태: Phase 0B account/auth foundation은 `development`에 merge됨. PR #6도 `development`에 merge되어 DRF view convention과 account auth 결정 지점 문서화가 반영됨. 0C-1 email/password JWT account API와 Kakao social login backend는 이 브랜치에서 구현됨. `User.joined_at`은 `created_at`과 중복되어 제거했고 `accounts.0002_remove_user_joined_at` migration을 로컬 PostgreSQL에 적용함. Django admin 앱/URL/model admin 등록은 제거했고, `is_staff`는 향후 staff 화면/API 플래그로 남김. DRF staff API 기본 권한 후보는 `IsAdminUser`임. 현재 로컬에는 account auth 코드 리뷰 단순화 변경이 커밋되지 않은 상태로 남아 있음. 고객 email verification/password reset API는 아직 구현하지 않음
+- 현재 코드 상태: Phase 0B account/auth foundation은 `development`에 merge됨. PR #6도 `development`에 merge되어 DRF view convention과 account auth 결정 지점 문서화가 반영됨. 0C-1 email/password JWT account API와 Kakao social login backend는 PR #7 브랜치에 구현되고 푸시됨. `User.joined_at`은 `created_at`과 중복되어 제거했고 `accounts.0002_remove_user_joined_at` migration을 로컬 PostgreSQL에 적용함. Django admin 앱/URL/model admin 등록은 제거했고, `is_staff`는 향후 staff 화면/API 플래그로 남김. DRF staff API 기본 권한 후보는 `IsAdminUser`임. PR #7 Quality CI에서 서비스용 `.env`를 찾지 못한 문제는 `APP_ENV_FILE`로 Compose env 파일을 선택하도록 수정함. 고객 email verification/password reset API는 아직 구현하지 않음
 - 로컬 backend 실행 기준: host에서 `uv run manage.py runserver`를 사용하지 않고 Docker Compose로 실행한다. `.env`는 app 컨테이너에 `env_file`로 전달되며, `DJANGO_SETTINGS_MODULE=config.settings.local`과 Compose service name `db:5432`의 `TRACEBACK_DATABASE_URL`을 사용한다.
 - 프론트 상태: `../traceback-client`는 `phase-0c-client-auth` 브랜치에서 account auth 연동 작업을 시작함. client repo에는 `AGENTS.md`가 없어서 `README.md`, `docs/brand-concept.md`, `docs/wireframe.md` 기준으로 진행한다. 현재 로컬 변경은 커밋/푸시하지 않은 상태다.
 - 파일 예산: 한 슬라이스 최대 30개
@@ -24,11 +24,10 @@ Kakao/Naver이며, 이번 slice는 Kakao만 구현한다. Google은 현재 Phase
 
 다음 세션에서 바로 해야 할 일:
 
-1. 커밋되지 않은 account auth 단순화 변경을 리뷰한다.
-2. 필요하면 이 변경을 별도 커밋/푸시한다.
-3. `POST /api/accounts/social/kakao` 계약이 `api-spec.md`와 일치하는지 최종 확인한다.
-4. `../traceback-client`의 `phase-0c-client-auth` 브랜치에서 social/email account 연동 QA를 이어간다.
-5. 프론트 QA는 Design / UX / Function으로 나누어 사용자 확인을 받는다.
+1. Compose CI env 파일 선택 수정안이 반영된 PR #7 Quality 재실행 결과를 확인한다.
+2. `POST /api/accounts/social/kakao` 계약이 `api-spec.md`와 일치하는지 최종 확인한다.
+3. `../traceback-client`의 `phase-0c-client-auth` 브랜치에서 social/email account 연동 QA를 이어간다.
+4. 프론트 QA는 Design / UX / Function으로 나누어 사용자 확인을 받는다.
 
 Phase 0B에서 구현된 범위:
 
@@ -185,6 +184,10 @@ Phase 0 완료로 기록하기 전에는 `docs/phase-0-completion.md`의 command
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run mypy apps/accounts`
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache DJANGO_SETTINGS_MODULE=config.settings.test TRACEBACK_DATABASE_URL=sqlite:///:memory: uv run pytest apps/accounts/tests` 통과: 58 passed, coverage 97.92%, coverage gate 90%
   - `git diff --check`
+- 2026-08-28 PR #7 Compose CI env 파일 수정:
+  - `APP_ENV_FILE=.env.example docker compose --env-file .env.example config --quiet` 통과
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run yamllint docker-compose.yml .github/workflows/ci.yml` 통과
+  - production overlay config는 로컬 Docker Compose `v2.18.1`이 기존 `!reset` 구문을 지원하지 않아 미검증; GitHub Actions에서 재검증 필요
 - Phase 0B commit: `6a0b3d4`
 - Phase 0B merge: PR #5, merge commit `489ed3b`
 - Phase 0C DRF convention slice:
