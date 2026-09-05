@@ -3,11 +3,13 @@ from unittest import mock
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.utils import timezone
+from rest_framework import exceptions
 from rest_framework.test import APIClient
 
 from apps.accounts.enums import SocialProvider
 from apps.accounts.models import SocialAccount
-from apps.accounts.services.social_login import SocialProfile
+from apps.accounts.providers.kakao import KakaoUpstreamError
+from apps.accounts.services.social_login import SocialUserInfo
 
 
 class KakaoOAuthViewTests(TestCase):
@@ -25,14 +27,49 @@ class KakaoOAuthViewTests(TestCase):
         self.assertEqual(response.status_code, 503)
         self.assertEqual(response.json()["code"], "kakao_not_configured")
 
+    def test_returns_bad_request_for_invalid_authorization_code(self) -> None:
+        with mock.patch(
+            "apps.accounts.views.KakaoOAuthClient.fetch_user_info_by_authorization_code",
+            side_effect=exceptions.ValidationError(
+                "Kakao authorization code is invalid or expired.",
+                code="kakao_authorization_code_invalid",
+            ),
+        ):
+            response = self.api_client.post(
+                "/api/accounts/social/kakao",
+                {"code": "expired-code"},
+                format="json",
+            )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["code"], "invalid")
+        self.assertEqual(
+            response.json()["details"],
+            {"non_field_errors": ["Kakao authorization code is invalid or expired."]},
+        )
+
+    def test_returns_bad_gateway_for_kakao_upstream_failure(self) -> None:
+        with mock.patch(
+            "apps.accounts.views.KakaoOAuthClient.fetch_user_info_by_authorization_code",
+            side_effect=KakaoUpstreamError(),
+        ):
+            response = self.api_client.post(
+                "/api/accounts/social/kakao",
+                {"code": "auth-code"},
+                format="json",
+            )
+
+        self.assertEqual(response.status_code, 502)
+        self.assertEqual(response.json()["code"], "kakao_upstream_error")
+
     @override_settings(
         KAKAO_REST_API_KEY="test-rest-api-key",
         KAKAO_REDIRECT_URI="https://client.example.com/auth/kakao/callback",
     )
     def test_creates_social_user_and_returns_jwt_pair(self) -> None:
         with mock.patch(
-            "apps.accounts.views.KakaoOAuthClient.fetch_profile_for_code",
-            return_value=SocialProfile(
+            "apps.accounts.views.KakaoOAuthClient.fetch_user_info_by_authorization_code",
+            return_value=SocialUserInfo(
                 provider_user_id="12345",
                 email=" KAKAO@Example.COM ",
                 email_verified=True,
@@ -75,8 +112,8 @@ class KakaoOAuthViewTests(TestCase):
         )
 
         with mock.patch(
-            "apps.accounts.views.KakaoOAuthClient.fetch_profile_for_code",
-            return_value=SocialProfile(
+            "apps.accounts.views.KakaoOAuthClient.fetch_user_info_by_authorization_code",
+            return_value=SocialUserInfo(
                 provider_user_id="12345",
                 email="kakao@example.com",
                 email_verified=True,
@@ -107,8 +144,8 @@ class KakaoOAuthViewTests(TestCase):
         )
 
         with mock.patch(
-            "apps.accounts.views.KakaoOAuthClient.fetch_profile_for_code",
-            return_value=SocialProfile(
+            "apps.accounts.views.KakaoOAuthClient.fetch_user_info_by_authorization_code",
+            return_value=SocialUserInfo(
                 provider_user_id="12345",
                 email="kakao@example.com",
                 email_verified=True,
@@ -141,8 +178,8 @@ class KakaoOAuthViewTests(TestCase):
         )
 
         with mock.patch(
-            "apps.accounts.views.KakaoOAuthClient.fetch_profile_for_code",
-            return_value=SocialProfile(
+            "apps.accounts.views.KakaoOAuthClient.fetch_user_info_by_authorization_code",
+            return_value=SocialUserInfo(
                 provider_user_id="12345",
                 email="kakao@example.com",
                 email_verified=True,
@@ -158,7 +195,8 @@ class KakaoOAuthViewTests(TestCase):
         self.assertEqual(response.json()["code"], "social_account_linking_required")
         self.assertEqual(
             response.json()["message"],
-            "This email is already registered. Sign in with email to connect Kakao.",
+            "This email is already registered. "
+            "Sign in with email to link the social account.",
         )
         self.assertFalse(SocialAccount.objects.exists())
 
@@ -174,8 +212,8 @@ class KakaoOAuthViewTests(TestCase):
         self.api_client.force_authenticate(user=user)
 
         with mock.patch(
-            "apps.accounts.views.KakaoOAuthClient.fetch_profile_for_code",
-            return_value=SocialProfile(
+            "apps.accounts.views.KakaoOAuthClient.fetch_user_info_by_authorization_code",
+            return_value=SocialUserInfo(
                 provider_user_id="12345",
                 email="kakao@example.com",
                 email_verified=True,
@@ -220,8 +258,8 @@ class KakaoOAuthViewTests(TestCase):
         self.api_client.force_authenticate(user=connector)
 
         with mock.patch(
-            "apps.accounts.views.KakaoOAuthClient.fetch_profile_for_code",
-            return_value=SocialProfile(
+            "apps.accounts.views.KakaoOAuthClient.fetch_user_info_by_authorization_code",
+            return_value=SocialUserInfo(
                 provider_user_id="12345",
                 email="connector@example.com",
                 email_verified=True,
@@ -243,8 +281,8 @@ class KakaoOAuthViewTests(TestCase):
     )
     def test_requires_verified_provider_email(self) -> None:
         with mock.patch(
-            "apps.accounts.views.KakaoOAuthClient.fetch_profile_for_code",
-            return_value=SocialProfile(
+            "apps.accounts.views.KakaoOAuthClient.fetch_user_info_by_authorization_code",
+            return_value=SocialUserInfo(
                 provider_user_id="12345",
                 email=None,
                 email_verified=False,
@@ -264,8 +302,8 @@ class KakaoOAuthViewTests(TestCase):
         )
 
         with mock.patch(
-            "apps.accounts.views.KakaoOAuthClient.fetch_profile_for_code",
-            return_value=SocialProfile(
+            "apps.accounts.views.KakaoOAuthClient.fetch_user_info_by_authorization_code",
+            return_value=SocialUserInfo(
                 provider_user_id="12345",
                 email="kakao@example.com",
                 email_verified=False,

@@ -10,7 +10,7 @@ from apps.accounts.models import SocialAccount, User
 
 
 @dataclass(frozen=True)
-class SocialProfile:
+class SocialUserInfo:
     # Internal DTO normalized by provider clients before account-linking policy runs.
     # It is not a DRF serializer because it is not an HTTP request/response boundary.
     provider_user_id: str
@@ -23,7 +23,8 @@ class SocialProfile:
 class SocialAccountLinkingRequired(exceptions.APIException):
     status_code = status.HTTP_409_CONFLICT
     default_detail = (
-        "This email is already registered. Sign in with email to connect Kakao."
+        "This email is already registered. "
+        "Sign in with email to link the social account."
     )
     default_code = "social_account_linking_required"
 
@@ -34,12 +35,16 @@ class SocialAccountConflict(exceptions.APIException):
     default_code = "social_account_conflict"
 
 
-def complete_social_login(*, provider: str, profile: SocialProfile) -> User:
+def get_or_create_user_for_social_login(
+    *,
+    provider: str,
+    user_info: SocialUserInfo,
+) -> User:
     social_account = (
         SocialAccount.objects.select_related("user")
         .filter(
             provider=provider,
-            provider_user_id=profile.provider_user_id,
+            provider_user_id=user_info.provider_user_id,
             is_active=True,
             deleted_at__isnull=True,
         )
@@ -54,10 +59,10 @@ def complete_social_login(*, provider: str, profile: SocialProfile) -> User:
                 "No active account found with the given credentials.",
                 code="no_active_account",
             )
-        _sync_social_email_snapshot(social_account, profile)
+        _update_social_account_email_snapshot(social_account, user_info)
         return social_account.user
 
-    email = _require_verified_provider_email(profile)
+    email = _get_verified_email(user_info)
     existing_user = User.objects.filter(
         email=email,
         is_active=True,
@@ -83,14 +88,14 @@ def complete_social_login(*, provider: str, profile: SocialProfile) -> User:
             if user.email_verified_at is None:
                 raise SocialAccountLinkingRequired() from None
 
-    _create_social_account(provider=provider, user=user, profile=profile)
+    _create_social_account(provider=provider, user=user, user_info=user_info)
     return user
 
 
-def connect_social_account(
+def link_social_account(
     *,
     provider: str,
-    profile: SocialProfile,
+    user_info: SocialUserInfo,
     user: User,
 ) -> SocialAccount:
     if not user.is_active or user.deleted_at is not None:
@@ -99,11 +104,11 @@ def connect_social_account(
             code="no_active_account",
         )
 
-    _require_verified_provider_email(profile)
+    _get_verified_email(user_info)
 
     social_account = SocialAccount.objects.filter(
         provider=provider,
-        provider_user_id=profile.provider_user_id,
+        provider_user_id=user_info.provider_user_id,
         is_active=True,
         deleted_at__isnull=True,
     ).first()
@@ -112,7 +117,7 @@ def connect_social_account(
             raise SocialAccountConflict(
                 "This social account is already linked to another user.",
             )
-        _sync_social_email_snapshot(social_account, profile)
+        _update_social_account_email_snapshot(social_account, user_info)
         return social_account
 
     provider_account = SocialAccount.objects.filter(
@@ -129,53 +134,53 @@ def connect_social_account(
     return _create_social_account(
         provider=provider,
         user=user,
-        profile=profile,
+        user_info=user_info,
     )
 
 
-def _require_verified_provider_email(profile: SocialProfile) -> str:
-    if not profile.email:
+def _get_verified_email(user_info: SocialUserInfo) -> str:
+    if not user_info.email:
         raise exceptions.ValidationError(
             "Provider account email is required.",
             code="provider_email_required",
         )
-    if not profile.email_verified:
+    if not user_info.email_verified:
         raise exceptions.ValidationError(
             "Verified provider account email is required.",
             code="provider_email_unverified",
         )
-    return User.objects.normalize_email(profile.email)
+    return User.objects.normalize_email(user_info.email)
 
 
 def _create_social_account(
     *,
     provider: str,
     user: User,
-    profile: SocialProfile,
+    user_info: SocialUserInfo,
 ) -> SocialAccount:
     try:
         return SocialAccount.objects.create(
             user=user,
             provider=provider,
-            provider_user_id=profile.provider_user_id,
-            provider_email=User.objects.normalize_email(profile.email),
-            provider_email_verified=profile.email_verified,
+            provider_user_id=user_info.provider_user_id,
+            provider_email=User.objects.normalize_email(user_info.email),
+            provider_email_verified=user_info.email_verified,
         )
     except IntegrityError as exc:
         raise SocialAccountConflict() from exc
 
 
-def _sync_social_email_snapshot(
+def _update_social_account_email_snapshot(
     social_account: SocialAccount,
-    profile: SocialProfile,
+    user_info: SocialUserInfo,
 ) -> None:
-    provider_email = User.objects.normalize_email(profile.email)
+    provider_email = User.objects.normalize_email(user_info.email)
     fields_to_update: list[str] = []
     if social_account.provider_email != provider_email:
         social_account.provider_email = provider_email
         fields_to_update.append("provider_email")
-    if social_account.provider_email_verified != profile.email_verified:
-        social_account.provider_email_verified = profile.email_verified
+    if social_account.provider_email_verified != user_info.email_verified:
+        social_account.provider_email_verified = user_info.email_verified
         fields_to_update.append("provider_email_verified")
     if fields_to_update:
         fields_to_update.append("updated_at")

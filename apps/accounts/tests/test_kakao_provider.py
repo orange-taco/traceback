@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from email.message import Message
+from io import BytesIO
 from typing import Any
 from unittest import mock
 from urllib import error
@@ -9,12 +10,12 @@ from django.test import SimpleTestCase, override_settings
 from rest_framework import exceptions
 
 from apps.accounts.providers.kakao import (
-    KakaoConfigurationError,
+    KakaoLoginConfigurationError,
     KakaoOAuthClient,
-    KakaoProviderError,
-    _post_form,
+    KakaoUpstreamError,
+    _post_form_and_parse_json,
 )
-from apps.accounts.services.social_login import SocialProfile
+from apps.accounts.services.social_login import SocialUserInfo
 
 
 class UrlopenResponse:
@@ -31,16 +32,26 @@ class UrlopenResponse:
         return self.body
 
 
+def make_http_error(status_code: int, body: bytes) -> error.HTTPError:
+    return error.HTTPError(
+        "https://provider.example.com",
+        status_code,
+        "Provider request failed",
+        hdrs=Message(),
+        fp=BytesIO(body),
+    )
+
+
 class KakaoOAuthClientTests(SimpleTestCase):
     @override_settings(KAKAO_REST_API_KEY="", KAKAO_REDIRECT_URI="callback")
     def test_requires_rest_api_key(self) -> None:
-        with self.assertRaises(KakaoConfigurationError):
-            KakaoOAuthClient().fetch_profile_for_code(code="auth-code")
+        with self.assertRaises(KakaoLoginConfigurationError):
+            KakaoOAuthClient().fetch_user_info_by_authorization_code(code="auth-code")
 
     @override_settings(KAKAO_REST_API_KEY="rest-key", KAKAO_REDIRECT_URI="")
     def test_requires_redirect_uri(self) -> None:
-        with self.assertRaises(KakaoConfigurationError):
-            KakaoOAuthClient().fetch_profile_for_code(code="auth-code")
+        with self.assertRaises(KakaoLoginConfigurationError):
+            KakaoOAuthClient().fetch_user_info_by_authorization_code(code="auth-code")
 
     @override_settings(
         KAKAO_REST_API_KEY="rest-key",
@@ -49,7 +60,7 @@ class KakaoOAuthClientTests(SimpleTestCase):
     )
     def test_exchange_omits_client_secret_when_unset(self) -> None:
         with mock.patch(
-            "apps.accounts.providers.kakao._post_form",
+            "apps.accounts.providers.kakao._post_form_and_parse_json",
             side_effect=[
                 {"access_token": "provider-token"},
                 {
@@ -62,7 +73,7 @@ class KakaoOAuthClientTests(SimpleTestCase):
                 },
             ],
         ) as post_form:
-            KakaoOAuthClient().fetch_profile_for_code(code="auth-code")
+            KakaoOAuthClient().fetch_user_info_by_authorization_code(code="auth-code")
 
         token_payload = post_form.call_args_list[0].args[1]
         self.assertNotIn("client_secret", token_payload)
@@ -72,9 +83,9 @@ class KakaoOAuthClientTests(SimpleTestCase):
         KAKAO_CLIENT_SECRET="secret",
         KAKAO_REDIRECT_URI="https://client.example.com/auth/kakao/callback",
     )
-    def test_fetch_profile_exchanges_code_and_maps_profile(self) -> None:
+    def test_fetches_user_info_by_exchanging_authorization_code(self) -> None:
         with mock.patch(
-            "apps.accounts.providers.kakao._post_form",
+            "apps.accounts.providers.kakao._post_form_and_parse_json",
             side_effect=[
                 {"access_token": "provider-token"},
                 {
@@ -87,11 +98,13 @@ class KakaoOAuthClientTests(SimpleTestCase):
                 },
             ],
         ) as post_form:
-            profile = KakaoOAuthClient().fetch_profile_for_code(code="auth-code")
+            user_info = KakaoOAuthClient().fetch_user_info_by_authorization_code(
+                code="auth-code",
+            )
 
         self.assertEqual(
-            profile,
-            SocialProfile(
+            user_info,
+            SocialUserInfo(
                 provider_user_id="12345",
                 email="user@example.com",
                 email_verified=True,
@@ -129,24 +142,30 @@ class KakaoOAuthClientTests(SimpleTestCase):
         KAKAO_REDIRECT_URI="https://client.example.com/auth/kakao/callback",
     )
     def test_rejects_token_response_without_access_token(self) -> None:
-        with mock.patch("apps.accounts.providers.kakao._post_form", return_value={}):
-            with self.assertRaises(KakaoProviderError):
-                KakaoOAuthClient().fetch_profile_for_code(code="auth-code")
+        with mock.patch(
+            "apps.accounts.providers.kakao._post_form_and_parse_json", return_value={}
+        ):
+            with self.assertRaises(KakaoUpstreamError):
+                KakaoOAuthClient().fetch_user_info_by_authorization_code(
+                    code="auth-code"
+                )
 
     @override_settings(
         KAKAO_REST_API_KEY="rest-key",
         KAKAO_REDIRECT_URI="https://client.example.com/auth/kakao/callback",
     )
-    def test_rejects_profile_response_without_id(self) -> None:
+    def test_rejects_user_info_response_without_id(self) -> None:
         with mock.patch(
-            "apps.accounts.providers.kakao._post_form",
+            "apps.accounts.providers.kakao._post_form_and_parse_json",
             side_effect=[
                 {"access_token": "provider-token"},
                 {"kakao_account": {"email": "user@example.com"}},
             ],
         ):
-            with self.assertRaises(KakaoProviderError):
-                KakaoOAuthClient().fetch_profile_for_code(code="auth-code")
+            with self.assertRaises(KakaoUpstreamError):
+                KakaoOAuthClient().fetch_user_info_by_authorization_code(
+                    code="auth-code"
+                )
 
     @override_settings(
         KAKAO_REST_API_KEY="rest-key",
@@ -154,7 +173,7 @@ class KakaoOAuthClientTests(SimpleTestCase):
     )
     def test_marks_email_unverified_when_kakao_says_email_is_invalid(self) -> None:
         with mock.patch(
-            "apps.accounts.providers.kakao._post_form",
+            "apps.accounts.providers.kakao._post_form_and_parse_json",
             side_effect=[
                 {"access_token": "provider-token"},
                 {
@@ -167,10 +186,12 @@ class KakaoOAuthClientTests(SimpleTestCase):
                 },
             ],
         ):
-            profile = KakaoOAuthClient().fetch_profile_for_code(code="auth-code")
+            user_info = KakaoOAuthClient().fetch_user_info_by_authorization_code(
+                code="auth-code",
+            )
 
-        self.assertEqual(profile.email, "user@example.com")
-        self.assertFalse(profile.email_verified)
+        self.assertEqual(user_info.email, "user@example.com")
+        self.assertFalse(user_info.email_verified)
 
     @override_settings(
         KAKAO_REST_API_KEY="rest-key",
@@ -178,7 +199,7 @@ class KakaoOAuthClientTests(SimpleTestCase):
     )
     def test_marks_email_unverified_when_email_validity_is_missing(self) -> None:
         with mock.patch(
-            "apps.accounts.providers.kakao._post_form",
+            "apps.accounts.providers.kakao._post_form_and_parse_json",
             side_effect=[
                 {"access_token": "provider-token"},
                 {
@@ -190,9 +211,11 @@ class KakaoOAuthClientTests(SimpleTestCase):
                 },
             ],
         ):
-            profile = KakaoOAuthClient().fetch_profile_for_code(code="auth-code")
+            user_info = KakaoOAuthClient().fetch_user_info_by_authorization_code(
+                code="auth-code",
+            )
 
-        self.assertFalse(profile.email_verified)
+        self.assertFalse(user_info.email_verified)
 
     @override_settings(
         KAKAO_REST_API_KEY="rest-key",
@@ -200,22 +223,108 @@ class KakaoOAuthClientTests(SimpleTestCase):
     )
     def test_ignores_invalid_kakao_account_shape(self) -> None:
         with mock.patch(
-            "apps.accounts.providers.kakao._post_form",
+            "apps.accounts.providers.kakao._post_form_and_parse_json",
             side_effect=[
                 {"access_token": "provider-token"},
                 {"id": 12345, "kakao_account": "invalid"},
             ],
         ):
-            profile = KakaoOAuthClient().fetch_profile_for_code(code="auth-code")
+            user_info = KakaoOAuthClient().fetch_user_info_by_authorization_code(
+                code="auth-code",
+            )
 
         self.assertEqual(
-            profile,
-            SocialProfile(
+            user_info,
+            SocialUserInfo(
                 provider_user_id="12345",
                 email=None,
                 email_verified=False,
             ),
         )
+
+    @override_settings(
+        KAKAO_REST_API_KEY="rest-key",
+        KAKAO_REDIRECT_URI="https://client.example.com/auth/kakao/callback",
+    )
+    def test_maps_expired_authorization_code_to_bad_request(self) -> None:
+        with mock.patch(
+            "apps.accounts.providers.kakao._post_form_and_parse_json",
+            side_effect=make_http_error(400, b'{"error_code":"KOE320"}'),
+        ):
+            with self.assertRaises(exceptions.ValidationError) as exc:
+                KakaoOAuthClient().fetch_user_info_by_authorization_code(
+                    code="expired-code",
+                )
+
+        self.assertEqual(
+            exc.exception.get_codes(),
+            ["kakao_authorization_code_invalid"],
+        )
+
+    @override_settings(
+        KAKAO_REST_API_KEY="rest-key",
+        KAKAO_REDIRECT_URI="https://client.example.com/auth/kakao/callback",
+    )
+    def test_maps_invalid_client_secret_to_configuration_error(self) -> None:
+        with mock.patch(
+            "apps.accounts.providers.kakao._post_form_and_parse_json",
+            side_effect=make_http_error(400, b'{"error_code":"KOE010"}'),
+        ):
+            with self.assertRaises(KakaoLoginConfigurationError):
+                KakaoOAuthClient().fetch_user_info_by_authorization_code(
+                    code="auth-code",
+                )
+
+    @override_settings(
+        KAKAO_REST_API_KEY="rest-key",
+        KAKAO_REDIRECT_URI="https://client.example.com/auth/kakao/callback",
+    )
+    def test_maps_unknown_token_error_to_upstream_error(self) -> None:
+        with mock.patch(
+            "apps.accounts.providers.kakao._post_form_and_parse_json",
+            side_effect=make_http_error(500, b'{"error_code":"unknown"}'),
+        ):
+            with self.assertRaises(KakaoUpstreamError):
+                KakaoOAuthClient().fetch_user_info_by_authorization_code(
+                    code="auth-code",
+                )
+
+    @override_settings(
+        KAKAO_REST_API_KEY="rest-key",
+        KAKAO_REDIRECT_URI="https://client.example.com/auth/kakao/callback",
+    )
+    def test_maps_unreadable_token_error_to_upstream_error(self) -> None:
+        for response_body in (
+            b"not-json",
+            b'[{"error_code":"KOE320"}]',
+            b'{"error_code":320}',
+        ):
+            with self.subTest(response_body=response_body):
+                with mock.patch(
+                    "apps.accounts.providers.kakao._post_form_and_parse_json",
+                    side_effect=make_http_error(400, response_body),
+                ):
+                    with self.assertRaises(KakaoUpstreamError):
+                        KakaoOAuthClient().fetch_user_info_by_authorization_code(
+                            code="auth-code",
+                        )
+
+    @override_settings(
+        KAKAO_REST_API_KEY="rest-key",
+        KAKAO_REDIRECT_URI="https://client.example.com/auth/kakao/callback",
+    )
+    def test_maps_user_info_http_error_to_upstream_error(self) -> None:
+        with mock.patch(
+            "apps.accounts.providers.kakao._post_form_and_parse_json",
+            side_effect=[
+                {"access_token": "provider-token"},
+                make_http_error(400, b'{"code":-1}'),
+            ],
+        ):
+            with self.assertRaises(KakaoUpstreamError):
+                KakaoOAuthClient().fetch_user_info_by_authorization_code(
+                    code="auth-code",
+                )
 
 
 class PostFormTests(SimpleTestCase):
@@ -224,7 +333,7 @@ class PostFormTests(SimpleTestCase):
             "apps.accounts.providers.kakao.request.urlopen",
             return_value=UrlopenResponse(b'{"ok": true}'),
         ) as urlopen:
-            response_data = _post_form(
+            response_data = _post_form_and_parse_json(
                 "https://provider.example.com/token",
                 {"code": "auth code"},
                 headers={"Authorization": "Bearer provider-token"},
@@ -244,59 +353,42 @@ class PostFormTests(SimpleTestCase):
         )
         self.assertEqual(urlopen.call_args.kwargs["timeout"], 5)
 
-    def test_maps_url_errors_to_provider_error(self) -> None:
+    def test_maps_network_error_to_upstream_error(self) -> None:
         with mock.patch(
             "apps.accounts.providers.kakao.request.urlopen",
             side_effect=error.URLError("down"),
         ):
-            with self.assertRaises(KakaoProviderError):
-                _post_form("https://provider.example.com/token", {"code": "x"})
+            with self.assertRaises(KakaoUpstreamError):
+                _post_form_and_parse_json(
+                    "https://provider.example.com/token", {"code": "x"}
+                )
 
-    def test_maps_bad_request_to_validation_error(self) -> None:
+    def test_propagates_http_error_for_caller_specific_mapping(self) -> None:
         with mock.patch(
             "apps.accounts.providers.kakao.request.urlopen",
-            side_effect=error.HTTPError(
-                "https://provider.example.com/token",
-                400,
-                "Bad Request",
-                hdrs=Message(),
-                fp=None,
-            ),
+            side_effect=make_http_error(400, b'{"error_code":"KOE320"}'),
         ):
-            with self.assertRaises(exceptions.ValidationError) as context:
-                _post_form("https://provider.example.com/token", {"code": "x"})
+            with self.assertRaises(error.HTTPError):
+                _post_form_and_parse_json(
+                    "https://provider.example.com/token", {"code": "x"}
+                )
 
-        self.assertEqual(
-            context.exception.get_codes(),
-            ["kakao_request_rejected"],
-        )
-
-    def test_maps_server_error_to_provider_error(self) -> None:
-        with mock.patch(
-            "apps.accounts.providers.kakao.request.urlopen",
-            side_effect=error.HTTPError(
-                "https://provider.example.com/token",
-                500,
-                "Server Error",
-                hdrs=Message(),
-                fp=None,
-            ),
-        ):
-            with self.assertRaises(KakaoProviderError):
-                _post_form("https://provider.example.com/token", {"code": "x"})
-
-    def test_maps_invalid_json_to_provider_error(self) -> None:
+    def test_maps_invalid_json_to_upstream_error(self) -> None:
         with mock.patch(
             "apps.accounts.providers.kakao.request.urlopen",
             return_value=UrlopenResponse(b"not-json"),
         ):
-            with self.assertRaises(KakaoProviderError):
-                _post_form("https://provider.example.com/token", {"code": "x"})
+            with self.assertRaises(KakaoUpstreamError):
+                _post_form_and_parse_json(
+                    "https://provider.example.com/token", {"code": "x"}
+                )
 
-    def test_rejects_non_object_json_response(self) -> None:
+    def test_maps_non_object_json_to_upstream_error(self) -> None:
         with mock.patch(
             "apps.accounts.providers.kakao.request.urlopen",
             return_value=UrlopenResponse(b'["invalid"]'),
         ):
-            with self.assertRaises(KakaoProviderError):
-                _post_form("https://provider.example.com/token", {"code": "x"})
+            with self.assertRaises(KakaoUpstreamError):
+                _post_form_and_parse_json(
+                    "https://provider.example.com/token", {"code": "x"}
+                )

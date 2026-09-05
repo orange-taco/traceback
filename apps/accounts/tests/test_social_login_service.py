@@ -12,13 +12,13 @@ from apps.accounts.models import SocialAccount, User
 from apps.accounts.services.social_login import (
     SocialAccountConflict,
     SocialAccountLinkingRequired,
-    SocialProfile,
-    complete_social_login,
-    connect_social_account,
+    SocialUserInfo,
+    get_or_create_user_for_social_login,
+    link_social_account,
 )
 
 
-class CompleteSocialLoginTests(TestCase):
+class SocialLoginUserResolutionTests(TestCase):
     def test_existing_social_account_logs_in_and_syncs_email_snapshot(self) -> None:
         user = User.objects.create_user("user@example.com", "StrongPass!2026")
         social_account = SocialAccount.objects.create(
@@ -29,9 +29,9 @@ class CompleteSocialLoginTests(TestCase):
             provider_email_verified=False,
         )
 
-        returned_user = complete_social_login(
+        returned_user = get_or_create_user_for_social_login(
             provider=SocialProvider.KAKAO,
-            profile=SocialProfile(
+            user_info=SocialUserInfo(
                 provider_user_id="provider-1",
                 email=" NEW@Example.COM ",
                 email_verified=True,
@@ -71,9 +71,9 @@ class CompleteSocialLoginTests(TestCase):
         ):
             with self.subTest(provider=provider):
                 with self.assertRaises(exceptions.AuthenticationFailed) as exc:
-                    complete_social_login(
+                    get_or_create_user_for_social_login(
                         provider=provider,
-                        profile=SocialProfile(
+                        user_info=SocialUserInfo(
                             provider_user_id=provider_user_id,
                             email="user@example.com",
                             email_verified=True,
@@ -92,9 +92,9 @@ class CompleteSocialLoginTests(TestCase):
             provider_email_verified=True,
         )
 
-        returned_user = complete_social_login(
+        returned_user = get_or_create_user_for_social_login(
             provider=SocialProvider.KAKAO,
-            profile=SocialProfile(
+            user_info=SocialUserInfo(
                 provider_user_id="provider-1",
                 email=None,
                 email_verified=False,
@@ -104,9 +104,9 @@ class CompleteSocialLoginTests(TestCase):
         self.assertEqual(returned_user, user)
 
     def test_requires_verified_provider_email_when_linking_is_needed(self) -> None:
-        for profile, expected_code in (
+        for user_info, expected_code in (
             (
-                SocialProfile(
+                SocialUserInfo(
                     provider_user_id="missing-email",
                     email=None,
                     email_verified=False,
@@ -114,7 +114,7 @@ class CompleteSocialLoginTests(TestCase):
                 "provider_email_required",
             ),
             (
-                SocialProfile(
+                SocialUserInfo(
                     provider_user_id="unverified-email",
                     email="user@example.com",
                     email_verified=False,
@@ -124,9 +124,9 @@ class CompleteSocialLoginTests(TestCase):
         ):
             with self.subTest(expected_code=expected_code):
                 with self.assertRaises(exceptions.ValidationError) as exc:
-                    complete_social_login(
+                    get_or_create_user_for_social_login(
                         provider=SocialProvider.KAKAO,
-                        profile=profile,
+                        user_info=user_info,
                     )
 
                 self.assertEqual(exc.exception.get_codes(), [expected_code])
@@ -138,9 +138,9 @@ class CompleteSocialLoginTests(TestCase):
             email_verified_at=timezone.now(),
         )
 
-        returned_user = complete_social_login(
+        returned_user = get_or_create_user_for_social_login(
             provider=SocialProvider.KAKAO,
-            profile=SocialProfile(
+            user_info=SocialUserInfo(
                 provider_user_id="provider-1",
                 email=" USER@Example.COM ",
                 email_verified=True,
@@ -160,9 +160,9 @@ class CompleteSocialLoginTests(TestCase):
         User.objects.create_user("user@example.com", "StrongPass!2026")
 
         with self.assertRaises(SocialAccountLinkingRequired) as exc:
-            complete_social_login(
+            get_or_create_user_for_social_login(
                 provider=SocialProvider.KAKAO,
-                profile=SocialProfile(
+                user_info=SocialUserInfo(
                     provider_user_id="provider-1",
                     email="user@example.com",
                     email_verified=True,
@@ -173,9 +173,9 @@ class CompleteSocialLoginTests(TestCase):
         self.assertFalse(SocialAccount.objects.exists())
 
     def test_new_social_user_is_created_with_unusable_password(self) -> None:
-        user = complete_social_login(
+        user = get_or_create_user_for_social_login(
             provider=SocialProvider.KAKAO,
-            profile=SocialProfile(
+            user_info=SocialUserInfo(
                 provider_user_id="provider-1",
                 email=" USER@Example.COM ",
                 email_verified=True,
@@ -211,9 +211,9 @@ class CompleteSocialLoginTests(TestCase):
             "create_user",
             side_effect=raise_after_concurrent_create,
         ):
-            user = complete_social_login(
+            user = get_or_create_user_for_social_login(
                 provider=SocialProvider.KAKAO,
-                profile=SocialProfile(
+                user_info=SocialUserInfo(
                     provider_user_id="provider-1",
                     email="user@example.com",
                     email_verified=True,
@@ -241,9 +241,9 @@ class CompleteSocialLoginTests(TestCase):
             side_effect=raise_after_concurrent_create,
         ):
             with self.assertRaises(SocialAccountLinkingRequired) as exc:
-                complete_social_login(
+                get_or_create_user_for_social_login(
                     provider=SocialProvider.KAKAO,
-                    profile=SocialProfile(
+                    user_info=SocialUserInfo(
                         provider_user_id="provider-1",
                         email="user@example.com",
                         email_verified=True,
@@ -254,14 +254,14 @@ class CompleteSocialLoginTests(TestCase):
         self.assertFalse(SocialAccount.objects.exists())
 
 
-class ConnectSocialAccountTests(TestCase):
-    def test_connect_creates_social_account_for_active_user(self) -> None:
+class SocialAccountLinkingTests(TestCase):
+    def test_link_creates_social_account_for_active_user(self) -> None:
         user = User.objects.create_user("user@example.com", "StrongPass!2026")
 
-        social_account = connect_social_account(
+        social_account = link_social_account(
             provider=SocialProvider.KAKAO,
             user=user,
-            profile=SocialProfile(
+            user_info=SocialUserInfo(
                 provider_user_id="provider-1",
                 email=" USER@Example.COM ",
                 email_verified=True,
@@ -272,7 +272,7 @@ class ConnectSocialAccountTests(TestCase):
         self.assertEqual(social_account.provider_email, "user@example.com")
         self.assertTrue(social_account.provider_email_verified)
 
-    def test_connect_rejects_inactive_or_deleted_user(self) -> None:
+    def test_link_rejects_inactive_or_deleted_user(self) -> None:
         for user in (
             User.objects.create_user(
                 "inactive@example.com",
@@ -287,10 +287,10 @@ class ConnectSocialAccountTests(TestCase):
         ):
             with self.subTest(email=user.email):
                 with self.assertRaises(exceptions.AuthenticationFailed) as exc:
-                    connect_social_account(
+                    link_social_account(
                         provider=SocialProvider.KAKAO,
                         user=user,
-                        profile=SocialProfile(
+                        user_info=SocialUserInfo(
                             provider_user_id=f"provider-{user.id}",
                             email=user.email,
                             email_verified=True,
@@ -299,12 +299,12 @@ class ConnectSocialAccountTests(TestCase):
 
                 self.assertEqual(exc.exception.get_codes(), "no_active_account")
 
-    def test_connect_requires_verified_provider_email(self) -> None:
+    def test_link_requires_verified_provider_email(self) -> None:
         user = User.objects.create_user("user@example.com", "StrongPass!2026")
 
-        for profile, expected_code in (
+        for user_info, expected_code in (
             (
-                SocialProfile(
+                SocialUserInfo(
                     provider_user_id="missing-email",
                     email=None,
                     email_verified=False,
@@ -312,7 +312,7 @@ class ConnectSocialAccountTests(TestCase):
                 "provider_email_required",
             ),
             (
-                SocialProfile(
+                SocialUserInfo(
                     provider_user_id="unverified-email",
                     email="user@example.com",
                     email_verified=False,
@@ -322,15 +322,15 @@ class ConnectSocialAccountTests(TestCase):
         ):
             with self.subTest(expected_code=expected_code):
                 with self.assertRaises(exceptions.ValidationError) as exc:
-                    connect_social_account(
+                    link_social_account(
                         provider=SocialProvider.KAKAO,
                         user=user,
-                        profile=profile,
+                        user_info=user_info,
                     )
 
                 self.assertEqual(exc.exception.get_codes(), [expected_code])
 
-    def test_connect_reuses_same_social_account_and_syncs_snapshot(self) -> None:
+    def test_link_reuses_same_social_account_and_syncs_snapshot(self) -> None:
         user = User.objects.create_user("user@example.com", "StrongPass!2026")
         social_account = SocialAccount.objects.create(
             user=user,
@@ -340,10 +340,10 @@ class ConnectSocialAccountTests(TestCase):
             provider_email_verified=False,
         )
 
-        returned = connect_social_account(
+        returned = link_social_account(
             provider=SocialProvider.KAKAO,
             user=user,
-            profile=SocialProfile(
+            user_info=SocialUserInfo(
                 provider_user_id="provider-1",
                 email="new@example.com",
                 email_verified=True,
@@ -355,7 +355,7 @@ class ConnectSocialAccountTests(TestCase):
         self.assertEqual(social_account.provider_email, "new@example.com")
         self.assertTrue(social_account.provider_email_verified)
 
-    def test_connect_rejects_social_account_linked_to_another_user(self) -> None:
+    def test_link_rejects_social_account_linked_to_another_user(self) -> None:
         owner = User.objects.create_user("owner@example.com", "StrongPass!2026")
         connector = User.objects.create_user("connector@example.com", "StrongPass!2026")
         SocialAccount.objects.create(
@@ -365,10 +365,10 @@ class ConnectSocialAccountTests(TestCase):
         )
 
         with self.assertRaises(SocialAccountConflict) as exc:
-            connect_social_account(
+            link_social_account(
                 provider=SocialProvider.KAKAO,
                 user=connector,
-                profile=SocialProfile(
+                user_info=SocialUserInfo(
                     provider_user_id="provider-1",
                     email="connector@example.com",
                     email_verified=True,
@@ -377,7 +377,7 @@ class ConnectSocialAccountTests(TestCase):
 
         self.assertEqual(exc.exception.get_codes(), "social_account_conflict")
 
-    def test_connect_rejects_second_account_for_same_provider(self) -> None:
+    def test_link_rejects_second_account_for_same_provider(self) -> None:
         user = User.objects.create_user("user@example.com", "StrongPass!2026")
         SocialAccount.objects.create(
             user=user,
@@ -386,10 +386,10 @@ class ConnectSocialAccountTests(TestCase):
         )
 
         with self.assertRaises(SocialAccountConflict) as exc:
-            connect_social_account(
+            link_social_account(
                 provider=SocialProvider.KAKAO,
                 user=user,
-                profile=SocialProfile(
+                user_info=SocialUserInfo(
                     provider_user_id="provider-2",
                     email="user@example.com",
                     email_verified=True,
@@ -398,7 +398,7 @@ class ConnectSocialAccountTests(TestCase):
 
         self.assertEqual(exc.exception.get_codes(), "social_account_conflict")
 
-    def test_connect_maps_database_identity_race_to_conflict(self) -> None:
+    def test_link_maps_social_account_race_to_conflict(self) -> None:
         owner = User.objects.create_user("owner@example.com", "StrongPass!2026")
         connector = User.objects.create_user("connector@example.com", "StrongPass!2026")
         SocialAccount.objects.create(
@@ -409,10 +409,10 @@ class ConnectSocialAccountTests(TestCase):
         )
 
         with self.assertRaises(SocialAccountConflict) as exc:
-            connect_social_account(
+            link_social_account(
                 provider=SocialProvider.KAKAO,
                 user=connector,
-                profile=SocialProfile(
+                user_info=SocialUserInfo(
                     provider_user_id="provider-1",
                     email="connector@example.com",
                     email_verified=True,

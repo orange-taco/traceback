@@ -9,7 +9,7 @@
 - 진행 단계: Phase 0 - Foundation
 - 현재 브랜치: `phase-0c-account-auth-contract`
 - 현재 슬라이스: Phase 0C - account API surface
-- 현재 코드 상태: Phase 0B account/auth foundation은 `development`에 merge됨. PR #6도 `development`에 merge되어 DRF view convention과 account auth 결정 지점 문서화가 반영됨. 0C-1 email/password JWT account API와 Kakao social login backend는 PR #7 브랜치에 구현되고 푸시됨. `User.joined_at`은 `created_at`과 중복되어 제거했고 `accounts.0002_remove_user_joined_at` migration을 로컬 PostgreSQL에 적용함. Django admin 앱/URL/model admin 등록은 제거했고, `is_staff`는 향후 staff 화면/API 플래그로 남김. DRF staff API 기본 권한 후보는 `IsAdminUser`임. PR #7 Quality CI에서 서비스용 `.env`를 찾지 못한 문제는 `APP_ENV_FILE`로 Compose env 파일을 선택하도록 수정함. 고객 email verification/password reset API는 아직 구현하지 않음
+- 현재 코드 상태: Phase 0B account/auth foundation은 `development`에 merge됨. PR #6도 `development`에 merge되어 DRF view convention과 account auth 결정 지점 문서화가 반영됨. 0C-1 email/password JWT account API와 Kakao social login backend는 PR #7 브랜치에 구현됨. `User.joined_at`은 `created_at`과 중복되어 제거했고 `accounts.0002_remove_user_joined_at` migration을 로컬 PostgreSQL에 적용함. Django admin 앱/URL/model admin 등록은 제거했고, `is_staff`는 향후 staff 화면/API 플래그로 남김. DRF staff API 기본 권한 후보는 `IsAdminUser`임. PR #7 Quality CI에서 서비스용 `.env`를 찾지 못한 문제는 `APP_ENV_FILE`로 Compose env 파일을 선택하도록 수정함. Kakao/social login 이름과 오류 경계를 명확히 정리했고 provider 공통 사용자 정보 DTO는 `SocialUserInfo`로 명명함. 고객 email verification/password reset API는 아직 구현하지 않음
 - 로컬 backend 실행 기준: host에서 `uv run manage.py runserver`를 사용하지 않고 Docker Compose로 실행한다. `.env`는 app 컨테이너에 `env_file`로 전달되며, `DJANGO_SETTINGS_MODULE=config.settings.local`과 Compose service name `db:5432`의 `TRACEBACK_DATABASE_URL`을 사용한다.
 - 프론트 상태: `../traceback-client`는 `phase-0c-client-auth` 브랜치에서 account auth 연동 작업을 시작함. client repo에는 `AGENTS.md`가 없어서 `README.md`, `docs/brand-concept.md`, `docs/wireframe.md` 기준으로 진행한다. 현재 로컬 변경은 커밋/푸시하지 않은 상태다.
 - 파일 예산: 한 슬라이스 최대 30개
@@ -106,6 +106,7 @@ Phase 0B에서 구현된 범위:
   - `GenericAPIView`는 class attribute(`permission_classes`, `authentication_classes`, `serializer_class`)를 먼저 두고, `serializer_class` 대상은 `self.get_serializer(...)`로 생성한다.
   - Serializer는 `ModelSerializer`를 우선 사용한다. plain `Serializer`는 모델과 직접 매핑되지 않는 입력에만 사용한다. `Meta.fields`는 한 줄에 하나씩 명시한다.
   - 응답 body가 있으면 serializer를 통과한다. DRF 제공 view는 제공 serializer와 응답 구조를 그대로 우선 사용한다.
+  - DRF 기본 exception을 우선 사용하고, 필요한 HTTP 상태와 의미에 맞는 exception을 DRF가 제공하지 않을 때만 `APIException` subclass를 추가한다.
 - 앱의 상위 `urls.py`는 실제 하위 URL이 필요한 앱에만 둔다.
 - `SiteSetting`은 Phase 0B에서 만들지 않는다. Phase 1 Catalog 또는 Phase 3 Order에서 재검토한다.
 - `IdempotencyRecord`는 Phase 0B에서 만들지 않는다. Phase 3 Order 전에 재결정한다.
@@ -190,8 +191,16 @@ Phase 0 완료로 기록하기 전에는 `docs/phase-0-completion.md`의 command
 - 2026-08-28 Kakao provider 코드 리뷰:
   - package marker `__init__.py` 9개를 내용 없는 0-byte 파일로 통일
   - provider endpoint 전역 상수와 단일 사용 JWT helper를 제거하고 호출 위치에 인라인
-  - Kakao HTTP 400은 validation error, HTTP 5xx/network 오류는 502로 분리
+  - Kakao HTTP 오류는 authorization code, 서버 설정, upstream 실패 원인으로 분류
   - `is_email_verified`와 `is_email_valid`가 모두 명시적 `True`일 때만 verified email로 판정
+- 2026-08-30 Kakao/social login 이름과 오류 경계 정리:
+  - authorization code 오류 400, account 인증 실패 401, account 상태 충돌 409, Kakao upstream 실패 502, 서버 설정 오류 503 기준으로 정리
+  - authorization code 오류는 DRF `ValidationError`를 사용하고, DRF에 해당 상태가 없는 409/502/503만 service/provider-local exception으로 유지
+  - provider 결과 DTO는 `SocialUserInfo`, 사용자 결정은 `get_or_create_user_for_social_login`, 명시적 계정 연결은 `link_social_account`로 역할을 드러냄
+  - Kakao provider 메서드는 authorization code 교환과 user info 조회가 이름에 드러나도록 정리
+  - Kakao provider의 단순 설정 helper는 호출 위치에 인라인하고, 공개 orchestration·OAuth 단계·공통 HTTP 처리·Kakao error code 파싱은 역할별 함수로 유지
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check .`, `ruff format --check .`, `mypy .` 통과
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache DJANGO_SETTINGS_MODULE=config.settings.test TRACEBACK_DATABASE_URL=sqlite:///:memory: uv run pytest` 통과: 75 passed, coverage 98.30%
 - Phase 0B commit: `6a0b3d4`
 - Phase 0B merge: PR #5, merge commit `489ed3b`
 - Phase 0C DRF convention slice:

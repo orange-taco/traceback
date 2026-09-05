@@ -13,7 +13,10 @@ from .serializers import (
     KakaoOAuthSerializer,
     SignupSerializer,
 )
-from .services.social_login import complete_social_login, connect_social_account
+from .services.social_login import (
+    get_or_create_user_for_social_login,
+    link_social_account,
+)
 
 
 class EmailSignupView(GenericAPIView[Any]):
@@ -35,18 +38,21 @@ class KakaoOAuthView(GenericAPIView[Any]):
     def post(self, request: Request) -> Response:
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        profile = KakaoOAuthClient().fetch_profile_for_code(
+        user_info = KakaoOAuthClient().fetch_user_info_by_authorization_code(
             code=serializer.validated_data["code"],
         )
         if request.user.is_authenticated:
-            connect_social_account(
+            link_social_account(
                 provider=SocialProvider.KAKAO,
-                profile=profile,
+                user_info=user_info,
                 user=request.user,
             )
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-        user = complete_social_login(provider=SocialProvider.KAKAO, profile=profile)
+        user = get_or_create_user_for_social_login(
+            provider=SocialProvider.KAKAO,
+            user_info=user_info,
+        )
         refresh = RefreshToken.for_user(user)
         return Response(
             {

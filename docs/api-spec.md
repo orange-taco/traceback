@@ -105,9 +105,10 @@ DRF view convention:
   - `provider + provider_user_id`에 해당하는 active `SocialAccount`가 있으면 provider ID 기준으로 해당 User를 로그인한다.
   - 기존 `SocialAccount` 재로그인 경로에서는 Kakao email이 없어도 차단하지 않는다. Kakao email이 있으면 email snapshot을 갱신한다.
   - 새 User 생성 또는 기존 User 자동 연결이 필요한 경로에서는 verified Kakao email이 필요하다.
-  - 연결이 필요한 경로에서 Kakao email이 없으면 `400 provider_email_required`.
-  - 연결이 필요한 경로에서 Kakao email이 verified가 아니면 `400 provider_email_unverified`.
-  - Kakao가 authorization code 교환 요청을 거부하면 `400` validation error를 반환한다.
+  - 연결이 필요한 경로에서 Kakao email이 없거나 verified가 아니면 `400 invalid`를 반환하고 원인은 `details`에 둔다.
+  - 만료되었거나 재사용된 authorization code(`KOE320`)는 `400 invalid`를 반환하고 원인은 `details`에 둔다.
+  - REST API key, client secret, redirect URI 등 서버 설정 오류는 `503 kakao_not_configured`.
+  - Kakao 장애, network 오류, 잘못된 provider 응답은 `502 kakao_upstream_error`.
   - 기존 email/password User가 있고 `User.email_verified_at`이 있으면 Kakao `SocialAccount`를 자동 연결하고 로그인한다.
   - 기존 email/password User가 있지만 `User.email_verified_at`이 없으면 자동 연결하지 않고 `409 social_account_linking_required`.
   - 기존 User가 없으면 unusable password를 가진 User를 만들고 Kakao email을 verified로 저장한다.

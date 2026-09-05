@@ -218,6 +218,9 @@ API 문서는 모든 endpoint를 미리 확정하지 않는다.
 
 미래 Phase의 API는 후보로만 둔다.
 
+DRF 오류는 제공되는 기본 exception을 우선 사용한다. 필요한 HTTP 상태와 의미에 맞는
+exception을 DRF가 제공하지 않을 때만 `APIException` subclass를 추가한다.
+
 ### 5. 상태값은 최소로 시작한다
 
 상태값은 UI와 운영에 실제로 필요한 만큼만 만든다.
