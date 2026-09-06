@@ -100,6 +100,8 @@ DRF view convention:
   - `KAKAO_REDIRECT_URI` 필수
   - `KAKAO_CLIENT_SECRET`은 Kakao Developers에서 client secret을 켠 경우 필수
 - 규칙:
+  - frontend가 authorization 요청 전에 임의의 `state`를 생성해 browser session에 저장하고, 10분 만료와 일회성 사용 기준으로 callback의 `state`를 검증한다.
+  - frontend는 `state` 검증에 성공한 경우에만 authorization code를 backend에 전달한다. Backend는 browser session을 소유하지 않으므로 이 endpoint에서는 code 교환만 담당한다.
   - backend가 Kakao token endpoint에 authorization code를 교환한다.
   - backend가 Kakao user info endpoint에서 provider user ID를 조회한다.
   - `provider + provider_user_id`에 해당하는 active `SocialAccount`가 있으면 provider ID 기준으로 해당 User를 로그인한다.

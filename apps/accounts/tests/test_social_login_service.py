@@ -13,6 +13,7 @@ from apps.accounts.services.social_login import (
     SocialAccountConflict,
     SocialAccountLinkingRequired,
     SocialUserInfo,
+    _create_social_account,
     get_or_create_user_for_social_login,
     link_social_account,
 )
@@ -84,7 +85,7 @@ class SocialLoginUserResolutionTests(TestCase):
 
     def test_existing_social_account_does_not_require_email_on_relogin(self) -> None:
         user = User.objects.create_user("user@example.com", "StrongPass!2026")
-        SocialAccount.objects.create(
+        social_account = SocialAccount.objects.create(
             user=user,
             provider=SocialProvider.KAKAO,
             provider_user_id="provider-1",
@@ -102,6 +103,9 @@ class SocialLoginUserResolutionTests(TestCase):
         )
 
         self.assertEqual(returned_user, user)
+        social_account.refresh_from_db()
+        self.assertEqual(social_account.provider_email, "user@example.com")
+        self.assertTrue(social_account.provider_email_verified)
 
     def test_requires_verified_provider_email_when_linking_is_needed(self) -> None:
         for user_info, expected_code in (
@@ -252,6 +256,37 @@ class SocialLoginUserResolutionTests(TestCase):
 
         self.assertEqual(exc.exception.get_codes(), "social_account_linking_required")
         self.assertFalse(SocialAccount.objects.exists())
+
+    def test_social_account_race_reuses_same_user_link(self) -> None:
+        user = User.objects.create_user(
+            "user@example.com",
+            password=None,
+            email_verified_at=timezone.now(),
+        )
+        existing_social_account = SocialAccount.objects.create(
+            user=user,
+            provider=SocialProvider.KAKAO,
+            provider_user_id="provider-1",
+            provider_email="user@example.com",
+            provider_email_verified=True,
+        )
+
+        with mock.patch.object(
+            SocialAccount.objects,
+            "create",
+            side_effect=IntegrityError,
+        ):
+            social_account = _create_social_account(
+                provider=SocialProvider.KAKAO,
+                user=user,
+                user_info=SocialUserInfo(
+                    provider_user_id="provider-1",
+                    email="user@example.com",
+                    email_verified=True,
+                ),
+            )
+
+        self.assertEqual(social_account, existing_social_account)
 
 
 class SocialAccountLinkingTests(TestCase):

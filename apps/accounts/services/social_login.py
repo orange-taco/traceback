@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 from rest_framework import exceptions, status
 
@@ -159,14 +159,24 @@ def _create_social_account(
     user_info: SocialUserInfo,
 ) -> SocialAccount:
     try:
-        return SocialAccount.objects.create(
-            user=user,
+        with transaction.atomic():
+            return SocialAccount.objects.create(
+                user=user,
+                provider=provider,
+                provider_user_id=user_info.provider_user_id,
+                provider_email=User.objects.normalize_email(user_info.email),
+                provider_email_verified=user_info.email_verified,
+            )
+    except IntegrityError as exc:
+        social_account = SocialAccount.objects.filter(
             provider=provider,
             provider_user_id=user_info.provider_user_id,
-            provider_email=User.objects.normalize_email(user_info.email),
-            provider_email_verified=user_info.email_verified,
-        )
-    except IntegrityError as exc:
+            is_active=True,
+            deleted_at__isnull=True,
+        ).first()
+        if social_account is not None and social_account.user_id == user.id:
+            _update_social_account_email_snapshot(social_account, user_info)
+            return social_account
         raise SocialAccountConflict() from exc
 
 
@@ -174,6 +184,8 @@ def _update_social_account_email_snapshot(
     social_account: SocialAccount,
     user_info: SocialUserInfo,
 ) -> None:
+    if not user_info.email:
+        return
     provider_email = User.objects.normalize_email(user_info.email)
     fields_to_update: list[str] = []
     if social_account.provider_email != provider_email:

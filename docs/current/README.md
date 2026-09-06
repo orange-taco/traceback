@@ -199,8 +199,16 @@ Phase 0 완료로 기록하기 전에는 `docs/phase-0-completion.md`의 command
   - provider 결과 DTO는 `SocialUserInfo`, 사용자 결정은 `get_or_create_user_for_social_login`, 명시적 계정 연결은 `link_social_account`로 역할을 드러냄
   - Kakao provider 메서드는 authorization code 교환과 user info 조회가 이름에 드러나도록 정리
   - Kakao provider의 단순 설정 helper는 호출 위치에 인라인하고, 공개 orchestration·OAuth 단계·공통 HTTP 처리·Kakao error code 파싱은 역할별 함수로 유지
+  - 기존 social 재로그인에서 provider email이 누락되면 저장된 email snapshot을 유지하고, 동일 social 연결 생성 경합은 같은 User의 기존 연결을 재사용
+  - OAuth `state`는 frontend browser session에서 10분 만료·일회성으로 검증한 뒤 backend code 교환을 호출하는 책임 경계로 확정
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check .`, `ruff format --check .`, `mypy .` 통과
   - `UV_CACHE_DIR=/tmp/traceback-uv-cache DJANGO_SETTINGS_MODULE=config.settings.test TRACEBACK_DATABASE_URL=sqlite:///:memory: uv run pytest` 통과: 75 passed, coverage 98.30%
+- 2026-09-06 PR #7 CodeRabbit review 처리:
+  - 기존 social 재로그인은 provider ID를 신뢰해 email 없이 허용하되, 누락된 email로 저장된 snapshot을 지우지 않도록 수정
+  - 동일 SocialAccount 생성 경합은 내부 savepoint rollback 후 같은 User의 기존 연결을 재사용하고, 다른 User 또는 비활성 연결이면 409 유지
+  - Kakao user info `property_keys` 테스트는 기존 반영을 확인했고, OAuth `state`는 frontend browser session에서 검증하는 현재 책임 경계를 API 명세에 기록
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check .`, `ruff format --check .`, `mypy .`, `git diff --check` 통과
+  - `UV_CACHE_DIR=/tmp/traceback-uv-cache DJANGO_SETTINGS_MODULE=config.settings.test TRACEBACK_DATABASE_URL=sqlite:///:memory: uv run pytest` 통과: 76 passed, coverage 98.23%
 - Phase 0B commit: `6a0b3d4`
 - Phase 0B merge: PR #5, merge commit `489ed3b`
 - Phase 0C DRF convention slice:
