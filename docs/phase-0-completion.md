@@ -6,14 +6,16 @@ Phase 1 Catalog는 이 문서의 필수 항목이 통과하고
 
 ## Current Verdict
 
-2026-07-11 기준 Phase 0은 **완료 아님**.
+2026-08-16 기준 Phase 0은 **완료 아님**.
 
 완료된 부분은 Django/DRF scaffold, ASGI entrypoint, 기본 CI/품질 도구,
-Docker/Compose 기반이다.
+Docker/Compose 기반, custom User/Auth foundation, 공통 API 인프라,
+관리자 REST 인증 baseline, email/password JWT account API다.
 
-Phase 0 완료를 막는 항목은 custom User/Auth 구현, 공통 API 인프라,
-관리자 REST 인증이다. User/Auth 정책 결정은
-`docs/phaseB.md`에 확정되어 있으며, 남은 작업은 구현과 검증이다.
+Phase 0 완료 전에는 PR #7의 email/password JWT API와 Kakao social login backend,
+필요한 frontend account 연동, PostgreSQL 실환경 migrate/test,
+production image build 검증을 마무리해야 한다. Phase 1 Catalog는 이 문서의
+필수 항목이 통과하고 `docs/build-plan.md` 완료 이력에 기록된 뒤 시작한다.
 
 ## Version Baseline
 
@@ -34,29 +36,31 @@ ASGI 운영을 전제로 하므로 Django는 반드시 `5.1` 이상이어야 한
 | --- | --- | --- |
 | Project scaffold | Django settings split, ASGI entrypoint, DRF installed, accounts URL mounted | Done |
 | PostgreSQL | CI migration/test verification uses PostgreSQL; local development documents PostgreSQL migrate path | Done: CI uses PostgreSQL service; local development defaults to Docker Compose PostgreSQL |
-| CI | CI runs install, lint, format check, mypy, Django check, migration drift check, migrate, migration check, tests, Compose config, production image build | Workflow includes explicit `migrate --noinput` and `migrate --check`; pending CI run evidence |
+| CI | CI runs install, lint, format check, mypy, Django check, migration drift check, migrate, migration check, tests, Compose config, production image build | Workflow exists; PR #7 Quality/Test/CodeRabbit passed; final Phase 0 CI evidence still pending |
 | Django version | Dependency range keeps Django `>=5.1,<5.3` for ASGI runtime | Done |
-| User | Implement decided custom User before commerce migrations | Decided in `phaseB.md`, missing implementation |
-| SocialAccount | Support initial Kakao/Naver social account linking model and constraints | Decided in `phaseB.md`, missing implementation |
-| Email/token flows | Email change request and user token baseline for verification/password flows | Decided in `phaseB.md`: email verify 24h, password set/reset 1h, email change 24h with 10m per-user request limit; missing implementation |
-| BenefitClaim | Record welcome benefit claims by HMAC phone hash to prevent duplicate issuance | Decided in `phaseB.md`: long-lived HMAC hash ledger without raw personal data; missing implementation |
+| User | Implement decided custom User before commerce migrations | Done in Phase 0B |
+| SocialAccount | Support initial Kakao/Naver social account linking model and constraints | Model foundation done; Kakao OAuth endpoint flow in PR #7; Naver pending |
+| Email/token flows | Email change request and user token baseline for verification/password flows | Model foundation done; email delivery and endpoint flows pending |
+| BenefitClaim | Record welcome benefit claims by HMAC phone hash to prevent duplicate issuance | Model foundation done; actual claim issuance flow pending |
 | SiteSetting | Explicitly defer until Catalog/Order needs concrete public settings or shipping policy | Deferred |
-| IdempotencyRecord | Explicitly defer until Order/Payment/admin command APIs introduce idempotent writes | Deferred |
-| Error response | DRF exception handler returns stable `code`, `message`, `details`, `request_id` contract | Missing |
-| Pagination | Shared DRF pagination class and response contract for list APIs | Missing |
-| Request ID | Middleware accepts/generates request ID and exposes it on responses/errors/log context | Missing |
-| Admin REST auth | Session authentication + `IsAdminUser` baseline and tests for anonymous/non-staff/staff access | Missing |
-| API namespace | Account endpoints live under `/api/accounts/`; admin REST endpoints use `/api/accounts/admin/` | Partial |
-| Secrets/settings | Required secrets fail fast outside test; example env documents local values | Partial |
-| Tests | Focused tests cover request ID, errors, pagination, admin auth, account models, migration health | Partial |
-| Docs checkpoint | `docs/build-plan.md` checkpoint and completion history match code and validation evidence | Partial |
+| IdempotencyRecord | Explicitly defer until Order/Payment/staff command APIs introduce idempotent writes | Deferred |
+| Error response | DRF exception handler returns stable `code`, `message`, `details`, `request_id` contract | Done in Phase 0B |
+| Pagination | Shared DRF pagination class and response contract for list APIs | Done in Phase 0B |
+| Request ID | Middleware accepts/generates request ID and exposes it on responses/errors/log context | Done in Phase 0B |
+| Staff API auth | JWT authentication + `IsAdminUser` baseline and tests for anonymous/non-staff/staff access | Implemented as staff permission baseline; Django admin removed |
+| API namespace | Account endpoints live under `/api/accounts/`; staff backend namespace is decided by the owning Phase | Current account/auth endpoints done; future staff resources added by owning Phase |
+| Secrets/settings | Required secrets fail fast outside test; example env documents local values | Mostly done; final production image/env validation pending |
+| Tests | Focused tests cover request ID, errors, pagination, staff auth, account models, serializers, social login service, Kakao provider, migration health | Current local/PR tests passed; PostgreSQL real migrate/test still pending |
+| Docs checkpoint | `docs/build-plan.md` checkpoint and completion history match code and validation evidence | Current checkpoint updated; completion history waits for merge/final validation |
 
 ## Required Decisions Before Phase 1
 
-1. User/Auth model:
-   Implement the custom User/Auth decisions recorded in `docs/phaseB.md`.
-2. Admin REST namespace:
-   Use `/api/accounts/admin/` for the Phase 0B admin REST authentication baseline.
+1. Kakao social login:
+   Implement Kakao first under the existing Kakao/Naver provider decision. Google is
+   outside the current Phase 0 provider scope unless separately approved.
+2. Client account integration:
+   After Kakao backend validation, connect frontend account/social auth flows in
+   `../traceback-client`.
 3. SiteSetting:
    Deferred from Phase 0B. Revisit before Phase 1 Catalog if public settings are
    needed for home/PDP, and before Phase 3 Order if shipping fee policy is needed.
@@ -71,19 +75,17 @@ Phase 0 must not implement commerce domain behavior beyond common foundation:
 - Catalog product models or APIs
 - Cart/order/payment/inventory business flows
 - Seller or marketplace support
-- Future admin API endpoints without a current Phase owner
+- Future staff operation API endpoints without a current Phase owner
 
 ## Missed Items To Resolve Before Phase 1
 
-1. Implement custom User/Auth foundation from `docs/phaseB.md`.
-2. Add request/response infrastructure:
-   request ID middleware, DRF exception handler, and shared pagination.
-3. Add admin REST authentication baseline:
-   session authentication with `IsAdminUser` and tests proving anonymous/non-staff
-   users are rejected while staff users are accepted.
-4. Add tests for the missing common behavior.
-5. Update `docs/build-plan.md` checkpoint and completion history only after the
-   above is implemented and verified.
+1. Complete and merge PR #7 after Kakao backend validation checks.
+2. Create or restore `../traceback-client/AGENTS.md` before frontend work, then
+   implement client account/social auth integration.
+3. Run PostgreSQL real migrate/test and production image build before marking
+   Phase 0 complete.
+4. Update `docs/build-plan.md` completion history only after the above is
+   implemented and verified.
 
 ## Phase 0 Completion Command Set
 

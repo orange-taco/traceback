@@ -4,6 +4,7 @@ services:
     image: ${APP_IMAGE:?APP_IMAGE is required}
     command: !reset []
     depends_on: !reset []
+    env_file: !reset []
     environment:
       TRACEBACK_DATABASE_URL: ${TRACEBACK_DATABASE_URL:?TRACEBACK_DATABASE_URL is required}
       DJANGO_SETTINGS_MODULE: config.settings.production

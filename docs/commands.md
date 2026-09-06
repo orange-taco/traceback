@@ -4,75 +4,74 @@
 
 Local development uses:
 
-- `uv` for Python dependencies and Django commands
-- Docker Compose PostgreSQL
+- Docker Compose for Django and PostgreSQL
+- `uv` inside the Docker image to build the Python environment
 - `.env` for local application settings
 
 ### Initial setup
 
-Create the environment and install dependencies:
+Create the local environment file:
 
 ```sh
 cp .env.example .env
-uv sync --all-groups
-uv run pre-commit install
 ```
 
-Start the local PostgreSQL service:
-
-```sh
-docker compose --env-file .env up -d db
-```
-
-The local database is published on host port `15432` to avoid conflicts with
-locally installed PostgreSQL. Django requires `TRACEBACK_DATABASE_URL` and does
-not fall back to `DATABASE_URL`. Compose uses `TRACEBACK_POSTGRES_*` variables
-for the local database service to avoid collisions with shell-level
-`POSTGRES_*` values.
-
-### Run the application
-
-Run Django on the host against the Docker Compose database:
-
-```sh
-uv run --env-file .env python manage.py migrate
-uv run --env-file .env python manage.py runserver
-```
-
-Or run the application container against the Compose database:
+Start the local stack:
 
 ```sh
 docker compose --env-file .env up app
 ```
 
+Local Django runs inside Docker Compose. The app container receives `.env` via
+`env_file`, and `TRACEBACK_DATABASE_URL` should point at the Compose PostgreSQL
+service name, for example `postgresql://traceback:development-only@db:5432/traceback`.
+Compose uses `TRACEBACK_POSTGRES_*` variables for the local database service to
+avoid collisions with shell-level `POSTGRES_*` values.
+
+### Run the application
+
+Run the application container against the Compose database:
+
+```sh
+docker compose --env-file .env up app
+```
+
+Run Django one-off commands inside the app container:
+
+```sh
+docker compose --env-file .env run --rm app python manage.py migrate
+docker compose --env-file .env run --rm app python manage.py createsuperuser
+docker compose --env-file .env run --rm app python manage.py shell
+```
+
 ### Django commands
 
 ```sh
-uv run --env-file .env python manage.py makemigrations
-uv run --env-file .env python manage.py migrate
-uv run --env-file .env python manage.py createsuperuser
-uv run --env-file .env python manage.py shell
+docker compose --env-file .env run --rm app python manage.py makemigrations
+docker compose --env-file .env run --rm app python manage.py migrate
+docker compose --env-file .env run --rm app python manage.py createsuperuser
+docker compose --env-file .env run --rm app python manage.py shell
 ```
 
 ### Tests and quality checks
 
 ```sh
-uv run pytest
-uv run ruff check .
-uv run ruff format --check .
-uv run mypy .
-uv run yamllint .
-uv run python manage.py check --settings=config.settings.test
-uv run python manage.py makemigrations --check --dry-run --settings=config.settings.test
-uv run python manage.py migrate --settings=config.settings.test
-uv run python manage.py migrate --check --settings=config.settings.test
+docker compose --env-file .env run --rm app pytest
+docker compose --env-file .env run --rm app ruff check .
+docker compose --env-file .env run --rm app ruff format --check .
+docker compose --env-file .env run --rm app mypy .
+docker compose --env-file .env run --rm app yamllint .
+docker compose --env-file .env run --rm app python manage.py check --settings=config.settings.test
+docker compose --env-file .env run --rm app python manage.py makemigrations --check --dry-run --settings=config.settings.test
+docker compose --env-file .env run --rm app python manage.py migrate --settings=config.settings.test
+docker compose --env-file .env run --rm app python manage.py migrate --check --settings=config.settings.test
 ```
 
 Run all Git hooks manually:
 
 ```sh
-uv run pre-commit run --all-files
-uv run pre-commit run --all-files --hook-stage pre-push
+docker compose --env-file .env run --rm app pre-commit run --all-files
+docker compose --env-file .env run --rm app pre-commit run --all-files --hook-stage pre-push
 ```
 
 ### Dependency management

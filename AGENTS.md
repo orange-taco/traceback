@@ -10,6 +10,12 @@ This repository implements the TRACEBACK commerce backend.
 4. Verify the current branch and working tree before changing files.
 5. Do not assume a phase is complete from conversation context alone.
 
+## User-Readable Rules
+
+- Keep `AGENTS_korea.md` as the Korean, user-readable companion to this AI-facing rule file.
+- Whenever `AGENTS.md` changes in a way that affects how work is planned, confirmed, implemented, verified, or reported, update `AGENTS_korea.md` in the same slice.
+- Do not copy implementation-only prompt wording into `AGENTS_korea.md`; explain the practical user-facing convention instead.
+
 ## Phase Checks
 
 - Treat `docs/simple-build-guide.md` and `docs/build-plan.md` as the phase scope authority.
@@ -24,6 +30,7 @@ This repository implements the TRACEBACK commerce backend.
 - Create task branches from `development`.
 - Use branch names that make the phase obvious, such as `phase-0-foundation` or `phase-1-catalog`.
 - Do not do feature work directly on `main` or `development`.
+- When creating a PR, use `development` as the base branch unless the user explicitly instructs otherwise.
 - Before switching or creating branches, check for existing user changes and preserve them.
 
 ## Change Scope
@@ -37,7 +44,10 @@ This repository implements the TRACEBACK commerce backend.
 
 ## Decision Points
 
-- When implementation reaches an undecided product, API, model, UX, security, or infrastructure choice, do not silently choose unless the choice is low-risk and already implied by existing docs.
+- Continue implementation without stopping for user confirmation unless the decision falls into one of these categories: PR review handling, business/product choice, technical stack/architecture choice, or external integration that the user must perform directly.
+- Treat business/product choices broadly: product behavior, API contract, model semantics, UX policy, security policy, and operational policy require confirmation when they change or decide business meaning.
+- Treat technical choices broadly: framework, library, architecture, infrastructure, persistence, authentication mechanism, deployment, and integration pattern changes require confirmation when they are not already implied by existing docs.
+- If a choice is low-risk and already implied by existing docs, make the call, implement it, and record it only when it will guide future work.
 - Present 2-3 concrete options with the implementation impact and tradeoff of each option.
 - Recommend one option when there is a clear engineering reason, but wait for the user's selection before implementing the decision.
 - After the user chooses, record the decision in the relevant doc only if it will guide future work.
@@ -57,3 +67,17 @@ This repository implements the TRACEBACK commerce backend.
 - Each column purpose must be justified by the minimal MVP scope or an explicit requirement.
 - If a column is only for future expansion and not required now, do not add it; record the deferred idea in the relevant docs instead.
 - Keep the model-purpose document aligned with the actual migrations before stopping work.
+
+## Test Organization
+
+- Each Django app owns its tests under `apps/<app>/tests/`. Do not put another app's model, serializer, view, service, or provider tests under `apps/core/tests`.
+- Keep `apps/core/tests` for core cross-cutting behavior only, such as request IDs, common error formatting, pagination, health checks, and shared permission probes.
+- Split API tests by public view surface:
+  - one `test_<resource>_view.py` per `GenericAPIView` when the view has distinct behavior;
+  - one `test_<resource>_viewset.py` per `ViewSet`;
+  - closely coupled framework-provided endpoints may share a file, such as `test_token_views.py` for SimpleJWT obtain/refresh.
+- Split serializer tests by serializer when the serializer has custom behavior, using `test_<serializer_subject>_serializer.py`.
+- Put domain model and manager tests in `test_models.py` unless the app grows enough to justify model-specific files.
+- Put service tests in `test_<service_subject>_service.py` and provider/client tests in `test_<provider_subject>_provider.py`.
+- Prioritize business model behavior, constraints, state transitions, calculations, concurrency, and idempotency. Do not add field-by-field tests for framework behavior unless the project adds custom validation, custom mapping, or security-sensitive read/write exposure.
+- View/API tests should verify the external contract: status code, request/response shape, authentication/permission behavior, and important database side effects. Do not duplicate every service branch in view tests when service tests already cover it.

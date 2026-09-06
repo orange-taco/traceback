@@ -26,6 +26,10 @@ class UserManager(BaseUserManager["User"]):
             if not User.objects.filter(username=username).exists():
                 return username
 
+    def get_by_natural_key(self, username: str | None) -> User:
+        email = self.normalize_email(username)
+        return self.get(email=email, deleted_at__isnull=True)
+
     def create_user(
         self,
         email: str,
