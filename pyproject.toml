@@ -53,6 +53,7 @@ extend-exclude = ["**/migrations/*.py"]
 select = ["E", "F", "I", "B", "DJ", "UP"]
 
 [tool.ruff.lint.per-file-ignores]
+"apps/accounts/models.py" = ["DJ001"]
 "config/settings/development.py" = ["F403", "F405"]
 "config/settings/local.py" = ["F403", "F405"]
 "config/settings/production.py" = ["F403"]

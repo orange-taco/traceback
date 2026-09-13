@@ -43,6 +43,11 @@
 | `socialaccount.SocialAccount` | provider와 provider UID를 User에 연결하고 provider 응답 보관 |
 | `sessions.Session` | 서버 측 인증 상태; browser에는 HttpOnly session ID만 전달 |
 
+Kakao 사용자 정보 응답은 `SocialAccount.extra_data` JSON에 보관된다. 현재는
+verified `account_email` scope만 요청한다. `profile_nickname`과 `profile_image`는
+인증에 필요하지 않아 요청하거나 별도 User 컬럼으로 복사하지 않는다. scope 축소
+전에 생성된 행의 `extra_data`에는 당시 provider 응답이 남아 있을 수 있다.
+
 기존 `accounts.SocialAccount`, `EmailChangeRequest`, `UserToken`,
 `User.email_verified_at`은 allauth 모델과 중복되므로
 `accounts.0004_move_auth_state_to_allauth`에서 데이터를 이전한 뒤 제거한다.

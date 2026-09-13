@@ -4,7 +4,6 @@ from allauth.socialaccount.providers.base import ProviderException
 from django.http import HttpRequest
 
 
-# allauth does not publish a py.typed marker for this adapter.
 class SocialAccountAdapter(DefaultSocialAccountAdapter):  # type: ignore[misc]
     def pre_social_login(
         self,

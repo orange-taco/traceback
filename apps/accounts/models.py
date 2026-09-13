@@ -14,6 +14,15 @@ from .managers import UserManager
 
 
 class User(AbstractBaseUser, PermissionsMixin, TimestampedModel):
+    password = models.CharField(
+        help_text="Django password hasher 결과",
+        max_length=128,
+    )
+    last_login = models.DateTimeField(
+        help_text="마지막 로그인 시간",
+        null=True,
+        blank=True,
+    )
     email = models.EmailField(
         help_text="로그인에 사용하는 대표 이메일",
         unique=True,
@@ -33,7 +42,7 @@ class User(AbstractBaseUser, PermissionsMixin, TimestampedModel):
         max_length=100,
         blank=True,
     )
-    phone_e164 = models.CharField(  # noqa: DJ001
+    phone_e164 = models.CharField(
         help_text="SMS 인증 후 저장되는 E.164 전화번호",
         max_length=20,
         null=True,
@@ -90,7 +99,7 @@ class BenefitClaim(models.Model):
         blank=True,
         related_name="benefit_claims",
     )
-    phone_hash = models.CharField(  # noqa: DJ001
+    phone_hash = models.CharField(
         help_text="전화번호 HMAC 해시",
         max_length=128,
         null=True,

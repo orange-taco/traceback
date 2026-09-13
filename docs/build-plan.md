@@ -1,6 +1,7 @@
 # Traceback Build Plan
 
-> 상위 문서: [`../main.md`](../main.md). 이 문서가 구현 순서, 현재 범위, 완료 판정의 단일 기준이다.
+> 구현 원칙은 [`simple-build-guide.md`](./simple-build-guide.md)를 따르고,
+> 이 문서는 구현 순서, 현재 범위, 완료 판정의 단일 기준으로 사용한다.
 
 ## 재개 체크포인트
 
@@ -24,7 +25,11 @@
 - 확인된 결정: Browser 인증은 django-allauth Headless + Django DB session을
   사용한다. React Router는 별도 auth session이나 token storage를 만들지 않는다.
   Kakao의 verified email은 같은 User에 자동 연결한다. Django admin은 사용하지
-  않고 staff API는 `is_staff`와 `IsAdminUser`를 기준으로 한다.
+  않고 staff API는 `is_staff`와 `IsAdminUser`를 기준으로 한다. 후속 CI/CD는
+  feature → `development` PR의 CI, `development` 병합 후 staging CD,
+  `development` → `main` PR의 release CI, `main` 병합 후 production CD로
+  분리하며 GitHub-hosted runner만 사용한다. Kakao는 인증에 필요한
+  `account_email` scope만 요청한다.
 - 미해결/설계 의심: 실제 Kakao 교차 로그인 브라우저 QA, client 비밀번호 변경
   화면, production container/reverse proxy/SMTP와 최종 CI 검증은 후속 작업이다.
   잔존 `usersessions_usersession` 테이블은 유지하고 QA 사용자 참조 행만 정리했다.

@@ -155,7 +155,7 @@ SOCIALACCOUNT_PROVIDERS = {
             if KAKAO_REST_API_KEY
             else []
         ),
-        "SCOPE": ["account_email", "profile_nickname", "profile_image"],
+        "SCOPE": ["account_email"],
         "EMAIL_AUTHENTICATION": True,
     }
 }

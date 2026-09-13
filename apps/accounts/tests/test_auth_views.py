@@ -171,7 +171,7 @@ class KakaoProviderRedirectTests(TestCase):
                         "key": "",
                     }
                 ],
-                "SCOPE": ["account_email", "profile_nickname", "profile_image"],
+                "SCOPE": ["account_email"],
                 "EMAIL_AUTHENTICATION": True,
             }
         },
@@ -201,7 +201,7 @@ class KakaoProviderRedirectTests(TestCase):
         self.assertIn("/accounts/kakao/login/callback/", query["redirect_uri"][0])
         self.assertEqual(
             set(query["scope"][0].split()),
-            {"account_email", "profile_nickname", "profile_image"},
+            {"account_email"},
         )
 
 
@@ -279,6 +279,7 @@ class KakaoAccountLinkingTests(TestCase):
             "social-first",
         )
         user = get_user_model().objects.get(email="social-first@example.com")
+        self.assertTrue(user.username)
         self.assertFalse(user.has_usable_password())
         self.assertEqual(
             social_client.get("/_allauth/browser/v1/auth/session").status_code,
@@ -437,7 +438,7 @@ class KakaoAccountLinkingTests(TestCase):
         )
         return SocialLogin(
             account=SocialAccount(provider="kakao", uid=uid),
-            user=get_user_model()(email=email or "", username=f"kakao-{uid}"),
+            user=get_user_model()(email=email or "", username=""),
             email_addresses=addresses,
             provider=provider,
         )

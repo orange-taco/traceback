@@ -27,6 +27,8 @@
 - Verified provider email may authenticate and connect to the matching User.
   For an unverified local email, allauth invalidates the old password before
   accepting the verified social login.
+- Kakao requests only verified `account_email`. Optional nickname/image scopes
+  are not requested or copied into dedicated User columns.
 - allauth owns `EmailAddress` and `SocialAccount`; the legacy account token,
   email-change-request, and social-account models are removed by migration.
 - React Router uses same-origin `/_allauth` and `/accounts` requests. Vite
@@ -40,7 +42,7 @@
 - Signup and login password minimum: 8 characters.
 - New Kakao signup requires a verified provider email, without a fallback
   email form. An already linked Kakao identity can re-login without email.
-- Kakao scopes: `account_email`, `profile_nickname`, `profile_image`.
+- Kakao scope: `account_email` only.
 - Local frontend: `http://localhost:5173`
 - Local allauth callback:
   `http://localhost:8000/accounts/kakao/login/callback/`
@@ -64,6 +66,26 @@ The server contract test now verifies logout DB-row removal and final HTTP 401.
    cross-route acceptance with PostgreSQL counts.
 3. Verify production container/reverse proxy/SMTP and final CI before recording
    overall Phase 0 completion. Do not start Phase 1 yet.
+
+## Model metadata cleanup validation (2026-09-13)
+
+- Confirmed in both `traceback_dev` and `traceback_dev-TEST` Kakao Developers
+  apps that `account_email` is required while `profile_nickname` and
+  `profile_image` are optional consent.
+- Reduced the requested Kakao scope to `account_email`; nickname/image are not
+  required by the current authentication or profile contract.
+- Removed explanatory comments from the account adapter and all inline comments
+  from project model files; required type/lint directives outside model code remain.
+- Added explicit Korean `help_text` to inherited `User.password` and
+  `User.last_login`; every concrete accounts/core model field now has help text.
+- Migration `accounts.0005` applies cleanly. Django check, migration drift check,
+  Ruff check/format, mypy, and all 30 tests passed with 96.69% coverage.
+- Removed the superseded Phase 0B design record, the duplicate auth HTML status
+  map, and the redundant root planning guide. Current state, model purpose, and
+  detailed contracts remain in their designated documents.
+- Audited `UserManager`: its methods are Django hooks or active project behavior.
+  In particular, Django's `ModelBackend` calls `get_by_natural_key()` indirectly,
+  so it is retained and covered by a manager test.
 
 ## Client handoff — deferred from this server slice
 
@@ -92,7 +114,6 @@ The server contract test now verifies logout DB-row removal and final HTTP 401.
 - Models and migrations: [`domain-model.md`](../domain-model.md),
   [`account-model-purpose.md`](./account-model-purpose.md)
 - Runtime and proxy: [`infrastructure-decisions.md`](../infrastructure-decisions.md)
-- Auth/infrastructure status: [`auth-status-map.html`](./auth-status-map.html)
 - Commands: [`commands.md`](../commands.md)
 
 

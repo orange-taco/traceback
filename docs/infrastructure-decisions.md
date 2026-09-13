@@ -11,6 +11,8 @@
 | 데이터베이스 | PostgreSQL | 운영 DB와 개발/CI 계약 통일 |
 | 애플리케이션 서버 | Gunicorn + Uvicorn worker + Django ASGI | 프로세스 관리와 ASGI 실행 분리 |
 | 이미지 배포 | `development` → `main` 병합 시 GitHub Actions가 ECR image 발행 후 SSM으로 EC2 배포 | 유일한 production release 경로와 immutable artifact 확보 |
+| CI/CD branch flow | feature → `development` PR은 CI만 실행하고, `development` 병합은 staging CD, `development` → `main` PR은 release CI, `main` 병합은 production CD를 실행 | 개발 통합 검증과 환경별 배포 시점을 명확히 분리 |
+| CI runner | GitHub-hosted runner를 사용하고 self-hosted runner는 고려하지 않음 | runner 운영과 보안 관리 부담을 만들지 않음 |
 | 개발 데이터베이스 | Compose PostgreSQL | 운영과 SQL 동작 차이 최소화 |
 | 개발 파일 저장소 | 로컬 파일 저장소 | 빠른 피드백, 오프라인 개발, 클라우드 비용/권한 불필요 |
 | 운영 파일 저장소 | S3 호환 object storage | 다중 인스턴스와 영속 파일 지원 |
@@ -43,6 +45,11 @@
 - 운영 비밀값은 저장소나 Compose 파일에 넣지 않고 배포 플랫폼 secret store에서 주입한다.
 - `.env`는 각 실행 환경의 비밀값 파일이며 Git에 포함하지 않는다.
 - `.env.example`은 모든 환경이 공유하는 공개 가능한 변수 계약과 비밀이 아닌 placeholder만 포함한다.
+- CI/CD workflow 분리는 staging 배포 기반을 구성하는 후속 인프라 슬라이스에서
+  구현한다. PR 생성만으로 배포하지 않으며, staging은 `development` 병합/push,
+  production은 `main` 병합/push를 배포 trigger로 사용한다.
+- `development` → `main` PR에서는 일반 CI에 production image build/smoke와
+  release branch gate를 추가하되 production 배포는 실행하지 않는다.
 
 ## 미결정
 
