@@ -4,7 +4,7 @@
 
 ## 공통 정책
 
-- Accounts base path: `/api/accounts`
+- Account authentication paths: `/_allauth/browser/v1` and `/accounts`
 - Format: JSON, 금액은 KRW 정수
 - staff 운영 인증: DRF staff API 기본 권한 후보는 `User.is_staff`를 확인하는 `IsAdminUser`이다. 세부 권한/namespace는 해당 Phase에서 확정한다.
 - 리스트 응답: pagination 포함
@@ -32,102 +32,45 @@ DRF view convention:
 
 ### Account
 
-회원 기능은 선택 흐름이며 Store, Cart, Checkout, Order Tracking은 비회원도 사용할 수 있어야 한다.
+회원 기능은 선택 흐름이며 Store, Cart, Checkout, Order Tracking은 비회원도 사용할
+수 있어야 한다.
 
 확정된 기준:
 
-- 고객 account 인증은 JWT Bearer token을 사용한다.
-- email/password token obtain 성공은 access/refresh token pair를 발급한다.
-- 가입 직후 token obtain과 구매를 허용한다.
-- 이메일 미인증이어도 로그인과 구매를 허용한다.
-- 이메일 인증은 필요하지만 사용할 이메일 발송 시스템을 아직 정하지 않았으므로 endpoint 구현 전 발송 방식을 결정한다.
-- password set은 기존 비밀번호가 없는 사용자도 사용할 수 있어야 한다.
-- password reset은 이메일 링크 기반으로 구현한다.
-- social login도 성공하면 같은 access/refresh token pair를 발급한다.
-- Kakao Login은 frontend가 Kakao authorization URL로 직접 이동하고, frontend
-  callback route가 받은 authorization `code`를 backend에 전달한다. Backend는
-  Kakao token/user 조회 후 JWT pair를 JSON으로 반환한다.
-  JWT를 redirect URL query에 직접 싣지 않는다.
+- django-allauth Headless Browser API가 가입, 이메일 인증, 로그인, 로그아웃,
+  비밀번호 재설정, Kakao OAuth와 계정 연결을 담당한다.
+- 인증 완료 상태는 Django DB session으로 저장하고 HttpOnly `sessionid` cookie로
+  전달한다. JWT와 browser token storage는 사용하지 않는다.
+- 변경 요청은 Django CSRF cookie와 `X-CSRFToken` header를 사용한다.
+- 이메일 가입은 mandatory verification이며 확인 전에는 로그인을 완료할 수 없다.
+- 비밀번호는 Django validators를 사용하며 최소 길이는 8자다.
+- 이메일 확인과 비밀번호 재설정 링크는 frontend route로 발송한다.
+- 검증된 provider email은 같은 email의 User를 인증하고 `SocialAccount`를 자동
+  연결한다. 미검증 local email 선점 상태라면 allauth가 기존 password를
+  무효화한 뒤 provider 소유자를 인증한다.
+- Kakao가 verified email을 제공하지 않으면 가입/연결을 완료하지 않으며 별도
+  email 입력을 받지 않는다.
+- Kakao OAuth `state`, authorization code 교환, provider 오류 처리는 allauth가
+  담당한다.
 
-#### `POST /api/accounts/signup`
+주요 allauth Browser API:
 
-- 요청: `email`, `password`
-- 성공: `201`
-- 규칙:
-  - email은 앞뒤 공백 제거 후 소문자로 정규화한다.
-  - password는 Django 기본 password validators를 통과해야 한다.
-  - 같은 email을 가진 User가 있으면 `400`.
-  - 성공 시 token은 발급하지 않는다. client는 token obtain을 별도로 호출한다.
-- 응답 body: 없음.
+| Method / Path | 계약 |
+| --- | --- |
+| `GET /_allauth/browser/v1/config` | CSRF cookie와 client 설정 |
+| `GET /_allauth/browser/v1/auth/session` | 현재 인증 상태와 User |
+| `POST /_allauth/browser/v1/auth/signup` | `email`, `password`; 확인 메일 발송 |
+| `POST /_allauth/browser/v1/auth/email/verify` | `key`; email 확인 및 session 완료 |
+| `POST /_allauth/browser/v1/auth/login` | `email`, `password`; DB session 생성 |
+| `DELETE /_allauth/browser/v1/auth/session` | 현재 session 종료 |
+| `POST /_allauth/browser/v1/auth/password/request` | reset link 발송 |
+| `POST /_allauth/browser/v1/auth/password/reset` | `key`, `password`; password 변경 |
+| `POST /_allauth/browser/v1/account/password/change` | 로그인 및 CSRF 필요; `current_password`, `new_password`; allauth 기본 API |
+| `POST /_allauth/browser/v1/auth/provider/redirect` | Kakao authorize redirect 시작 |
+| `GET /accounts/kakao/login/callback/` | Kakao provider callback |
 
-#### `POST /api/accounts/token/obtain`
-
-- 요청: `email`, `password`
-- 성공: `200`
-- 규칙:
-  - email은 앞뒤 공백 제거 후 소문자로 정규화한다.
-  - 실패 응답은 SimpleJWT 기본 `no_active_account` 오류를 사용하며 email 존재 여부를 드러내지 않는다.
-  - 성공 시 access/refresh token pair를 발급한다.
-- 응답:
-
-```json
-{
-  "access": "jwt-access-token",
-  "refresh": "jwt-refresh-token"
-}
-```
-
-#### `POST /api/accounts/token/refresh`
-
-- 요청: `refresh`
-- 성공: `200`
-- 규칙:
-  - 유효한 refresh token으로 새 access token을 발급한다.
-- 응답:
-
-```json
-{
-  "access": "jwt-access-token"
-}
-```
-
-#### `POST /api/accounts/social/kakao`
-
-- 요청: `code`
-- 성공: `200`
-- 설정:
-  - `KAKAO_REST_API_KEY` 필수
-  - `KAKAO_REDIRECT_URI` 필수
-  - `KAKAO_CLIENT_SECRET`은 Kakao Developers에서 client secret을 켠 경우 필수
-- 규칙:
-  - frontend가 authorization 요청 전에 임의의 `state`를 생성해 browser session에 저장하고, 10분 만료와 일회성 사용 기준으로 callback의 `state`를 검증한다.
-  - frontend는 `state` 검증에 성공한 경우에만 authorization code를 backend에 전달한다. Backend는 browser session을 소유하지 않으므로 이 endpoint에서는 code 교환만 담당한다.
-  - backend가 Kakao token endpoint에 authorization code를 교환한다.
-  - backend가 Kakao user info endpoint에서 provider user ID를 조회한다.
-  - `provider + provider_user_id`에 해당하는 active `SocialAccount`가 있으면 provider ID 기준으로 해당 User를 로그인한다.
-  - 기존 `SocialAccount` 재로그인 경로에서는 Kakao email이 없어도 차단하지 않는다. Kakao email이 있으면 email snapshot을 갱신한다.
-  - 새 User 생성 또는 기존 User 자동 연결이 필요한 경로에서는 verified Kakao email이 필요하다.
-  - 연결이 필요한 경로에서 Kakao email이 없거나 verified가 아니면 `400 invalid`를 반환하고 원인은 `details`에 둔다.
-  - 만료되었거나 재사용된 authorization code(`KOE320`)는 `400 invalid`를 반환하고 원인은 `details`에 둔다.
-  - REST API key, client secret, redirect URI 등 서버 설정 오류는 `503 kakao_not_configured`.
-  - Kakao 장애, network 오류, 잘못된 provider 응답은 `502 kakao_upstream_error`.
-  - 기존 email/password User가 있고 `User.email_verified_at`이 있으면 Kakao `SocialAccount`를 자동 연결하고 로그인한다.
-  - 기존 email/password User가 있지만 `User.email_verified_at`이 없으면 자동 연결하지 않고 `409 social_account_linking_required`.
-  - 기존 User가 없으면 unusable password를 가진 User를 만들고 Kakao email을 verified로 저장한다.
-  - 성공 시 access/refresh token pair를 발급한다.
-- 응답:
-
-```json
-{
-  "access": "jwt-access-token",
-  "refresh": "jwt-refresh-token"
-}
-```
-
-구현 전 추가로 확정할 기준:
-
-- 이메일 인증과 welcome benefit 지급 조건의 관계
-- password reset/password set token 발급 응답과 실제 발송 방식
+운영 프록시는 `/_allauth`와 `/accounts`를 같은 public origin에서 Django로
+전달하고 원래 Host와 `X-Forwarded-Proto`를 보존한다.
 
 ### Catalog
 

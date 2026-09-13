@@ -19,6 +19,9 @@
 | AWS 애플리케이션 실행 | EC2 + Docker Compose | 초기 운영 복잡도와 비용을 낮추고 로컬과 실행 계약 통일 |
 | AWS 데이터베이스 | 환경별 managed PostgreSQL | 백업, 장애 대응, 운영 DB 격리 |
 | Reverse proxy | 별도 서버 없이 애플리케이션 EC2 내부 Nginx/Caddy | TLS와 정적 파일 처리를 하되 별도 서버 운영 방지 |
+| Browser authentication | django-allauth Headless + PostgreSQL Django session | 즉시 session 종료, CSRF 보호, React Router SSR과 같은 인증 기준 |
+| Auth routing | public `/_allauth`, `/accounts`를 Django로 same-origin proxy | HttpOnly cookie를 단일 site 범위로 유지 |
+| Transactional email | Django SMTP mailer contract | provider를 고정하지 않고 verification/reset 메일을 환경별 SMTP로 전달 |
 
 ## 환경별 원칙
 
@@ -26,9 +29,14 @@
 - development는 PostgreSQL과 로컬 파일 저장소를 기본값으로 사용한다.
 - 로컬 PostgreSQL은 직접 설치본이 아니라 Compose service를 사용한다.
 - 로컬에서는 development 실행과 production overlay smoke test를 모두 수행한다.
+- Production overlay 검증과 실행에는 기존 배포 workflow와 같이 Docker Compose
+  v2.24.4 이상을 사용한다. `docker compose version --short`로 확인한다.
+  v2.18.1은 `db: !reset null`에서 `services.db must be a mapping` 오류가 나며,
+  `{}`로 바꾸면 개발 DB가 남으므로 문법 우회 대신 Compose를 업데이트한다.
 - 팀 공유 테스트, 외부 연동, S3 계약 검증은 AWS staging에서 수행한다.
 - staging과 production은 DB, S3 bucket, secret, 배포 권한을 분리한다.
 - staging과 production은 동일한 production image/settings/Compose 계약을 사용하고 주입되는 `.env`/secret 값만 분리한다.
+- production reverse proxy는 원래 Host와 `X-Forwarded-Proto`를 보존한다.
 - staging과 production Compose는 PostgreSQL container를 실행하지 않고 managed PostgreSQL의 `TRACEBACK_DATABASE_URL`을 주입받는다.
 - CI 단위/통합 테스트는 PostgreSQL을 사용하고 외부 S3 호출은 하지 않는다.
 - S3 연동 자체는 별도의 staging 통합 테스트에서 검증한다.

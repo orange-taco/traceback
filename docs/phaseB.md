@@ -1,5 +1,9 @@
 # Phase 0B Account/Auth Decisions
 
+> Historical design record. The custom social/email token models in this file
+> were superseded by django-allauth in Phase 0C. Current behavior is defined by
+> `current/README.md`, `api-spec.md`, and `domain-model.md`.
+
 이 문서는 Phase 0B common API/auth 작업에서 확정한 계정, 인증,
 소셜 로그인, 혜택 중복 방지 결정을 기록한다.
 

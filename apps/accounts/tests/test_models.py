@@ -1,12 +1,10 @@
-from datetime import timedelta
-
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
 
-from apps.accounts.enums import BenefitClaimCode, SocialProvider, UserTokenPurpose
-from apps.accounts.models import BenefitClaim, SocialAccount, User, UserToken
+from apps.accounts.enums import BenefitClaimCode
+from apps.accounts.models import BenefitClaim, User
 
 
 class UserModelTests(TestCase):
@@ -46,35 +44,6 @@ class UserModelTests(TestCase):
 
 
 class AccountFoundationModelTests(TestCase):
-    def test_social_account_constraints(self) -> None:
-        user = User.objects.create_user("user@example.com")
-        SocialAccount.objects.create(
-            user=user,
-            provider=SocialProvider.KAKAO,
-            provider_user_id="kakao-1",
-        )
-
-        with self.assertRaises(IntegrityError):
-            SocialAccount.objects.create(
-                user=user,
-                provider=SocialProvider.KAKAO,
-                provider_user_id="kakao-2",
-            )
-
-    def test_user_token_lifetimes_are_decided_values(self) -> None:
-        self.assertEqual(
-            UserToken.lifetime_for(UserTokenPurpose.EMAIL_VERIFY),
-            timedelta(hours=24),
-        )
-        self.assertEqual(
-            UserToken.lifetime_for(UserTokenPurpose.PASSWORD_SET),
-            timedelta(hours=1),
-        )
-        self.assertEqual(
-            UserToken.lifetime_for(UserTokenPurpose.PASSWORD_RESET),
-            timedelta(hours=1),
-        )
-
     def test_welcome_benefit_requires_phone_hash(self) -> None:
         claim = BenefitClaim(
             code=BenefitClaimCode.WELCOME_SIGNUP,

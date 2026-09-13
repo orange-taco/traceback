@@ -1,0 +1,371 @@
+<div id="traceback-auth-map">
+  <style>
+    #traceback-auth-map {
+      color: light-dark(#172033, #edf2ff);
+      font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      background: light-dark(#f7f9fc, #11151d);
+      border: 1px solid light-dark(#d9e0eb, #303846);
+      max-width: 980px;
+      margin: 0 auto;
+    }
+    #traceback-auth-map * { box-sizing: border-box; }
+    #traceback-auth-map .top {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 22px 24px 18px;
+      border-bottom: 1px solid light-dark(#d9e0eb, #303846);
+      background: light-dark(#ffffff, #181e28);
+    }
+    #traceback-auth-map h2,
+    #traceback-auth-map h3,
+    #traceback-auth-map p { margin: 0; }
+    #traceback-auth-map h2 { font-size: 21px; line-height: 1.25; }
+    #traceback-auth-map .sub {
+      color: light-dark(#637087, #aab5c7);
+      font-size: 12px;
+      margin-top: 6px;
+    }
+    #traceback-auth-map .tabs { display: flex; gap: 4px; }
+    #traceback-auth-map .tab {
+      border: 1px solid light-dark(#bfc9d8, #414c5e);
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      font-size: 12px;
+      min-height: 38px;
+      padding: 0 13px;
+    }
+    #traceback-auth-map .tab[aria-pressed="true"] {
+      background: #1f5eff;
+      border-color: #1f5eff;
+      color: #fff;
+    }
+    #traceback-auth-map .panel { display: none; padding: 24px; }
+    #traceback-auth-map .panel.active { display: block; }
+    #traceback-auth-map .flow { display: grid; gap: 10px; }
+    #traceback-auth-map .flow-step {
+      align-items: center;
+      display: grid;
+      gap: 14px;
+      grid-template-columns: 34px 150px 1fr;
+    }
+    #traceback-auth-map .step-number {
+      align-items: center;
+      background: #1f5eff;
+      color: #fff;
+      display: flex;
+      font-size: 13px;
+      font-weight: 800;
+      height: 30px;
+      justify-content: center;
+      width: 30px;
+    }
+    #traceback-auth-map .node {
+      border: 1px solid light-dark(#cbd4e1, #3b4657);
+      background: light-dark(#fff, #181e28);
+      min-height: 112px;
+      padding: 15px 17px;
+    }
+    #traceback-auth-map .node strong { display: block; font-size: 15px; }
+    #traceback-auth-map .node .owner {
+      color: #1f5eff;
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+    #traceback-auth-map .node ul {
+      color: light-dark(#536078, #b6c0cf);
+      font-size: 12px;
+      line-height: 1.55;
+      margin: 12px 0 0;
+      padding-left: 17px;
+    }
+    #traceback-auth-map .step-label {
+      color: #1f5eff;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    #traceback-auth-map .inside {
+      border-top: 1px solid light-dark(#d9e0eb, #303846);
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 1fr 1fr 1fr;
+      margin-top: 14px;
+      padding-top: 13px;
+    }
+    #traceback-auth-map .mini {
+      background: light-dark(#eef3fb, #222a36);
+      font-size: 11px;
+      line-height: 1.4;
+      padding: 9px;
+    }
+    #traceback-auth-map .connections {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(3, 1fr);
+      margin-top: 18px;
+    }
+    #traceback-auth-map .connection {
+      border-left: 3px solid #1f5eff;
+      background: light-dark(#eef3fb, #222a36);
+      font-size: 12px;
+      line-height: 1.45;
+      padding: 11px 12px;
+    }
+    #traceback-auth-map .legend {
+      color: light-dark(#637087, #aab5c7);
+      font-size: 11px;
+      margin-top: 16px;
+    }
+    #traceback-auth-map .feature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-left: 1px solid light-dark(#d9e0eb, #303846);
+      border-top: 1px solid light-dark(#d9e0eb, #303846);
+    }
+    #traceback-auth-map .feature {
+      background: light-dark(#fff, #181e28);
+      border-bottom: 1px solid light-dark(#d9e0eb, #303846);
+      border-right: 1px solid light-dark(#d9e0eb, #303846);
+      min-height: 116px;
+      padding: 15px;
+    }
+    #traceback-auth-map .feature-head {
+      align-items: center;
+      display: flex;
+      gap: 9px;
+      margin-bottom: 8px;
+    }
+    #traceback-auth-map .mark {
+      align-items: center;
+      background: #18864b;
+      color: #fff;
+      display: inline-flex;
+      font-size: 12px;
+      height: 22px;
+      justify-content: center;
+      width: 22px;
+    }
+    #traceback-auth-map .pending .mark { background: #b56500; }
+    #traceback-auth-map .feature strong { font-size: 13px; }
+    #traceback-auth-map .feature p {
+      color: light-dark(#5d6a80, #aeb9ca);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    #traceback-auth-map .section-title {
+      align-items: center;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 13px;
+    }
+    #traceback-auth-map .section-title span {
+      color: light-dark(#637087, #aab5c7);
+      font-size: 11px;
+    }
+    #traceback-auth-map .route-list {
+      border-top: 1px solid light-dark(#d9e0eb, #303846);
+    }
+    #traceback-auth-map .route {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: 150px 1fr 92px;
+      padding: 16px 0;
+      border-bottom: 1px solid light-dark(#d9e0eb, #303846);
+      align-items: center;
+    }
+    #traceback-auth-map .route-name { font-size: 13px; font-weight: 700; }
+    #traceback-auth-map .route p {
+      color: light-dark(#5d6a80, #aeb9ca);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    #traceback-auth-map .result {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 7px 8px;
+      text-align: center;
+      background: light-dark(#e8f7ef, #183528);
+      color: light-dark(#167040, #75d8a3);
+    }
+    #traceback-auth-map .result.blocked {
+      background: light-dark(#fff2df, #392a19);
+      color: light-dark(#9a5600, #ffc06c);
+    }
+    @media (max-width: 720px) {
+      #traceback-auth-map .top { align-items: stretch; flex-direction: column; }
+      #traceback-auth-map .tabs { display: grid; grid-template-columns: repeat(3, 1fr); }
+      #traceback-auth-map .flow-step { grid-template-columns: 32px 1fr; }
+      #traceback-auth-map .flow-step .node { grid-column: 1 / -1; }
+      #traceback-auth-map .inside { grid-template-columns: 1fr; }
+      #traceback-auth-map .connections,
+      #traceback-auth-map .feature-grid { grid-template-columns: 1fr; }
+      #traceback-auth-map .route { grid-template-columns: 1fr; gap: 7px; }
+      #traceback-auth-map .result { text-align: left; width: fit-content; }
+    }
+  </style>
+
+  <div class="top">
+    <div>
+      <h2>TRACEBACK 서비스 연결과 회원 기능</h2>
+      <p class="sub">서버 우선 완료 범위 · 2026-09-13 · Phase 0 완료 아님</p>
+      <p class="sub">서버 검증: PostgreSQL 29 passed · coverage 96.60% · ruff/mypy/check/migration 통과</p>
+      <p class="sub">DB 검증: QA 계정 4개 정리 완료 · 실제 Kakao 계정 보존 · 세션 0개. 실제 교차 로그인 브라우저 QA는 후속 작업.</p>
+      <p class="sub">PostgreSQL 테스트 29개 통과, 실제 Kakao 연결 1개·Django 세션 0개 확인. QA 삭제는 예전 usersessions 참조로 롤백됐으며 정리와 최종 재검증이 남았습니다. client 화면과 MCP UI 검증은 별도 후속 작업입니다. 자동 테스트의 provider mock은 실제 검증과 구분합니다.</p>
+    </div>
+    <div class="tabs" role="group" aria-label="보기 전환">
+      <button class="tab" type="button" data-view="infra" aria-pressed="true">서비스 흐름</button>
+      <button class="tab" type="button" data-view="features" aria-pressed="false">회원 기능</button>
+      <button class="tab" type="button" data-view="linking" aria-pressed="false">계정 연결</button>
+    </div>
+  </div>
+
+  <section class="panel active" data-panel="infra">
+    <div class="flow">
+      <div class="flow-step">
+        <span class="step-number">1</span>
+        <span class="step-label">고객 → Netlify</span>
+        <div class="node">
+          <strong>화면을 열고 회원 요청을 보냅니다</strong>
+          <ul>
+            <li>Netlify는 React Router 화면을 제공합니다.</li>
+            <li>회원 API 요청은 같은 사이트 주소로 보내므로 고객에게 서버 주소가 따로 보이지 않습니다.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="flow-step">
+        <span class="step-number">2</span>
+        <span class="step-label">Netlify → EC2</span>
+        <div class="node">
+          <strong>회원 요청만 AWS의 Nginx로 전달합니다</strong>
+          <ul>
+            <li>Netlify rewrite/proxy가 회원 경로를 EC2로 넘깁니다.</li>
+            <li>Nginx는 HTTPS와 원래 호스트 정보를 보존해 Docker의 Django로 전달합니다.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="flow-step">
+        <span class="step-number">3</span>
+        <span class="step-label">Django 처리</span>
+        <div class="node">
+          <strong>allauth가 본인 확인을 마치고 세션을 저장합니다</strong>
+          <div class="inside">
+            <div class="mini"><b>Django</b><br>가입·로그인 정책</div>
+            <div class="mini"><b>PostgreSQL</b><br>회원·세션 저장</div>
+            <div class="mini"><b>브라우저</b><br>HttpOnly 쿠키 보관</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="connections">
+      <div class="connection"><b>Kakao</b><br>본인 확인 후 서버 callback으로 복귀</div>
+      <div class="connection"><b>메일 서비스</b><br>가입 확인·비밀번호 재설정 링크 발송</div>
+      <div class="connection"><b>보안 방식</b><br>HttpOnly 세션 쿠키 + CSRF 보호</div>
+    </div>
+    <p class="legend">화면은 Netlify가 제공하고, 회원 요청만 Netlify proxy → EC2 Nginx → Docker Django로 이동합니다.</p>
+  </section>
+
+  <section class="panel" data-panel="features">
+    <div class="section-title">
+      <h3>고객이 사용할 수 있는 기능</h3>
+      <span>서버 PostgreSQL 검증 완료 · 실제 교차 로그인 브라우저 QA 대기</span>
+    </div>
+    <div class="feature-grid">
+      <div class="feature">
+        <div class="feature-head"><span class="mark">✓</span><strong>이메일 회원가입</strong></div>
+        <p>이메일과 비밀번호를 입력하면 확인 링크를 발송합니다.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-head"><span class="mark">✓</span><strong>이메일 확인</strong></div>
+        <p>링크에서 확인 버튼을 눌러야 가입이 완료됩니다.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-head"><span class="mark">✓</span><strong>로그인·로그아웃</strong></div>
+        <p>서버 세션으로 로그인하고 로그아웃 즉시 세션을 종료합니다.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-head"><span class="mark">✓</span><strong>비밀번호 찾기</strong></div>
+        <p>이메일 링크로 새 비밀번호를 설정할 수 있습니다.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-head"><span class="mark">✓</span><strong>같은 이메일 계정 연결</strong></div>
+        <p>카카오가 확인한 이메일을 기존 회원 계정에 안전하게 연결합니다.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-head"><span class="mark">✓</span><strong>이메일 선점 방어</strong></div>
+        <p>미확인 이메일을 선점한 비밀번호는 소셜 본인 확인 시 무효화됩니다.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-head"><span class="mark">✓</span><strong>카카오 실제 로그인</strong></div>
+        <p>두 Kakao 앱의 동의항목과 callback을 설정했고 로컬 왕복 로그인을 확인했습니다.</p>
+      </div>
+      <div class="feature pending">
+        <div class="feature-head"><span class="mark">!</span><strong>로그인 중 비밀번호 변경</strong></div>
+        <p>allauth 비밀번호 변경 API의 인증·CSRF·현재 비밀번호·세션 처리는 자동 테스트로 확인했습니다. 변경 화면은 사용자 결정에 따라 별도 client 후속 작업으로 분리했습니다.</p>
+      </div>
+      <div class="feature pending">
+        <div class="feature-head"><span class="mark">!</span><strong>운영 메일 발송</strong></div>
+        <p>메일 기능은 완료됐고 운영 SMTP 서비스 연결·발송 확인이 남았습니다.</p>
+      </div>
+      <div class="feature pending">
+        <div class="feature-head"><span class="mark">!</span><strong>운영 주소 연결</strong></div>
+        <p>Netlify와 EC2 사이 Nginx 경로·HTTPS 설정을 운영에서 확인해야 합니다.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-head"><span class="mark">✓</span><strong>추가 소셜 확장 기반</strong></div>
+        <p>Google·Apple·Meta를 같은 allauth 방식으로 추가할 수 있습니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" data-panel="linking">
+    <div class="section-title">
+      <h3>이메일과 카카오를 함께 쓰는 기준</h3>
+      <span>중복 회원은 만들지 않음</span>
+    </div>
+    <div class="route-list">
+      <div class="route">
+        <div class="route-name">이메일 확인 완료 → 카카오</div>
+        <p>같은 이메일이면 기존 비밀번호를 유지하고 카카오를 같은 회원에 연결합니다.</p>
+        <div class="result">둘 다 사용</div>
+      </div>
+      <div class="route">
+        <div class="route-name">이메일 미확인 → 카카오</div>
+        <p>카카오가 이메일 소유를 확인하면 연결하되, 선점자가 만든 기존 비밀번호는 무효화합니다. 비밀번호 찾기로 새 비밀번호를 만들 수 있습니다.</p>
+        <div class="result">소유자 보호</div>
+      </div>
+      <div class="route">
+        <div class="route-name">카카오 가입 → 이메일 가입</div>
+        <p>같은 이메일로 새 회원을 다시 만들지는 않습니다. 비밀번호 찾기를 거치면 기존 한 계정에서 이메일 로그인도 사용할 수 있습니다.</p>
+        <div class="result blocked">중복 가입 차단</div>
+      </div>
+      <div class="route">
+        <div class="route-name">첫 카카오 로그인인데 이메일 확인 불가</div>
+        <p>카카오가 확인한 이메일이 없으면 실제 이메일 소유자인지 증명할 수 없습니다. 별도 이메일 입력으로 우회하지 않고 회원 생성을 중단합니다.</p>
+        <div class="result blocked">가입하지 않음</div>
+      </div>
+      <div class="route">
+        <div class="route-name">이미 연결된 카카오 재로그인</div>
+        <p>과거에 연결된 카카오 회원번호가 일치하면 같은 사람임을 확인할 수 있습니다. 이번 응답에서 이메일이 빠져도 기존 회원으로 로그인합니다.</p>
+        <div class="result">재로그인 허용</div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    (() => {
+      document.addEventListener("click", (event) => {
+        const tab = event.target.closest("#traceback-auth-map [data-view]");
+        if (!tab) return;
+        const root = document.getElementById("traceback-auth-map");
+        const tabs = [...root.querySelectorAll("[data-view]")];
+        const panels = [...root.querySelectorAll("[data-panel]")];
+        tabs.forEach((item) => item.setAttribute("aria-pressed", String(item === tab)));
+        panels.forEach((panel) => panel.classList.toggle("active", panel.dataset.panel === tab.dataset.view));
+      });
+    })();
+  </script>
+</div>

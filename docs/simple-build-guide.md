@@ -246,10 +246,11 @@ MVP라도 다음 원칙은 유지한다.
 목표:
 
 - Django/DRF/PostgreSQL 기반을 만든다.
-- 계정 API는 `/api/accounts` 기준으로 시작한다.
+- 계정 인증은 django-allauth Headless Browser API와 Django DB session을
+  사용한다.
 - 공통 오류 응답, pagination, request ID, staff 여부 플래그를 얇게 만든다.
 - Custom User/Auth 기반을 만든다.
-- Kakao/Naver 소셜 계정 연결, 이메일 변경 요청, 사용자 토큰, 혜택 중복 방지 ledger의 최소 모델을 만든다.
+- allauth의 email/social/session 모델과 혜택 중복 방지 ledger를 사용한다.
 - 운영/개발 명령과 CI를 유지한다.
 
 아직 하지 않는다:
@@ -264,8 +265,8 @@ MVP라도 다음 원칙은 유지한다.
 
 - User는 `AbstractBaseUser` + `PermissionsMixin` 기반 custom User를 사용하고 email로 로그인한다.
 - Django admin은 사용하지 않는다. staff 운영 화면/API는 단일 client repo에서 시작한다. DRF staff API 기본 권한 후보는 `User.is_staff`를 확인하는 `IsAdminUser`이며, backend namespace와 세부 권한은 해당 Phase에서 다시 확정한다.
-- `UserToken`은 이메일 인증 24시간, 비밀번호 설정 1시간, 비밀번호 재설정 1시간 뒤 만료한다.
-- `EmailChangeRequest`는 24시간 뒤 만료하고 같은 user 기준 10분에 1회 요청을 허용한다.
+- 이메일 인증과 비밀번호 재설정 token은 allauth가 발급·검증한다.
+- Browser에는 HttpOnly session ID만 저장하고 인증 상태는 서버에 둔다.
 - `BenefitClaim`은 원문 개인정보 없이 HMAC hash ledger로 장기 보관한다.
 
 ### Phase 1 - Catalog

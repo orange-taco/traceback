@@ -10,7 +10,6 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.test import APIClient
-from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.core.pagination import StandardPageNumberPagination
 
@@ -55,14 +54,14 @@ urlpatterns = [
 class RequestIDTests(SimpleTestCase):
     def test_response_includes_supplied_request_id(self) -> None:
         response = self.client.get(
-            "/api/accounts/token/obtain",
+            "/health",
             headers={"X-Request-ID": "req-123"},
         )
 
         self.assertEqual(response["X-Request-ID"], "req-123")
 
     def test_response_generates_request_id_when_missing(self) -> None:
-        response = self.client.get("/api/accounts/token/obtain")
+        response = self.client.get("/health")
 
         self.assertTrue(response["X-Request-ID"])
 
@@ -100,12 +99,11 @@ class StaffRESTAuthTests(TestCase):
     def test_staff_endpoint_rejects_anonymous_users(self) -> None:
         response = self.api_client.get("/probe/staff")
 
-        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.status_code, 403)
 
     def test_staff_endpoint_rejects_non_staff_users(self) -> None:
         user = self.user_model.objects.create_user("user@example.com")
-        token = RefreshToken.for_user(user).access_token
-        self.api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        self.api_client.force_login(user)
 
         response = self.api_client.get("/probe/staff")
 
@@ -116,8 +114,7 @@ class StaffRESTAuthTests(TestCase):
             "staff@example.com",
             is_staff=True,
         )
-        token = RefreshToken.for_user(staff).access_token
-        self.api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        self.api_client.force_login(staff)
 
         response = self.api_client.get("/probe/staff")
 

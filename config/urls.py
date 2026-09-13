@@ -4,5 +4,6 @@ from apps.core.views import health_check
 
 urlpatterns = [
     path("health", health_check),
-    path("api/accounts/", include("apps.accounts.urls")),
+    path("_allauth/", include("allauth.headless.urls")),
+    path("accounts/", include("allauth.urls")),
 ]
