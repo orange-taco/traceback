@@ -35,6 +35,9 @@
   `UserManager`는 Django 필수 생성 hook만 남겼다. CodeRabbit의 migration,
   password-reset, production secret, validation 기록 지적을 현재 코드 기준으로
   재검증해 반영했다.
+- 2026-09-14 인증 UX 보강: 링크 인증 방식을 유지하면서 미인증 이메일 확인 링크
+  재전송 Headless endpoint를 추가했다. 계정 존재 여부를 숨기는 동일 응답과
+  allauth confirmation cooldown/rate limit을 적용한다.
 - 다음 작업: 푸시된 서버 변경의 원격 CI 결과 확인. Compose 오류는
   사용자 Docker Desktop 업데이트 후 v5.5.1 구성 검사 통과로 해결했다.
   이후 client 인계와 Phase 0 배포 검증을 진행한다.

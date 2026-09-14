@@ -17,6 +17,10 @@
 
 - Email signup, mandatory email verification, login, logout, password reset,
   password change, and Kakao OAuth use django-allauth Headless.
+- Unverified email users can request a new confirmation link through the custom
+  Headless endpoint `POST /_allauth/browser/v1/auth/email/verify/resend`.
+  Responses do not reveal whether an address exists, and allauth's confirmation
+  cooldown/rate limit remains active.
 - Browser authentication uses Django database sessions. The browser stores an
   HttpOnly `sessionid`; mutating requests use Django CSRF protection.
 - Kakao requests only verified `account_email`. Optional nickname/image scopes

@@ -60,6 +60,7 @@ DRF view convention:
 | `GET /_allauth/browser/v1/config` | CSRF cookie와 client 설정 |
 | `GET /_allauth/browser/v1/auth/session` | 현재 인증 상태와 User |
 | `POST /_allauth/browser/v1/auth/signup` | `email`, `password`; 확인 메일 발송 |
+| `POST /_allauth/browser/v1/auth/email/verify/resend` | `email`; 미인증 계정에 확인 링크 재발송. 계정 존재 여부와 무관하게 같은 응답 |
 | `POST /_allauth/browser/v1/auth/email/verify` | `key`; email 확인 및 session 완료 |
 | `POST /_allauth/browser/v1/auth/login` | `email`, `password`; DB session 생성 |
 | `DELETE /_allauth/browser/v1/auth/session` | 현재 session 종료 |
