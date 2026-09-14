@@ -4,16 +4,23 @@
 
 ## 공통 정책
 
-- Base path: `/api/v1`
+- Account authentication paths: `/_allauth/browser/v1` and `/accounts`
 - Format: JSON, 금액은 KRW 정수
-- 관리자 인증: Django session + staff/superuser + DRF `IsAdminUser`
+- staff 운영 인증: DRF staff API 기본 권한 후보는 `User.is_staff`를 확인하는 `IsAdminUser`이다. 세부 권한/namespace는 해당 Phase에서 확정한다.
 - 리스트 응답: pagination 포함
 - 오류 응답: `code`, `message`, `details`, `request_id`
 - 생성/승인/취소 등 명령 API는 `Idempotency-Key`를 사용한다.
 - 같은 scope/key와 같은 요청은 기존 결과, 다른 요청은 `409 Conflict`.
 - 고객 명령 token 원문은 응답에만 포함하고 서버에는 hash만 저장한다.
 
-`GET /health`는 인증 없이 서비스 상태를 반환한다. 정상 응답은 `200`과 `{"status": "ok"}`다.
+DRF view convention:
+
+- Resource API는 `GenericViewSet` + mixin 조합으로 만들고 router에 등록한다. mixin method를 오버라이드하면 DRF 원본 흐름(`get_serializer`, `perform_*`, pagination, headers)을 유지한다.
+- Signup, token obtain, token refresh, callback처럼 resource CRUD가 아닌 단일 행위 API는 `GenericAPIView` 또는 해당 DRF 제공 view를 사용한다.
+- 새 코드에서 `@api_view`, `APIView`, `ListAPIView`, `RetrieveAPIView`, `@action`은 사용하지 않는다.
+- `GenericAPIView`는 class attribute(`permission_classes`, `authentication_classes`, `serializer_class`)를 먼저 두고, `serializer_class` 대상은 `self.get_serializer(...)`로 생성한다.
+- Serializer는 `ModelSerializer`를 우선 사용한다. plain `Serializer`는 모델과 직접 매핑되지 않는 입력에만 사용한다. `Meta.fields`는 한 줄에 하나씩 명시한다.
+- 응답 body가 있으면 serializer를 통과한다. DRF 제공 view는 제공 serializer와 응답 구조를 그대로 우선 사용한다.
 
 계산 상태 enum:
 
@@ -22,6 +29,51 @@
 - `fulfillment_status`: `unfulfilled`, `preparing`, `partially_shipped`, `shipped`, `delivered`
 
 ## 고객 API
+
+### Account
+
+회원 기능은 선택 흐름이며 Store, Cart, Checkout, Order Tracking은 비회원도 사용할
+수 있어야 한다.
+
+확정된 기준:
+
+- django-allauth Headless Browser API가 가입, 이메일 인증, 로그인, 로그아웃,
+  비밀번호 재설정, Kakao OAuth와 계정 연결을 담당한다.
+- 인증 완료 상태는 Django DB session으로 저장하고 HttpOnly `sessionid` cookie로
+  전달한다. JWT와 browser token storage는 사용하지 않는다.
+- 변경 요청은 Django CSRF cookie와 `X-CSRFToken` header를 사용한다.
+- 이메일 가입은 mandatory verification이며 확인 전에는 로그인을 완료할 수 없다.
+- 비밀번호는 Django validators를 사용하며 최소 길이는 8자다.
+- 이메일 확인과 비밀번호 재설정 링크는 frontend route로 발송한다.
+- 이메일 확인 메일은 같은 이메일 기준 3분에 2회, 같은 IP 기준 1분에 3회까지
+  발송하며, 초과 요청도 계정 존재 여부를 드러내지 않는다.
+- 검증된 provider email은 같은 email의 User를 인증하고 `SocialAccount`를 자동
+  연결한다. 미검증 local email 선점 상태라면 allauth가 기존 password를
+  무효화한 뒤 provider 소유자를 인증한다.
+- Kakao가 verified email을 제공하지 않으면 가입/연결을 완료하지 않으며 별도
+  email 입력을 받지 않는다.
+- Kakao OAuth `state`, authorization code 교환, provider 오류 처리는 allauth가
+  담당한다.
+
+주요 allauth Browser API:
+
+| Method / Path | 계약 |
+| --- | --- |
+| `GET /_allauth/browser/v1/config` | CSRF cookie와 client 설정 |
+| `GET /_allauth/browser/v1/auth/session` | 현재 인증 상태와 User |
+| `POST /_allauth/browser/v1/auth/signup` | `email`, `password`; 확인 메일 발송 |
+| `POST /_allauth/browser/v1/auth/email/verify/resend` | `email`; 미인증 계정에 확인 링크 재발송. 계정 존재 여부와 무관하게 같은 응답 |
+| `POST /_allauth/browser/v1/auth/email/verify` | `key`; email 확인 및 session 완료 |
+| `POST /_allauth/browser/v1/auth/login` | `email`, `password`; DB session 생성 |
+| `DELETE /_allauth/browser/v1/auth/session` | 현재 session 종료 |
+| `POST /_allauth/browser/v1/auth/password/request` | reset link 발송 |
+| `POST /_allauth/browser/v1/auth/password/reset` | `key`, `password`; password 변경 |
+| `POST /_allauth/browser/v1/account/password/change` | 로그인 및 CSRF 필요; `current_password`, `new_password`; allauth 기본 API |
+| `POST /_allauth/browser/v1/auth/provider/redirect` | Kakao authorize redirect 시작 |
+| `GET /accounts/kakao/login/callback/` | Kakao provider callback |
+
+운영 프록시는 `/_allauth`와 `/accounts`를 같은 public origin에서 Django로
+전달하고 원래 Host와 `X-Forwarded-Proto`를 보존한다.
 
 ### Catalog
 
@@ -105,40 +157,40 @@ Cart item 응답은 `id`, `variant_id`, `display_name`, `unit_price`, `quantity`
 - 중복/순서 역전을 허용하고 공통 결제 조정 service로 처리한다.
 - 오래 걸리는 후속 처리는 비동기로 넘긴다.
 
-## 관리자 API
+## Staff 운영 API
 
-모든 관리자 API는 session 인증과 `IsAdminUser`를 요구한다. 각 Phase 시작 전 요청/응답 세부 필드를 확정한다.
+Django admin은 사용하지 않는다. Staff 운영 화면/API는 단일 client repo의 staff 화면에서 시작한다. DRF staff API 기본 권한 후보는 `IsAdminUser`이며, backend path, 세부 권한, 요청/응답 필드는 각 Phase 시작 전에 확정한다.
 
 ### Product / Inventory
 
-| Method / Path | 계약 |
+| 기능 | 계약 후보 |
 | --- | --- |
-| `GET /admin/products` | 상품 pagination |
-| `POST /admin/products` | Product와 VariantGroup/Variant 생성 |
-| `GET /admin/products/{id}` | 관리자 상품 상세 |
-| `PATCH /admin/products/{id}` | 상품/옵션 수정 |
-| `POST /admin/products/{id}/publish` | draft를 active로 게시 |
-| `GET /admin/variants` | 재고 필드와 계산 가용 수량 조회 |
-| `POST /admin/variants/{id}/inventory-adjustments` | `Idempotency-Key`; 요청 `quantity_delta`, `reason`; row lock 후 movement 기록 |
+| 상품 목록 | 상품 pagination |
+| 상품 생성 | Product와 VariantGroup/Variant 생성 |
+| 상품 상세 | staff 상품 상세 |
+| 상품 수정 | 상품/옵션 수정 |
+| 상품 게시 | draft를 active로 게시 |
+| 재고 조회 | 재고 필드와 계산 가용 수량 조회 |
+| 재고 조정 | `Idempotency-Key`; 요청 `quantity_delta`, `reason`; row lock 후 movement 기록 |
 
 ### Order / Fulfillment
 
-| Method / Path | 계약 |
+| 기능 | 계약 후보 |
 | --- | --- |
-| `GET /admin/orders` | 계산 상태 필터를 지원하는 주문 pagination |
-| `GET /admin/orders/{id}` | snapshot, lines, payments, fulfillments, refunds/returns, active holds |
-| `POST /admin/orders/{id}/fulfillment-hold` | `Idempotency-Key`; manual hold는 `reason`, `note` 필수 |
-| `POST /admin/fulfillment-holds/{id}/release` | `Idempotency-Key`; 원천 상태 재검증 후 지정 hold 해제 |
-| `POST /admin/orders/{id}/fulfillments` | `Idempotency-Key`; 상태/송장/`lines[{order_line_id, quantity}]`; 출고 조건 검증 |
-| `PATCH /admin/fulfillments/{id}` | 준비/배송 상태 변경; shipped/delivered는 cancelled로 되돌리지 않음 |
+| 주문 목록 | 계산 상태 필터를 지원하는 주문 pagination |
+| 주문 상세 | snapshot, lines, payments, fulfillments, refunds/returns, active holds |
+| 출고 보류 | `Idempotency-Key`; manual hold는 `reason`, `note` 필수 |
+| 출고 보류 해제 | `Idempotency-Key`; 원천 상태 재검증 후 지정 hold 해제 |
+| 출고 생성 | `Idempotency-Key`; 상태/송장/`lines[{order_line_id, quantity}]`; 출고 조건 검증 |
+| 출고 상태 변경 | 준비/배송 상태 변경; shipped/delivered는 cancelled로 되돌리지 않음 |
 
 ### Cancellation / Refund
 
-| Method / Path | 계약 |
+| 기능 | 계약 후보 |
 | --- | --- |
-| `POST /admin/orders/{id}/cancellations` | `Idempotency-Key`; 요청 `reason`, `lines[{order_line_id, quantity}]`; 결제 전 취소 또는 결제 후 환불 오케스트레이션 |
-| `POST /admin/refunds` | `Idempotency-Key`; 완료 ReturnLine 기반 환불 또는 수기 조정 |
-| `POST /admin/refunds/{id}/retry` | 기존 Refund와 PG 작업 키로 조회/재시도 |
+| 주문 취소 | `Idempotency-Key`; 요청 `reason`, `lines[{order_line_id, quantity}]`; 결제 전 취소 또는 결제 후 환불 오케스트레이션 |
+| 환불 생성 | `Idempotency-Key`; 완료 ReturnLine 기반 환불 또는 수기 조정 |
+| 환불 재시도 | 기존 Refund와 PG 작업 키로 조회/재시도 |
 
 규칙:
 
@@ -149,11 +201,11 @@ Cart item 응답은 `id`, `variant_id`, `display_name`, `unit_price`, `quantity`
 
 ### Return
 
-| Method / Path | 계약 |
+| 기능 | 계약 후보 |
 | --- | --- |
-| `POST /admin/orders/{id}/returns` | `Idempotency-Key`; 배송 완료 수량 범위 안에서 접수 |
-| `PATCH /admin/returns/{id}` | `Idempotency-Key`; `requested -> approved/rejected`, `approved -> in_transit/received`, `in_transit -> received` |
-| `POST /admin/returns/{id}/complete` | `Idempotency-Key`; accepted/restock 수량 확정, 재판매 가능 수량만 재고 복구 |
+| 반품 접수 | `Idempotency-Key`; 배송 완료 수량 범위 안에서 접수 |
+| 반품 상태 변경 | `Idempotency-Key`; `requested -> approved/rejected`, `approved -> in_transit/received`, `in_transit -> received` |
+| 반품 완료 | `Idempotency-Key`; accepted/restock 수량 확정, 재판매 가능 수량만 재고 복구 |
 
 환불은 자동 생성하지 않고 완료 Return을 참조해 별도 실행한다.
 
