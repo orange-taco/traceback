@@ -45,6 +45,8 @@ DRF view convention:
 - 이메일 가입은 mandatory verification이며 확인 전에는 로그인을 완료할 수 없다.
 - 비밀번호는 Django validators를 사용하며 최소 길이는 8자다.
 - 이메일 확인과 비밀번호 재설정 링크는 frontend route로 발송한다.
+- 이메일 확인 메일은 같은 이메일 기준 3분에 2회, 같은 IP 기준 1분에 3회까지
+  발송하며, 초과 요청도 계정 존재 여부를 드러내지 않는다.
 - 검증된 provider email은 같은 email의 User를 인증하고 `SocialAccount`를 자동
   연결한다. 미검증 local email 선점 상태라면 allauth가 기존 password를
   무효화한 뒤 provider 소유자를 인증한다.

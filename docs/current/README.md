@@ -41,6 +41,7 @@
 - `ACCOUNT_EMAIL_VERIFICATION = "mandatory"`
 - Password minimum: 8 characters
 - Email confirmation lifetime: 1 day
+- Email confirmation send limit: 2 per 3 minutes per email and 3 per minute per IP
 - Headless client: browser only
 - Local frontend: `http://localhost:5173`
 - Local provider callback: `http://localhost:8000/accounts/kakao/login/callback/`

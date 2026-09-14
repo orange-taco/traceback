@@ -127,6 +127,9 @@ ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*"]
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 1
+ACCOUNT_RATE_LIMITS = {
+    "confirm_email": "2/180s/key,3/m/ip",
+}
 
 HEADLESS_ONLY = True
 HEADLESS_CLIENTS = ("browser",)
