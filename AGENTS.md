@@ -4,8 +4,8 @@ This repository implements the TRACEBACK commerce backend.
 
 ## Session Start
 
-1. Read `docs/simple-build-guide.md` first.
-2. Read the resume checkpoint in `docs/build-plan.md`.
+1. Read `docs/current/README.md` for the current state and next action.
+2. Read the resume checkpoint and implementation principles in `docs/build-plan.md`.
 3. Use only the relevant detailed docs for the current slice.
 4. Verify the current branch and working tree before changing files.
 5. Do not assume a phase is complete from conversation context alone.
@@ -18,7 +18,7 @@ This repository implements the TRACEBACK commerce backend.
 
 ## Phase Checks
 
-- Treat `docs/simple-build-guide.md` and `docs/build-plan.md` as the phase scope authority.
+- Treat `docs/build-plan.md` as the phase scope and completion authority.
 - Before starting a new phase, compare the code, tests, and checkpoint against that phase's completion criteria.
 - Start Phase 1 only after Phase 0 completion criteria are satisfied and recorded.
 - If Phase 0 is incomplete, continue Phase 0 work instead of starting Catalog work.

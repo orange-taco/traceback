@@ -46,7 +46,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(move_auth_state_to_allauth, migrations.RunPython.noop),
+        migrations.RunPython(move_auth_state_to_allauth),
         migrations.RemoveIndex(
             model_name="emailchangerequest",
             name="accounts_em_user_id_96ba00_idx",

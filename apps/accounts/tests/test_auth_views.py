@@ -131,7 +131,9 @@ class HeadlessAccountAuthTests(TestCase):
             {"key": key, "password": "new-valid-pass-123"},
         )
 
-        self.assertIn(response.status_code, {200, 401}, response.content)
+        self.assertEqual(response.status_code, 401, response.content)
+        self.assertFalse(response.json()["meta"]["is_authenticated"])
+        self.assertNotIn("_auth_user_id", self.client.session)
         user.refresh_from_db()
         self.assertTrue(user.check_password("new-valid-pass-123"))
 

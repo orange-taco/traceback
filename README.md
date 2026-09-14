@@ -1,7 +1,5 @@
 # Traceback Backend
 
-Command reference: [docs/commands.md](docs/commands.md)
-
 ## Local development
 
 Local development uses Docker Compose PostgreSQL by default. Django can run
@@ -78,4 +76,22 @@ uv run python manage.py makemigrations --check --dry-run --settings=config.setti
 uv run python manage.py migrate --settings=config.settings.test
 uv run python manage.py migrate --check --settings=config.settings.test
 uv run pytest
+```
+
+Common Django commands:
+
+```sh
+uv run --env-file .env python manage.py makemigrations
+uv run --env-file .env python manage.py migrate
+uv run --env-file .env python manage.py createsuperuser
+uv run --env-file .env python manage.py shell
+```
+
+Production images run Gunicorn directly. Validate and start the production
+overlay with environment values supplied by an untracked `.env`:
+
+```sh
+APP_IMAGE=traceback-production:local docker compose --env-file .env -f docker-compose.yml -f docker-compose_prod.yml config
+docker build --target production -t traceback-production:local .
+APP_IMAGE=traceback-production:local docker compose --env-file .env -f docker-compose.yml -f docker-compose_prod.yml up -d --no-build --wait
 ```

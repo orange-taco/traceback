@@ -45,6 +45,36 @@
 
 익명 cart token 원문은 HttpOnly cookie로만 전달하고 DB에는 hash만 저장한다.
 
+### 현재 account/auth 모델 컬럼 목적
+
+| 모델·컬럼 | 목적 |
+| --- | --- |
+| `User.email` | 로그인과 계정 식별에 사용하는 unique 대표 이메일 |
+| `User.username` | 고객 노출이 가능한 unique 사용자명; 가입 시 임의 값 생성 |
+| `User.username_changed_at` | 사용자명 변경 제한과 운영 추적 기준 |
+| `User.name` | 선택적인 실명 또는 표시 이름 |
+| `User.phone_e164` | SMS 인증 후 저장하는 정규화 전화번호 |
+| `User.phone_verified_at` | 전화번호 소유 확인 시각; welcome benefit 중복 기준 |
+| `User.is_active` | 로그인 가능 여부; 탈퇴 시 `False`로 전환 |
+| `User.is_staff` | staff API 접근 기준 |
+| `User.is_superuser` | Django 권한 시스템의 전체 권한 플래그 |
+| `User.deleted_at` | 탈퇴·익명화 정책을 적용한 시각 |
+| `User.last_login` | Django 인증의 최근 로그인 시각 |
+| `User.password` | Django password hasher 결과; 원문은 저장하지 않음 |
+| `User.created_at`, `User.updated_at` | 가입 시각과 레코드 변경 추적 |
+| `BenefitClaim.code` | 지급한 혜택 종류 |
+| `BenefitClaim.user_id` | 혜택 수령 User; 탈퇴 후 참조 해제를 위해 nullable |
+| `BenefitClaim.phone_hash` | 원문 전화번호 대신 저장하는 HMAC hash |
+| `BenefitClaim.claimed_at` | 혜택 지급 시각 |
+| `BenefitClaim.claim_source` | 지급을 발생시킨 흐름 |
+| `BenefitClaim.metadata` | 감사에 필요한 비정형 부가 정보 |
+
+활성 인증 전화번호는 DB partial unique constraint로 중복을 막는다.
+`welcome_signup` 혜택은 `phone_hash`가 필수이며 같은 hash에는 한 번만 지급된다.
+allauth가 소유하는 `EmailAddress`는 이메일 인증 상태를, `SocialAccount`는
+provider identity와 응답을, Django `Session`은 서버 인증 상태를 보관한다.
+Kakao는 `account_email`만 요청하며 nickname/image를 User 컬럼으로 복사하지 않는다.
+
 ## Order
 
 | 모델 | 주요 필드 | 핵심 규칙 |

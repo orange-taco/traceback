@@ -6,15 +6,15 @@ AI 실행 지침 전체를 그대로 옮기는 문서가 아니라, 이 저장�
 
 ## 시작 기준
 
-- 새 작업은 먼저 `docs/simple-build-guide.md`의 범위와 원칙을 기준으로 본다.
-- 이어서 `docs/build-plan.md`의 재개 체크포인트를 확인한다.
+- 새 작업은 먼저 `docs/current/README.md`에서 현재 상태와 다음 행동을 확인한다.
+- 이어서 `docs/build-plan.md`의 재개 체크포인트와 구현 원칙을 확인한다.
 - 현재 작업에 필요한 상세 문서만 추가로 참고한다.
 - 작업 전 현재 브랜치와 작업트리를 확인한다.
 - 대화 맥락만으로 Phase가 완료됐다고 가정하지 않는다.
 
 ## Phase 진행
 
-- Phase 범위의 기준 문서는 `docs/simple-build-guide.md`와 `docs/build-plan.md`다.
+- Phase 범위와 완료 판정의 기준 문서는 `docs/build-plan.md`다.
 - Phase 0 완료 기준이 실제 코드, 테스트, 체크포인트에 반영되기 전에는 Phase 1 Catalog를 시작하지 않는다.
 - 개발을 마치거나 멈출 때는 `docs/current/README.md`와 `docs/build-plan.md`의 현재 상태를 실제 코드 상태와 맞춘다.
 - 완료 이력은 검증이 끝난 뒤에만 기록한다.

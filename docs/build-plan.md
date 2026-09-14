@@ -1,7 +1,6 @@
 # Traceback Build Plan
 
-> 구현 원칙은 [`simple-build-guide.md`](./simple-build-guide.md)를 따르고,
-> 이 문서는 구현 순서, 현재 범위, 완료 판정의 단일 기준으로 사용한다.
+> 이 문서는 구현 원칙, 순서, 현재 범위, 완료 판정의 단일 기준이다.
 
 ## 재개 체크포인트
 
@@ -15,8 +14,7 @@
   서버 구현과 검증을 마무리한다. 2026-09-13 사용자 결정으로 client 구현과
   브라우저 UI 검증은 후속 작업으로 분리했다. 상세 인계는 current/README.md에 둔다.
 - 변경 파일 예산: 이번 42개 파일 서버 전환에 한해 30개 제한 예외 승인 (2026-09-13)
-- 관련 명세: `current/README.md`, `phase-0-completion.md`, `api-spec.md`,
-  `domain-model.md`, `current/account-model-purpose.md`
+- 관련 명세: `current/README.md`, `api-spec.md`, `domain-model.md`
 - 현재까지 완료: Phase 0 foundation과 custom User를 유지하면서 Python 3.14,
   Django 6.1, django-allauth Headless로 전환했다. Email verification, password
   reset, Kakao OAuth, DB session과 React Router
@@ -33,6 +31,10 @@
 - 미해결/설계 의심: 실제 Kakao 교차 로그인 브라우저 QA, client 비밀번호 변경
   화면, production container/reverse proxy/SMTP와 최종 CI 검증은 후속 작업이다.
   잔존 `usersessions_usersession` 테이블은 유지하고 QA 사용자 참조 행만 정리했다.
+- 2026-09-14 정리: 중복 문서 네 개를 기준 문서로 통합하고, custom
+  `UserManager`는 Django 필수 생성 hook만 남겼다. CodeRabbit의 migration,
+  password-reset, production secret, validation 기록 지적을 현재 코드 기준으로
+  재검증해 반영했다.
 - 다음 작업: 푸시된 서버 변경의 원격 CI 결과 확인. Compose 오류는
   사용자 Docker Desktop 업데이트 후 v5.5.1 구성 검사 통과로 해결했다.
   이후 client 인계와 Phase 0 배포 검증을 진행한다.
@@ -74,6 +76,17 @@
 - **막힘**: 재개 체크포인트의 미해결/설계 의심에 차단 원인과 필요한 결정이 기록됨.
 
 ## 작업 방식
+
+### 구현 원칙
+
+- TRACEBACK은 seller가 없는 단독 브랜드 커머스다. marketplace 구조는 만들지 않는다.
+- 모델과 상태값은 현재 Phase의 화면·API·운영에 필요한 최소 범위만 확정한다.
+- 상세 문서의 미래 모델·필드·endpoint는 구현 지시가 아니라 설계 후보로 본다.
+- API는 Phase마다 요청, 응답, 인증, 대표 오류, 핵심 테스트를 함께 확정한다.
+- 결제 PG 호출은 DB transaction 밖에서 수행하고, 주문·결제·재고 변경은
+  중복 요청과 동시성에 안전하며 사후 감사와 복구가 가능해야 한다.
+- 구현 중 제품, API, 모델, 보안, 아키텍처 의미가 달라지는 선택은 사용자 결정을
+  받은 뒤 기준 문서와 코드에 반영한다.
 
 Phase 안에서 작업 슬라이스를 시작할 때 "재개 체크포인트"를 갱신한다.
 
@@ -181,7 +194,7 @@ Phase 0 결정:
 - **범위**: Django/DRF/PostgreSQL 프로젝트, 환경 설정, `User`, `SiteSetting`, `IdempotencyRecord`, `/api/accounts`, 공통 오류, pagination, `request_id`, 관리자 인증, CI.
 - **검증**: 설정/비밀키 주입, namespace 분리, 관리자 권한, 공통 응답 규약.
 - **완료**: 새 환경에서 설치, migrate, 테스트가 성공하고 CI가 같은 검증을 실행한다.
-- **참고**: `phase-0-completion.md`, `api-spec.md` 기본/응답 정책, `domain-model.md` User/SiteSetting/IdempotencyRecord.
+- **참고**: `api-spec.md` 기본/응답 정책, `domain-model.md` User/SiteSetting/IdempotencyRecord.
 
 ## Phase 1 — Catalog
 

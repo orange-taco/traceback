@@ -15,22 +15,6 @@ class UserModelTests(TestCase):
         self.assertTrue(user.username.startswith("user_"))
         self.assertTrue(user.check_password("secret-pass"))
 
-    def test_natural_key_lookup_normalizes_email_and_excludes_deleted_user(
-        self,
-    ) -> None:
-        user = User.objects.create_user("lookup@example.com", "secret-pass")
-
-        self.assertEqual(
-            User.objects.get_by_natural_key(" LOOKUP@EXAMPLE.COM "),
-            user,
-        )
-
-        user.deleted_at = timezone.now()
-        user.save(update_fields=["deleted_at"])
-
-        with self.assertRaises(User.DoesNotExist):
-            User.objects.get_by_natural_key("lookup@example.com")
-
     def test_superuser_requires_staff_and_superuser_flags(self) -> None:
         with self.assertRaises(ValueError):
             User.objects.create_superuser(
