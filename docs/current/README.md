@@ -51,7 +51,7 @@
 - Commit `818e8e9`: remote CI Quality, Test, and CodeRabbit checks passed.
 - Current cleanup command `DJANGO_SETTINGS_MODULE=config.settings.test
   TRACEBACK_DATABASE_URL=sqlite:///:memory: uv run pytest` ran the full local
-  suite: 29 tests passed with 96.47% coverage.
+  suite: 32 tests passed with 96.37% coverage, including resend rate limits.
 - PostgreSQL command `docker compose exec -T -e
   DJANGO_SETTINGS_MODULE=config.settings.test app pytest` passed 29 tests with
   96.60% coverage before the current cleanup. OAuth provider responses were mocked.
