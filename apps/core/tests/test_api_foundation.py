@@ -6,9 +6,10 @@ from django.contrib.auth import get_user_model
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import path
 from rest_framework import serializers
-from rest_framework.permissions import AllowAny
+from rest_framework.generics import GenericAPIView
+from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.response import Response
 from rest_framework.test import APIClient
-from rest_framework.views import APIView
 
 from apps.core.pagination import StandardPageNumberPagination
 
@@ -17,14 +18,14 @@ class NumberSerializer(serializers.Serializer[dict[str, int]]):
     value = serializers.IntegerField()
 
 
-class ValidationProbeView(APIView):
+class ValidationProbeView(GenericAPIView[Any]):
     permission_classes = [AllowAny]
 
     def get(self, request):  # type: ignore[no-untyped-def]
         raise serializers.ValidationError({"field": ["invalid"]})
 
 
-class NumberListView(APIView):
+class NumberListView(GenericAPIView[Any]):
     permission_classes = [AllowAny]
     pagination_class = StandardPageNumberPagination
 
@@ -36,23 +37,31 @@ class NumberListView(APIView):
         return paginator.get_paginated_response(serializer.data)
 
 
+class StaffProbeView(GenericAPIView[Any]):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):  # type: ignore[no-untyped-def]
+        return Response({"ok": True})
+
+
 urlpatterns = [
     path("probe/error", ValidationProbeView.as_view()),
     path("probe/numbers", NumberListView.as_view()),
+    path("probe/staff", StaffProbeView.as_view()),
 ]
 
 
 class RequestIDTests(SimpleTestCase):
     def test_response_includes_supplied_request_id(self) -> None:
         response = self.client.get(
-            "/api/accounts/admin/session",
+            "/health",
             headers={"X-Request-ID": "req-123"},
         )
 
         self.assertEqual(response["X-Request-ID"], "req-123")
 
     def test_response_generates_request_id_when_missing(self) -> None:
-        response = self.client.get("/api/accounts/admin/session")
+        response = self.client.get("/health")
 
         self.assertTrue(response["X-Request-ID"])
 
@@ -81,35 +90,36 @@ class CommonAPIContractTests(SimpleTestCase):
         self.assertEqual(response.json()["results"], [{"value": 0}, {"value": 1}])
 
 
-class AdminRESTAuthTests(TestCase):
+@override_settings(ROOT_URLCONF=__name__)
+class StaffRESTAuthTests(TestCase):
     def setUp(self) -> None:
-        self.client = APIClient()
+        self.api_client = APIClient()
         self.user_model = get_user_model()
 
-    def test_admin_endpoint_rejects_anonymous_users(self) -> None:
-        response = self.client.get("/api/accounts/admin/session")
+    def test_staff_endpoint_rejects_anonymous_users(self) -> None:
+        response = self.api_client.get("/probe/staff")
 
         self.assertEqual(response.status_code, 403)
 
-    def test_admin_endpoint_rejects_non_staff_users(self) -> None:
+    def test_staff_endpoint_rejects_non_staff_users(self) -> None:
         user = self.user_model.objects.create_user("user@example.com")
-        self.client.force_login(user)
+        self.api_client.force_login(user)
 
-        response = self.client.get("/api/accounts/admin/session")
+        response = self.api_client.get("/probe/staff")
 
         self.assertEqual(response.status_code, 403)
 
-    def test_admin_endpoint_accepts_staff_users(self) -> None:
+    def test_staff_endpoint_accepts_staff_users(self) -> None:
         staff = self.user_model.objects.create_user(
             "staff@example.com",
             is_staff=True,
         )
-        self.client.force_login(staff)
+        self.api_client.force_login(staff)
 
-        response = self.client.get("/api/accounts/admin/session")
+        response = self.api_client.get("/probe/staff")
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.json(),
-            {"email": "staff@example.com", "is_staff": True},
+            {"ok": True},
         )

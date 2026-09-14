@@ -1,160 +1,95 @@
 # Current Work
 
-이 문서는 새 세션에서 현재 작업을 빠르게 이어가기 위한 최소 컨텍스트다.
-세부 설계나 완료 판정이 필요할 때만 상위 `docs/` 문서를 추가로 읽는다.
+새 세션은 이 문서를 현재 상태와 다음 행동의 단일 진입점으로 사용한다.
+세부 계약은 관련 기준 문서에서만 관리한다.
 
-## 지금 상태
+## Current State
 
-- 진행 단계: Phase 0 - Foundation
-- 현재 브랜치: `phase-0c-account-api-plan`
-- 현재 슬라이스: Phase 0C - account API surface
-- 현재 코드 상태: Phase 0B account/auth foundation은 `development`에 merge됨. DRF view convention을 확정했고 기존 `/api/accounts/admin/session`은 `APIView` 기반으로 정리됨. 고객 signup/sign in/social/email 인증 API는 아직 구현하지 않음
-- 파일 예산: 한 슬라이스 최대 30개
-- Phase 1 Catalog 시작 금지: Phase 0 완료 기준이 통과하고 `docs/build-plan.md` 완료 이력에 기록되기 전까지 Catalog 작업을 시작하지 않는다.
+- Phase: Phase 0 — Foundation
+- Backend branch: `phase-0c-account-auth-contract`
+- Current slice: django-allauth Headless server authentication completion
+- Server implementation, PostgreSQL contract tests, production image, and direct
+  production container smoke are complete.
+- Client 구현과 실제 Kakao browser acceptance는 별도 후속 작업이다.
+- Phase 1 Catalog는 Phase 0의 남은 검증 전에는 시작하지 않는다.
 
-## 다음 작업
+## Implemented Contract
 
-Phase 0C의 다음 작은 슬라이스는 email/password first 기준으로 signup/sign in API
-계약을 확정하는 것이다. 이메일 인증은 필요하지만 사용할 이메일 발송 시스템이 아직
-정해지지 않았으므로, 인증 endpoint는 발송 방식 결정 후 구현한다.
+- Email signup, mandatory email verification, login, logout, password reset,
+  password change, and Kakao OAuth use django-allauth Headless.
+- Unverified email users can request a new confirmation link through the custom
+  Headless endpoint `POST /_allauth/browser/v1/auth/email/verify/resend`.
+  Responses do not reveal whether an address exists, and allauth's confirmation
+  cooldown/rate limit remains active.
+- Browser authentication uses Django database sessions. The browser stores an
+  HttpOnly `sessionid`; mutating requests use Django CSRF protection.
+- Kakao requests only verified `account_email`. Optional nickname/image scopes
+  are not requested or copied into User columns.
+- A verified provider email may connect to the matching User. New Kakao signup
+  requires a verified email; an existing provider identity may re-login without it.
+- allauth owns `EmailAddress` and `SocialAccount`; legacy account auth models were
+  migrated and removed by `accounts.0004`.
+- React Router uses same-origin `/_allauth` and `/accounts` routes. Production
+  proxying must preserve the original Host and `X-Forwarded-Proto`.
+- Staff API permissions use Django sessions with `IsAdminUser`. Django admin and
+  SimpleJWT are not part of the current contract.
 
-Phase 0B에서 구현된 범위:
+## Configuration Contract
 
-- custom User/Auth 모델
-- account enum 분리: `SocialProvider`, `UserTokenPurpose`, `BenefitClaimCode`
-- Kakao/Naver `SocialAccount`
-- `EmailChangeRequest`
-- `UserToken`
-- `BenefitClaim`
-- request ID middleware
-- 공통 DRF 오류 응답
-- 공통 pagination
-- `/api/accounts/admin/` 관리자 REST 인증 baseline
-- Phase 0B 관리자 REST surface는 accounts URL에서 묶는다.
-- 관련 테스트
-- Phase 0B 모델/컬럼 목적 HTML 문서
+- `ACCOUNT_LOGIN_METHODS = {"email"}`
+- `ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*"]`
+- `ACCOUNT_EMAIL_VERIFICATION = "mandatory"`
+- Password minimum: 8 characters
+- Email confirmation lifetime: 1 day
+- Email confirmation send limit: 2 per 3 minutes per email and 3 per minute per IP
+- Headless client: browser only
+- Local frontend: `http://localhost:5173`
+- Local provider callback: `http://localhost:8000/accounts/kakao/login/callback/`
 
-완료된 Phase 0C 범위:
+## Validation
 
-- DRF convention 문서화
-- 기존 function-based account view 제거
-- `/api/accounts/admin/session`을 `APIView`로 전환
-- 고객 account API 구현 전 확정해야 할 기준 문서화
+- Commit `818e8e9`: remote CI Quality, Test, and CodeRabbit checks passed.
+- Current cleanup command `DJANGO_SETTINGS_MODULE=config.settings.test
+  TRACEBACK_DATABASE_URL=sqlite:///:memory: uv run pytest` ran the full local
+  suite: 29 tests passed with 96.47% coverage.
+- PostgreSQL command `docker compose exec -T -e
+  DJANGO_SETTINGS_MODULE=config.settings.test app pytest` passed 29 tests with
+  96.60% coverage before the current cleanup. OAuth provider responses were mocked.
+- A fresh migration run passed. A separate migration fixture with
+  `Case@Test.com` and `case@test.com` stopped at `accounts.0003` with the intended
+  clear case-insensitive duplicate error, before allauth lowercased User emails.
+- Live PostgreSQL Django check, migration application/drift checks, Ruff,
+  formatting, mypy, YAML lint, uv lock, and development/production Compose
+  configuration passed.
+- Production image `traceback-production-smoke:local` (`7a696a1a2b19`) booted
+  Gunicorn as the `app` user with a read-only root filesystem and returned HTTP
+  200 from `/health`. Runtime secrets were injected and were not embedded in the image.
+- Synthetic QA Users 4–7, their EmailAddress rows, and one referencing legacy
+  session row were removed. User 8 and its Kakao SocialAccount were preserved.
 
-다음 슬라이스 후보:
+## Remaining Validation
 
-- signup/sign in의 필수 입력, 응답 필드, 실패 응답 정책 결정
-- 이메일 인증 발송 시스템 결정
-- email verification과 welcome benefit 지급 조건 결정
-- social login과 social auto-linking은 email/password first 흐름 뒤에 별도 결정
-- password set은 기존 비밀번호가 없는 사용자도 허용
-- password reset은 이메일 링크 기반으로 구현
-- 기준 확정 후 가장 작은 account API endpoint부터 구현
+1. Complete the current CodeRabbit follow-up and confirm remote CI.
+2. Verify the production same-origin reverse proxy and real SMTP delivery.
+3. In the separate client slice, complete password-change UI and actual Kakao
+   cross-route browser acceptance, including logout and PostgreSQL row counts.
+4. Record Phase 0 completion in `docs/build-plan.md` only after these checks pass.
 
-## 이미 결정된 것
+## Client Handoff
 
-- Django/DRF/PostgreSQL을 사용한다.
-- custom User는 `AbstractBaseUser` + `PermissionsMixin` 기반이고 email로 로그인한다.
-- `User.REQUIRED_FIELDS = []`는 DB 컬럼이 아니라 Django custom user 설정이다. `createsuperuser`가 email/password 외 추가 필드를 묻지 않게 하며, username은 manager가 자동 생성한다.
-- `UserManager.create_user()`는 저장 전에 `full_clean(exclude=["password"])`를 실행한다. manager 경로의 User 생성은 모델 필드/unique/constraint validation을 먼저 통과해야 한다.
-- account enum은 model 내부 class가 아니라 `apps/accounts/enums.py`에 둔다.
-- Django migration 파일은 생성물이므로 Ruff pre-commit check/format 대상에서 제외한다. 스키마 검증은 `makemigrations --check --dry-run`, `migrate`, 테스트로 한다.
-- 관리자 REST 인증은 Django session + DRF `IsAdminUser`를 사용한다.
-- 관리자 REST namespace는 `/api/accounts/admin/`이다.
-- DRF view convention:
-  - 2개 이상의 mixin/action 조합으로 자연스럽게 표현되는 resource API는 `ViewSet`을 사용한다.
-  - 단일 행위 endpoint로만 표현되는 API는 `APIView`를 사용한다.
-  - `@api_view`, `GenericAPIView`, `ListAPIView`, `RetrieveAPIView` 등 나머지 view 형태는 새 코드에서 사용하지 않는다.
-  - account/auth처럼 로그인, 로그아웃, 이메일 인증, 비밀번호 재설정, 소셜 완료는 resource CRUD가 아니므로 기본적으로 `APIView` 대상이다.
-  - catalog/admin resource처럼 목록/상세/생성/수정/삭제 중 2개 이상이 필요한 경우 `ViewSet` 대상이다.
-- 앱의 상위 `urls.py`는 실제 하위 URL이 필요한 앱에만 둔다.
-- Phase 0B staff/admin REST URL은 별도 `staff` 패키지 없이 accounts URL에서 시작한다.
-- `SiteSetting`은 Phase 0B에서 만들지 않는다. Phase 1 Catalog 또는 Phase 3 Order에서 재검토한다.
-- `IdempotencyRecord`는 Phase 0B에서 만들지 않는다. Phase 3 Order 전에 재결정한다.
-- `UserToken` 만료:
-  - email verify: 24시간
-  - password set: 1시간
-  - password reset: 1시간
-- `EmailChangeRequest`는 24시간 뒤 만료하고 같은 user 기준 10분에 1회 요청을 허용한다.
-- `BenefitClaim`은 원문 개인정보 없이 HMAC hash ledger로 장기 보관한다.
-- Phase 0C account API는 email/password 가입과 로그인을 먼저 구현한다.
-- 이메일 인증은 필요하지만 사용할 이메일 발송 시스템을 아직 정하지 않았다.
-- password set은 기존 비밀번호가 없는 사용자도 사용할 수 있어야 한다.
-- password reset은 이메일 링크 기반으로 구현한다.
-- `UserToken`, `EmailChangeRequest`, `BenefitClaim`의 실제 발급/소비 API와 클라이언트 연동 flow는 클라이언트 구현 시점에 구현한다.
-- `User.deleted_at`, `SocialAccount.deleted_at` 컬럼은 탈퇴/익명화 정책을 표현하기 위해 유지한다.
-- 실제 탈퇴 처리 메서드나 service는 Phase 0B MVP에서 만들지 않는다. 회원 탈퇴 API/운영 플로우가 시작될 때 구현한다.
+- Add the password-change screen using
+  `POST /_allauth/browser/v1/account/password/change`. Support social-only users
+  setting their first password without `current_password`.
+- Run social signup → password reset → email login → Kakao re-login and verified
+  email signup → Kakao auto-connect in a real browser.
+- Await logout before reading the session again and verify the final unauthenticated
+  state and HttpOnly cookie behavior.
+- Follow `../traceback-client/AGENTS.md`; keep client changes in that repository.
 
-## 먼저 확인할 것
+## Relevant Docs
 
-작업 전:
-
-```bash
-git status --short --branch
-```
-
-이미 사용자 변경이 있으면 보존한다.
-
-현재 작업 브랜치는 `phase-0c-account-api-plan`이다. 다음 코드 작업을 계속하기 전에
-이 브랜치 이름을 유지할지, 구현 브랜치로 새로 나눌지 확인한다.
-
-## 필요한 경우만 읽을 문서
-
-- Phase 0B 모델/컬럼 목적: [`phase-0b-model-purpose.html`](./phase-0b-model-purpose.html)
-- Phase 0B 상세 결정: [`../phaseB.md`](../phaseB.md)
-- Phase 0 완료 기준: [`../phase-0-completion.md`](../phase-0-completion.md)
-- 전체 체크포인트와 완료 이력: [`../build-plan.md`](../build-plan.md)
-- 전체 구현 원칙: [`../simple-build-guide.md`](../simple-build-guide.md)
-- API 공통 규약 확인이 필요할 때: [`../api-spec.md`](../api-spec.md)
-- User 모델 원칙 확인이 필요할 때: [`../domain-model.md`](../domain-model.md)
-
-## 완료 전 검증
-
-Phase 0 완료로 기록하기 전에는 `docs/phase-0-completion.md`의 command set을 실행한다.
-검증이 끝나기 전에는 `docs/build-plan.md` 완료 이력에 완료로 적지 않는다.
-
-마지막 로컬 검증:
-
-- Phase 0B commit: `6a0b3d4`
-- Phase 0B merge: PR #5, merge commit `489ed3b`
-- Phase 0C DRF convention slice:
-  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check apps/accounts/views.py apps/accounts/urls.py apps/core/tests/test_api_foundation.py`
-  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run mypy apps/accounts apps/core`
-  - `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run pytest`
-  - `git diff --check`
-- `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check .`
-- `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff check apps/accounts/migrations/0001_initial.py`
-- `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run ruff format --check .`
-- `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run mypy .`
-- `UV_CACHE_DIR=/tmp/traceback-uv-cache DJANGO_SETTINGS_MODULE=config.settings.test uv run python manage.py check`
-- `UV_CACHE_DIR=/tmp/traceback-uv-cache DJANGO_SETTINGS_MODULE=config.settings.test uv run python manage.py makemigrations --check --dry-run`
-- `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run pytest`
-- `UV_CACHE_DIR=/tmp/traceback-uv-cache TRACEBACK_DATABASE_URL=sqlite:////tmp/traceback-phase0b-check.sqlite DJANGO_SETTINGS_MODULE=config.settings.test uv run python manage.py migrate --noinput`
-- `UV_CACHE_DIR=/tmp/traceback-uv-cache TRACEBACK_DATABASE_URL=sqlite:////tmp/traceback-phase0b-check.sqlite DJANGO_SETTINGS_MODULE=config.settings.test uv run python manage.py migrate --check`
-- `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run yamllint .`
-- `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run pre-commit validate-config`
-- `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run pre-commit run ruff-check --files apps/accounts/migrations/0001_initial.py apps/accounts/models.py`
-- `UV_CACHE_DIR=/tmp/traceback-uv-cache uv run pre-commit run ruff-format --files apps/accounts/migrations/0001_initial.py apps/accounts/models.py`
-- `docker compose --env-file .env.example config --quiet`
-- `APP_IMAGE=traceback:test docker compose --env-file .env.example -f docker-compose.yml -f docker-compose_prod.yml config --quiet`
-
-아직 못 돌린 검증:
-
-- PostgreSQL 실환경 migrate/test
-- production image build
-- 실제 GitHub Actions CI
-
-## 작업 종료 시 업데이트
-
-작업을 마치거나 세션을 멈추기 전에는 이 문서를 현재 코드 상태에 맞게 갱신한다.
-
-반드시 갱신할 내용:
-
-- 지금 상태: phase, 브랜치, 현재 슬라이스가 실제와 일치하는지
-- 다음 작업: 새 세션이 바로 시작할 수 있는 가장 구체적인 행동
-- 이미 결정된 것: 작업 중 새로 확정된 설계 결정
-- 먼저 확인할 것: 남은 사용자 변경, 미검증 파일, 주의할 충돌
-- 완료 전 검증: 마지막으로 통과한 명령과 아직 못 돌린 명령
-
-`docs/build-plan.md`의 재개 체크포인트도 같은 내용으로 맞춘다. 단, 완료 이력은
-완료 조건과 검증이 실제로 끝난 뒤에만 기록한다.
+- Phase/checkpoint: [`../build-plan.md`](../build-plan.md)
+- API contract: [`../api-spec.md`](../api-spec.md)
+- Models and column purposes: [`../domain-model.md`](../domain-model.md)
+- Runtime and deployment: [`../infrastructure-decisions.md`](../infrastructure-decisions.md)
+- Commands: [`../../README.md`](../../README.md)

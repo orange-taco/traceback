@@ -34,16 +34,46 @@
 
 | 모델 | 주요 필드 | 핵심 규칙 |
 | --- | --- | --- |
-| `User` | `email`, `username`, `username_changed_at`, `name`, `phone_e164`, `phone_verified_at`, `email_verified_at`, `is_active`, `is_staff`, `is_superuser`, `deleted_at`, `last_login`, `joined_at` | custom User, 정규화 email 로그인, 활성·비삭제 User만 로그인 lookup 대상, 탈퇴 시 email 익명화로 재가입 허용, `username` unique 자동 생성, 활성 인증 phone partial unique |
-| `SocialAccount` | `user_id`, `provider(kakao/naver)`, `provider_user_id`, `provider_email`, `provider_email_verified`, `is_active`, `linked_at`, `deleted_at?` | active 행만 lookup, `(provider, provider_user_id)` unique, `(user_id, provider)` unique, 탈퇴 시 inactive + provider identity/email 익명화 |
-| `EmailChangeRequest` | `user_id`, `new_email`, `token_hash`, `expires_at`, `confirmed_at?` | token 원문 저장 금지, 24시간 만료, user당 10분 1회 요청, 새 요청 시 기존 미확정 요청 만료 |
-| `UserToken` | `user_id`, `purpose(email_verify/password_set/password_reset)`, `token_hash`, `expires_at`, `consumed_at?` | token 원문 저장 금지, email verify 24시간, password set/reset 1시간 만료 |
+| `User` | `email`, `username`, `username_changed_at`, `name`, `phone_e164`, `phone_verified_at`, `is_active`, `is_staff`, `is_superuser`, `deleted_at`, `last_login` | custom User, 정규화 email 로그인, 활성·비삭제 User만 로그인 lookup 대상, 탈퇴 시 email 익명화로 재가입 허용, `username` unique 자동 생성, 활성 인증 phone partial unique |
+| `allauth.account.EmailAddress` | `user_id`, `email`, `verified`, `primary` | 대표 email과 인증 상태의 단일 기준; mandatory email verification과 변경 흐름에 사용 |
+| `allauth.socialaccount.SocialAccount` | `user_id`, `provider`, `uid`, `extra_data` | provider identity unique; Kakao 응답과 내부 User 연결을 allauth가 관리 |
+| `django.contrib.sessions.Session` | `session_key`, `session_data`, `expire_date` | HttpOnly cookie에는 session ID만 두고 인증 상태는 DB에 저장 |
 | `BenefitClaim` | `code`, `user_id?`, `phone_hash?`, `claimed_at`, `claim_source`, `metadata` | `welcome_signup`은 `phone_hash IS NOT NULL`이며 `(code, phone_hash)` unique, 원문 전화번호 저장 금지, HMAC hash ledger로 장기 보관 |
 | `UserAddress` | `user_id`, 주소 필드, `is_default` | Phase 9+, 사용자당 default 최대 1개 |
 | `Cart` | `user_id?`, `cart_token_hash?`, `status(active/ordered/expired)`, `expires_at?` | token hash partial unique, 회원당 active 최대 1개 |
 | `CartItem` | `cart_id`, `product_variant_id`, `quantity` | `(cart_id, product_variant_id)` unique, `quantity > 0` |
 
 익명 cart token 원문은 HttpOnly cookie로만 전달하고 DB에는 hash만 저장한다.
+
+### 현재 account/auth 모델 컬럼 목적
+
+| 모델·컬럼 | 목적 |
+| --- | --- |
+| `User.email` | 로그인과 계정 식별에 사용하는 unique 대표 이메일 |
+| `User.username` | 고객 노출이 가능한 unique 사용자명; 가입 시 임의 값 생성 |
+| `User.username_changed_at` | 사용자명 변경 제한과 운영 추적 기준 |
+| `User.name` | 선택적인 실명 또는 표시 이름 |
+| `User.phone_e164` | SMS 인증 후 저장하는 정규화 전화번호 |
+| `User.phone_verified_at` | 전화번호 소유 확인 시각; welcome benefit 중복 기준 |
+| `User.is_active` | 로그인 가능 여부; 탈퇴 시 `False`로 전환 |
+| `User.is_staff` | staff API 접근 기준 |
+| `User.is_superuser` | Django 권한 시스템의 전체 권한 플래그 |
+| `User.deleted_at` | 탈퇴·익명화 정책을 적용한 시각 |
+| `User.last_login` | Django 인증의 최근 로그인 시각 |
+| `User.password` | Django password hasher 결과; 원문은 저장하지 않음 |
+| `User.created_at`, `User.updated_at` | 가입 시각과 레코드 변경 추적 |
+| `BenefitClaim.code` | 지급한 혜택 종류 |
+| `BenefitClaim.user_id` | 혜택 수령 User; 탈퇴 후 참조 해제를 위해 nullable |
+| `BenefitClaim.phone_hash` | 원문 전화번호 대신 저장하는 HMAC hash |
+| `BenefitClaim.claimed_at` | 혜택 지급 시각 |
+| `BenefitClaim.claim_source` | 지급을 발생시킨 흐름 |
+| `BenefitClaim.metadata` | 감사에 필요한 비정형 부가 정보 |
+
+활성 인증 전화번호는 DB partial unique constraint로 중복을 막는다.
+`welcome_signup` 혜택은 `phone_hash`가 필수이며 같은 hash에는 한 번만 지급된다.
+allauth가 소유하는 `EmailAddress`는 이메일 인증 상태를, `SocialAccount`는
+provider identity와 응답을, Django `Session`은 서버 인증 상태를 보관한다.
+Kakao는 `account_email`만 요청하며 nickname/image를 User 컬럼으로 복사하지 않는다.
 
 ## Order
 

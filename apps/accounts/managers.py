@@ -12,20 +12,6 @@ if TYPE_CHECKING:
 class UserManager(BaseUserManager["User"]):
     use_in_migrations = True
 
-    @classmethod
-    def normalize_email(cls, email: str | None) -> str:
-        if email is None:
-            return ""
-        return email.strip().lower()
-
-    def generate_username(self) -> str:
-        from .models import User
-
-        while True:
-            username = f"user_{secrets.token_hex(4)}"
-            if not User.objects.filter(username=username).exists():
-                return username
-
     def create_user(
         self,
         email: str,
@@ -35,8 +21,13 @@ class UserManager(BaseUserManager["User"]):
         if not email:
             raise ValueError("The email address must be set.")
 
-        normalized_email = self.normalize_email(email)
-        extra_fields.setdefault("username", self.generate_username())
+        normalized_email = email.strip().lower()
+        if "username" not in extra_fields:
+            while True:
+                username = f"user_{secrets.token_hex(4)}"
+                if not self.filter(username=username).exists():
+                    extra_fields["username"] = username
+                    break
         user = self.model(email=normalized_email, **extra_fields)
         user.set_password(password)
         user.full_clean(exclude=["password"])
