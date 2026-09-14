@@ -53,7 +53,7 @@ class HeadlessAccountAuthTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json()["meta"]["is_authenticated"])
 
-    @override_settings(ACCOUNT_EMAIL_CONFIRMATION_COOLDOWN=0)
+    @override_settings(ACCOUNT_RATE_LIMITS={"confirm_email": "10/180s/key"})
     def test_unverified_email_can_request_another_confirmation_link(self) -> None:
         response = self.post_json(
             "/_allauth/browser/v1/auth/signup",
@@ -80,6 +80,23 @@ class HeadlessAccountAuthTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["status"], 200)
         self.assertEqual(len(mail.outbox), 0)
+
+    def test_confirmation_resend_obeys_email_rate_limit(self) -> None:
+        response = self.post_json(
+            "/_allauth/browser/v1/auth/signup",
+            {"email": "limited@example.com", "password": "valid-pass-123"},
+        )
+        self.assertEqual(response.status_code, 401)
+        mail.outbox.clear()
+
+        for _ in range(2):
+            response = self.post_json(
+                "/_allauth/browser/v1/auth/email/verify/resend",
+                {"email": "limited@example.com"},
+            )
+            self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(len(mail.outbox), 1)
 
     def test_verified_user_can_login_read_session_and_logout(self) -> None:
         user = self.user_model.objects.create_user(
