@@ -6,7 +6,7 @@
 ## Current State
 
 - Phase: Phase 0 — Foundation
-- Backend branch: `phase-0c-account-auth-contract`
+- Backend branch: `phase-0c-account-deletion`
 - Current slice: django-allauth Headless server authentication completion
 - Server implementation, PostgreSQL contract tests, production image, and direct
   production container smoke are complete.
@@ -27,6 +27,10 @@
   are not requested or copied into User columns.
 - A verified provider email may connect to the matching User. New Kakao signup
   requires a verified email; an existing provider identity may re-login without it.
+- `DELETE /_allauth/browser/v1/account/providers` removes a local provider
+  connection through allauth. `DELETE /_allauth/browser/v1/account` removes
+  local auth rows and anonymizes/deactivates the User. Kakao remote unlink is
+  not attempted because provider access tokens are not persisted.
 - allauth owns `EmailAddress` and `SocialAccount`; legacy account auth models were
   migrated and removed by `accounts.0004`.
 - React Router uses same-origin `/_allauth` and `/accounts` routes. Production

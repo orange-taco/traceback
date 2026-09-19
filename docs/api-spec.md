@@ -69,6 +69,9 @@ DRF view convention:
 | `POST /_allauth/browser/v1/auth/password/request` | reset link 발송 |
 | `POST /_allauth/browser/v1/auth/password/reset` | `key`, `password`; password 변경 |
 | `POST /_allauth/browser/v1/account/password/change` | 로그인 및 CSRF 필요; `current_password`, `new_password`; allauth 기본 API |
+| `GET /_allauth/browser/v1/account/providers` | 로그인 및 현재 User의 연결 provider 목록 |
+| `DELETE /_allauth/browser/v1/account/providers` | 로그인 및 CSRF 필요; `provider`, `account`(provider UID)로 로컬 SocialAccount 연결 해제. provider 서버 unlink는 별도 운영 연동 |
+| `DELETE /_allauth/browser/v1/account` | 로그인 및 CSRF 필요; 로컬 SocialAccount/EmailAddress/session을 정리하고 User를 비활성·익명화. provider 서버 unlink는 별도 운영 연동 |
 | `POST /_allauth/browser/v1/auth/provider/redirect` | Kakao authorize redirect 시작 |
 | `GET /accounts/kakao/login/callback/` | Kakao provider callback |
 
