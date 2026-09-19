@@ -153,6 +153,27 @@ class HeadlessAccountAuthTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(SocialAccount.objects.filter(pk=account.pk).exists())
 
+    def test_social_only_user_cannot_disconnect_last_provider_without_password(
+        self,
+    ) -> None:
+        user = self.user_model.objects.create_user(
+            "social-only@example.com", password=None
+        )
+        EmailAddress.objects.create(
+            user=user, email=user.email, primary=True, verified=True
+        )
+        account = SocialAccount.objects.create(user=user, provider="kakao", uid="uid-only")
+        self.client.force_login(user)
+
+        response = self.delete(
+            "/_allauth/browser/v1/account/providers",
+            {"provider": "kakao", "account": account.uid},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["errors"][0]["code"], "no_password")
+        self.assertTrue(SocialAccount.objects.filter(pk=account.pk).exists())
+
     def test_account_delete_anonymizes_user_and_clears_local_auth_state(self) -> None:
         user = self.user_model.objects.create_user(
             "delete@example.com", "valid-pass-123"
