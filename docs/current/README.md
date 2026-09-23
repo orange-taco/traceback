@@ -18,7 +18,8 @@
 - Email signup, mandatory email verification, login, logout, password reset,
   password change, and Kakao OAuth use django-allauth Headless.
 - Unverified email users can request a new confirmation link through the custom
-  Headless endpoint `POST /_allauth/browser/v1/auth/email/verify/resend`.
+  `POST /accounts/email/verify/resend` endpoint because the current link-based
+  flow has no equivalent allauth Headless endpoint.
   Responses do not reveal whether an address exists, and allauth's confirmation
   cooldown/rate limit remains active.
 - Browser authentication uses Django database sessions. The browser stores an
@@ -27,10 +28,14 @@
   are not requested or copied into User columns.
 - A verified provider email may connect to the matching User. New Kakao signup
   requires a verified email; an existing provider identity may re-login without it.
-- `DELETE /_allauth/browser/v1/account/providers` removes a local provider
-  connection through allauth. `DELETE /_allauth/browser/v1/account` removes
-  local auth rows and anonymizes/deactivates the User. Kakao remote unlink is
-  not attempted because provider access tokens are not persisted.
+- allauth Headless `GET/DELETE /_allauth/browser/v1/account/providers` manages
+  connected providers. Kakao remote unlink uses `KAKAO_ADMIN_KEY` before the
+  local connection is removed. Account
+  `DELETE /accounts/delete` follows the same provider-first order, then removes local auth rows
+  and anonymizes/deactivates the User.
+- A single Kakao-only account without a usable password cannot unlink through
+  allauth until an alternate password exists; the client offers explicit account
+  deletion instead.
 - allauth owns `EmailAddress` and `SocialAccount`; legacy account auth models were
   migrated and removed by `accounts.0004`.
 - React Router uses same-origin `/_allauth` and `/accounts` routes. Production

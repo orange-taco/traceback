@@ -1,7 +1,10 @@
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from allauth.socialaccount.models import SocialLogin
 from allauth.socialaccount.providers.base import ProviderException
+from django.core.exceptions import ValidationError
 from django.http import HttpRequest
+
+from .providers import KakaoUnlinkError, unlink_kakao_user
 
 
 class SocialAccountAdapter(DefaultSocialAccountAdapter):  # type: ignore[misc]
@@ -15,3 +18,13 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):  # type: ignore[misc]
             return
         if not any(address.verified for address in sociallogin.email_addresses):
             raise ProviderException("A verified provider email is required.")
+
+    def validate_disconnect(self, account, accounts) -> None:
+        super().validate_disconnect(account, accounts)
+        if account.provider == "kakao":
+            try:
+                unlink_kakao_user(account.uid)
+            except KakaoUnlinkError as exc:
+                raise ValidationError(
+                    str(exc), code="provider_unavailable"
+                ) from exc

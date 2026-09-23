@@ -62,16 +62,16 @@ DRF view convention:
 | `GET /_allauth/browser/v1/config` | CSRF cookie와 client 설정 |
 | `GET /_allauth/browser/v1/auth/session` | 현재 인증 상태와 User |
 | `POST /_allauth/browser/v1/auth/signup` | `email`, `password`; 확인 메일 발송 |
-| `POST /_allauth/browser/v1/auth/email/verify/resend` | `email`; 미인증 계정에 확인 링크 재발송. 계정 존재 여부와 무관하게 같은 응답 |
+| `POST /accounts/email/verify/resend` | `email`; allauth의 link 방식이 제공하지 않는 미인증 계정 확인 링크 재전송 custom endpoint. 계정 존재 여부와 무관하게 같은 응답 |
 | `POST /_allauth/browser/v1/auth/email/verify` | `key`; email 확인 및 session 완료 |
 | `POST /_allauth/browser/v1/auth/login` | `email`, `password`; DB session 생성 |
 | `DELETE /_allauth/browser/v1/auth/session` | 현재 session 종료 |
 | `POST /_allauth/browser/v1/auth/password/request` | reset link 발송 |
 | `POST /_allauth/browser/v1/auth/password/reset` | `key`, `password`; password 변경 |
 | `POST /_allauth/browser/v1/account/password/change` | 로그인 및 CSRF 필요; `current_password`, `new_password`; allauth 기본 API |
-| `GET /_allauth/browser/v1/account/providers` | 로그인 및 현재 User의 연결 provider 목록 |
-| `DELETE /_allauth/browser/v1/account/providers` | 로그인 및 CSRF 필요; `provider`, `account`(provider UID)로 로컬 SocialAccount 연결 해제. provider 서버 unlink는 별도 운영 연동 |
-| `DELETE /_allauth/browser/v1/account` | 로그인 및 CSRF 필요; 로컬 SocialAccount/EmailAddress/session을 정리하고 User를 비활성·익명화. provider 서버 unlink는 별도 운영 연동 |
+| `GET /_allauth/browser/v1/account/providers` | 로그인 및 현재 User의 연결 provider 목록. allauth Headless 기본 endpoint |
+| `DELETE /_allauth/browser/v1/account/providers` | 로그인 및 CSRF 필요; `provider`, `account`(provider UID)로 allauth provider 연결 해제. Kakao는 SocialAccountAdapter에서 Admin Key 동의철회를 먼저 수행하며 원격 실패 시 로컬 연결을 유지. 마지막 연결이고 사용 가능한 비밀번호가 없으면 allauth의 `no_password` 오류를 반환 |
+| `DELETE /accounts/delete` | 로그인 및 CSRF 필요; provider unlink 성공 후 로컬 SocialAccount/EmailAddress/session을 정리하고 User를 비활성·익명화 |
 | `POST /_allauth/browser/v1/auth/provider/redirect` | Kakao authorize redirect 시작 |
 | `GET /accounts/kakao/login/callback/` | Kakao provider callback |
 

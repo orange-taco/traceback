@@ -63,7 +63,7 @@ class HeadlessAccountAuthTests(TestCase):
         mail.outbox.clear()
 
         response = self.post_json(
-            "/_allauth/browser/v1/auth/email/verify/resend",
+            "/accounts/email/verify/resend",
             {"email": "RESEND@EXAMPLE.COM"},
         )
 
@@ -73,7 +73,7 @@ class HeadlessAccountAuthTests(TestCase):
 
     def test_confirmation_resend_does_not_reveal_unknown_email(self) -> None:
         response = self.post_json(
-            "/_allauth/browser/v1/auth/email/verify/resend",
+            "/accounts/email/verify/resend",
             {"email": "unknown@example.com"},
         )
 
@@ -91,7 +91,7 @@ class HeadlessAccountAuthTests(TestCase):
 
         for _ in range(2):
             response = self.post_json(
-                "/_allauth/browser/v1/auth/email/verify/resend",
+                "/accounts/email/verify/resend",
                 {"email": "limited@example.com"},
             )
             self.assertEqual(response.status_code, 200)
@@ -146,23 +146,25 @@ class HeadlessAccountAuthTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["data"][0]["uid"], account.uid)
 
-        response = self.delete(
-            "/_allauth/browser/v1/account/providers",
-            {"provider": "kakao", "account": account.uid},
-        )
+        with patch("apps.accounts.adapters.unlink_kakao_user") as unlink:
+            response = self.delete(
+                "/_allauth/browser/v1/account/providers",
+                {"provider": "kakao", "account": account.uid},
+            )
         self.assertEqual(response.status_code, 200)
+        unlink.assert_called_once_with(account.uid)
         self.assertFalse(SocialAccount.objects.filter(pk=account.pk).exists())
 
-    def test_social_only_user_cannot_disconnect_last_provider_without_password(
-        self,
-    ) -> None:
+    def test_social_only_user_cannot_disconnect_without_password(self) -> None:
         user = self.user_model.objects.create_user(
             "social-only@example.com", password=None
         )
         EmailAddress.objects.create(
             user=user, email=user.email, primary=True, verified=True
         )
-        account = SocialAccount.objects.create(user=user, provider="kakao", uid="uid-only")
+        account = SocialAccount.objects.create(
+            user=user, provider="kakao", uid="uid-only"
+        )
         self.client.force_login(user)
 
         response = self.delete(
@@ -185,16 +187,19 @@ class HeadlessAccountAuthTests(TestCase):
         self.client.force_login(user)
         self.get_csrf_token()
 
-        response = self.client.delete(
-            "/_allauth/browser/v1/account",
-            headers={"X-CSRFToken": self.client.cookies["csrftoken"].value},
-        )
+        with patch("apps.accounts.services.unlink_kakao_user") as unlink:
+            response = self.client.delete(
+                "/accounts/delete",
+                headers={"X-CSRFToken": self.client.cookies["csrftoken"].value},
+            )
 
         self.assertEqual(response.status_code, 204)
+        unlink.assert_called_once_with("uid-delete")
         user.refresh_from_db()
         self.assertFalse(user.is_active)
         self.assertIsNotNone(user.deleted_at)
         self.assertTrue(user.email.startswith("deleted-"))
+        self.assertLessEqual(len(user.username), 32)
         self.assertFalse(user.has_usable_password())
         self.assertFalse(EmailAddress.objects.filter(user=user).exists())
         self.assertFalse(SocialAccount.objects.filter(user=user).exists())
@@ -203,14 +208,14 @@ class HeadlessAccountAuthTests(TestCase):
         )
 
     def test_account_delete_requires_authentication_and_csrf(self) -> None:
-        response = self.client.delete("/_allauth/browser/v1/account")
+        response = self.client.delete("/accounts/delete")
         self.assertEqual(response.status_code, 403)
 
         user = self.user_model.objects.create_user(
             "csrf-delete@example.com", "valid-pass-123"
         )
         self.client.force_login(user)
-        response = self.client.delete("/_allauth/browser/v1/account")
+        response = self.client.delete("/accounts/delete")
         self.assertEqual(response.status_code, 403)
 
     def test_unverified_user_cannot_complete_password_login(self) -> None:
