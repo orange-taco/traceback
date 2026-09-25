@@ -31,6 +31,18 @@ uv sync --all-groups
 uv run pre-commit install
 ```
 
+`.env.dev.git` and `.env.prod.git` are inventories for GitHub Environments
+`development` and `production`. Register their four named values as Environment
+variables in GitHub, following [`docs/deployment.md`](docs/deployment.md) for
+OIDC, IAM, ECR, SSM and EC2 setup. CI's quality/test jobs use fixed test values;
+only the downstream deployment jobs use GitHub Environments. The image is
+stored in ECR; no Docker Hub token is needed.
+
+Each EC2 uses a separate untracked `/opt/traceback/.env` for Django runtime
+values. Copy `config/server.env.example` to that path and replace the placeholders
+with values for that server. GitHub Environment variables are not copied there.
+The Kakao Admin Key is required for account unlink.
+
 Start the local PostgreSQL service:
 
 ```sh
@@ -63,23 +75,39 @@ checks and the full test suite before pushes. A failing hook blocks the operatio
 Render and validate the production configuration:
 
 ```sh
-APP_IMAGE=traceback-production:local docker compose --env-file .env.example -f docker-compose.yml -f docker-compose_prod.yml config
+APP_ENV_FILE=config/ci-production.env APP_IMAGE=traceback-production:local docker compose --env-file config/ci-production.env -f docker-compose.yml -f docker-compose_prod.yml config
 ```
 
-Staging and production use the same production image, settings, and Compose
-overlay. Each server injects its own untracked `.env`. The production overlay
-removes the local source mount, host port, and PostgreSQL container and requires
-an external `TRACEBACK_DATABASE_URL`.
+AWS development and production use the same Docker image and Compose overlay.
+Each server injects its own untracked `.env`; the overlay
+passes that file directly to the app container. It removes the local source
+mount, host port, and PostgreSQL container and requires an external
+`TRACEBACK_DATABASE_URL`.
 
 ## Delivery
 
 - Feature branches open pull requests into `development`; CI runs quality and tests.
 - The only production release path is a pull request from `development` into `main`.
-- A `development` to `main` pull request also runs the production container smoke test.
-- Merging into `main` publishes an immutable production image to ECR and deploys it
-  to production EC2 through AWS Systems Manager.
+- A `development` to `main` pull request also starts the production container,
+  applies migrations in its temporary CI database, and waits for HTTP health.
+- A `development` push runs CI quality and tests first; only then does it build
+  one production-target Docker image, push it to ECR under the commit SHA, and
+  deploy its digest to the development EC2 through SSM.
+- A `main` push also runs CI quality and tests first. It then deploys that same
+  ECR image digest to production, after confirming successful development CI
+  (including deployment) for the source commit. Production never rebuilds it.
+  Use a merge commit or fast-forward merge so the development commit remains
+  in `main` history; squash merges cannot identify the image to promote.
+- GitHub Environments `development` and `production` require `AWS_DEPLOY_ROLE_ARN`,
+  `AWS_REGION`, `ECR_REPOSITORY`, and their respective `DEVELOPMENT_INSTANCE_ID`
+  or `PRODUCTION_INSTANCE_ID`. Both environments must point to the same ECR
+  repository and AWS Region. The EC2 instances need ECR pull and SSM access,
+  `/opt/traceback` with the Compose files, and their own populated `.env`.
 - Protect `main` in GitHub so it only accepts pull requests from `development`,
-  requires CI, and requires production environment approval where appropriate.
+  requires CI, and requires production Environment approval before deployment.
+  See [`docs/deployment.md`](docs/deployment.md) for the manual setup and release
+  validation checklist and [`docs/todo.md`](docs/todo.md) for the AWS/GitHub setup
+  checklist; neither GitHub Environments nor AWS resources are created by the workflows.
 
 Run the same checks enforced by CI:
 

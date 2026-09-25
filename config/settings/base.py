@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
@@ -106,6 +107,12 @@ MAILERS = {
         },
     }
 }
+if (os.getenv("EMAIL_HOST_USER") or os.getenv("EMAIL_HOST_PASSWORD")) and not (
+    os.getenv("EMAIL_USE_TLS", "false").lower() == "true"
+):
+    raise ImproperlyConfigured(
+        "EMAIL_USE_TLS=true is required when SMTP credentials are configured"
+    )
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
     "allauth.account.auth_backends.AuthenticationBackend",

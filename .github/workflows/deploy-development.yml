@@ -1,0 +1,87 @@
+name: Deploy development
+
+on:
+  workflow_call:
+
+concurrency:
+  group: development-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    name: Publish development image
+    if: github.ref == 'refs/heads/development'
+    runs-on: ubuntu-latest
+    environment:
+      name: development
+      deployment: false
+    outputs:
+      image: ${{ steps.ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}@${{ steps.existing.outputs.digest || steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Require immutable ECR tags
+        env:
+          ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+        run: |
+          tag_policy="$(aws ecr describe-repositories --repository-names "$ECR_REPOSITORY" --query 'repositories[0].imageTagMutability' --output text)"
+          test "$tag_policy" = IMMUTABLE
+      - name: Reuse image on workflow rerun
+        id: existing
+        env:
+          ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+        run: |
+          if digest="$(aws ecr describe-images \
+            --repository-name "$ECR_REPOSITORY" \
+            --image-ids "imageTag=$GITHUB_SHA" \
+            --query 'imageDetails[0].imageDigest' \
+            --output text 2>&1)"; then
+            echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          elif [[ "$digest" != *ImageNotFoundException* ]]; then
+            echo "$digest" >&2
+            exit 1
+          fi
+      - uses: aws-actions/amazon-ecr-login@v2
+        id: ecr
+      - uses: docker/setup-buildx-action@v3
+        if: steps.existing.outputs.digest == ''
+      - uses: docker/build-push-action@v6
+        if: steps.existing.outputs.digest == ''
+        id: build
+        with:
+          context: .
+          file: Dockerfile
+          target: production
+          push: true
+          tags: ${{ steps.ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy development EC2
+    needs: publish
+    if: github.ref == 'refs/heads/development'
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - env:
+          APP_IMAGE: ${{ needs.publish.outputs.image }}
+          INSTANCE_ID: ${{ vars.DEVELOPMENT_INSTANCE_ID }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+        run: bash .github/scripts/deploy-ec2.sh
