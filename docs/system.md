@@ -62,6 +62,7 @@ codebase check → system/design check → user decision review → implementati
 - Staging/production: AWS, managed PostgreSQL, S3-compatible storage
 - App: Gunicorn + Uvicorn worker + Django ASGI
 - Runtime: EC2 + Docker Compose, production image는 ECR에서 배포
+- Migration: CI는 임시 DB에서 검증하고, 실제 환경의 `migrate --noinput`은 CD에서 새 애플리케이션 실행 전에 수행한다.
 - Branch flow: feature → `development` → `main`
 - Secrets: untracked environment/secret store; repository에는 placeholder만 둔다.
 - CI는 GitHub-hosted runner를 사용한다.

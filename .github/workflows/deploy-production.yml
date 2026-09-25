@@ -71,8 +71,10 @@ jobs:
                 \"cd /opt/traceback\",
                 \"printf '2.24.4\\\\n%s\\\\n' \\\"\\$(docker compose version --short | sed 's/^v//')\\\" | sort -V -C\",
                 \"aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin ${APP_IMAGE%%/*}\",
-                \"APP_IMAGE=$APP_IMAGE docker compose --env-file .env -f docker-compose.yml -f docker-compose_prod.yml pull app\",
-                \"APP_IMAGE=$APP_IMAGE docker compose --env-file .env -f docker-compose.yml -f docker-compose_prod.yml up -d --no-build --wait app\"
+                \"compose_cmd='docker compose --env-file .env -f docker-compose.yml -f docker-compose_prod.yml'\",
+                \"APP_IMAGE=$APP_IMAGE $compose_cmd pull app\",
+                \"APP_IMAGE=$APP_IMAGE $compose_cmd run --rm app python manage.py migrate --noinput\",
+                \"APP_IMAGE=$APP_IMAGE $compose_cmd up -d --no-build --wait app\"
               ]" \
               --query 'Command.CommandId' \
               --output text
