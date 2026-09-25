@@ -31,6 +31,11 @@ uv sync --all-groups
 uv run pre-commit install
 ```
 
+Development and production servers also use a local, untracked `.env` file.
+Use `.env.dev.git` or `.env.prod.git` as the versioned template, copy the
+selected template to `.env`, and replace every `replace-*` value before starting
+the server. Docker Compose reads application settings from that `.env` file.
+
 Start the local PostgreSQL service:
 
 ```sh
@@ -67,9 +72,10 @@ APP_IMAGE=traceback-production:local docker compose --env-file .env.example -f d
 ```
 
 Staging and production use the same production image, settings, and Compose
-overlay. Each server injects its own untracked `.env`. The production overlay
-removes the local source mount, host port, and PostgreSQL container and requires
-an external `TRACEBACK_DATABASE_URL`.
+overlay. Each server injects its own untracked `.env`; the production overlay
+passes that file directly to the app container. It removes the local source
+mount, host port, and PostgreSQL container and requires an external
+`TRACEBACK_DATABASE_URL`.
 
 ## Delivery
 
