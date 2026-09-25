@@ -1,0 +1,4 @@
+interface:
+  display_name: "TRACEBACK System Visualizer"
+  short_description: "Create interactive visual system documentation"
+  default_prompt: "Use $auth-flow-visualizer to create or update a visual, artifact-style TRACEBACK system guide for the requested domain or workflow."

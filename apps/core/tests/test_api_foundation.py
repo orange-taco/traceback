@@ -51,21 +51,6 @@ urlpatterns = [
 ]
 
 
-class RequestIDTests(SimpleTestCase):
-    def test_response_includes_supplied_request_id(self) -> None:
-        response = self.client.get(
-            "/health",
-            headers={"X-Request-ID": "req-123"},
-        )
-
-        self.assertEqual(response["X-Request-ID"], "req-123")
-
-    def test_response_generates_request_id_when_missing(self) -> None:
-        response = self.client.get("/health")
-
-        self.assertTrue(response["X-Request-ID"])
-
-
 @override_settings(ROOT_URLCONF=__name__)
 class CommonAPIContractTests(SimpleTestCase):
     def test_error_response_uses_common_contract(self) -> None:

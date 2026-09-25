@@ -4,11 +4,25 @@ This repository implements the TRACEBACK commerce backend.
 
 ## Session Start
 
-1. Read `docs/current/README.md` for the current state and next action.
-2. Read the resume checkpoint and implementation principles in `docs/build-plan.md`.
-3. Use only the relevant detailed docs for the current slice.
-4. Verify the current branch and working tree before changing files.
-5. Do not assume a phase is complete from conversation context alone.
+Every new AI session must follow the four gates below in order. Do not implement
+before the required gate is complete.
+
+1. **Codebase check**: read the root README, `docs/current/README.md`,
+   and `docs/system.md`; verify the branch and working tree; inspect the source,
+   tests, and configuration that the task may affect. This establishes the real
+   code state before using conversation context.
+2. **Design check**: read the relevant section of `docs/system.md` and
+   `docs/build-plan.md`; compare the requested work with the large system flow
+   and confirmed decisions. Do not reread unrelated historical detail.
+3. **Decision review**: identify business, API, security, persistence,
+   authentication, infrastructure, or other architectural choices that need the
+   user's review. Present concrete options and tradeoffs, wait for the user's
+   decision, then record the decision in `docs/system.md` or `docs/build-plan.md`.
+   If no reviewable decision exists, record that implementation can proceed.
+4. **Implementation and verification**: only after gates 1–3, change code,
+   tests, and affected docs; run proportional validation; update the checkpoint.
+
+Do not assume a phase is complete from conversation context alone.
 
 ## User-Readable Rules
 
@@ -24,6 +38,13 @@ This repository implements the TRACEBACK commerce backend.
 - If Phase 0 is incomplete, continue Phase 0 work instead of starting Catalog work.
 - Keep the resume checkpoint aligned with the real code state before stopping work.
 - After finishing development work, update `docs/current/README.md` so a new session can see the current state, next action, completed scope, and remaining validation without reading the full docs set.
+- Keep `docs/current/README.md` short and snapshot-like, including only the current
+  next action and validation state. Do not append task history there.
+- Use `docs/todo.md` only for optional future backlog. Read it when a related future
+  area is selected; it is not a mandatory task list for every new session.
+- Treat each user task as one bounded work slice. When the slice is complete, update
+  the checkpoint, report the result, and end the AI session. Do not carry completed
+  work into an implicit next task; the next task starts in a new AI session.
 
 ## Branching
 

@@ -8,6 +8,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 from allauth.account.models import EmailAddress, get_emailconfirmation_model
 from allauth.socialaccount.models import SocialAccount, SocialLogin
 from allauth.socialaccount.providers.kakao.views import KakaoOAuth2Adapter
+from allauth.usersessions.models import UserSession
 from django.contrib.auth import get_user_model
 from django.contrib.sessions.models import Session
 from django.core import mail
@@ -63,7 +64,7 @@ class HeadlessAccountAuthTests(TestCase):
         mail.outbox.clear()
 
         response = self.post_json(
-            "/_allauth/browser/v1/auth/email/verify/resend",
+            "/accounts/email/verify/resend",
             {"email": "RESEND@EXAMPLE.COM"},
         )
 
@@ -73,7 +74,7 @@ class HeadlessAccountAuthTests(TestCase):
 
     def test_confirmation_resend_does_not_reveal_unknown_email(self) -> None:
         response = self.post_json(
-            "/_allauth/browser/v1/auth/email/verify/resend",
+            "/accounts/email/verify/resend",
             {"email": "unknown@example.com"},
         )
 
@@ -91,7 +92,7 @@ class HeadlessAccountAuthTests(TestCase):
 
         for _ in range(2):
             response = self.post_json(
-                "/_allauth/browser/v1/auth/email/verify/resend",
+                "/accounts/email/verify/resend",
                 {"email": "limited@example.com"},
             )
             self.assertEqual(response.status_code, 200)
@@ -131,6 +132,106 @@ class HeadlessAccountAuthTests(TestCase):
         self.assertEqual(
             self.client.get("/_allauth/browser/v1/auth/session").status_code, 401
         )
+
+    @override_settings(
+        SOCIALACCOUNT_PROVIDERS={
+            "kakao": {
+                "APPS": [
+                    {
+                        "client_id": "test-client-id",
+                        "secret": "test-client-secret",
+                        "key": "",
+                    }
+                ]
+            }
+        }
+    )
+    def test_authenticated_user_can_disconnect_local_social_account(self) -> None:
+        user = self.user_model.objects.create_user(
+            "disconnect@example.com", "valid-pass-123"
+        )
+        EmailAddress.objects.create(
+            user=user, email=user.email, primary=True, verified=True
+        )
+        account = SocialAccount.objects.create(user=user, provider="kakao", uid="uid-1")
+        self.client.force_login(user)
+
+        response = self.client.get("/_allauth/browser/v1/account/providers")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["data"][0]["uid"], account.uid)
+
+        with patch("apps.accounts.adapters.unlink_kakao_user") as unlink:
+            response = self.delete(
+                "/_allauth/browser/v1/account/providers",
+                {"provider": "kakao", "account": account.uid},
+            )
+        self.assertEqual(response.status_code, 200)
+        unlink.assert_called_once_with(account.uid)
+        self.assertFalse(SocialAccount.objects.filter(pk=account.pk).exists())
+
+    def test_social_only_user_cannot_disconnect_without_password(self) -> None:
+        user = self.user_model.objects.create_user(
+            "social-only@example.com", password=None
+        )
+        EmailAddress.objects.create(
+            user=user, email=user.email, primary=True, verified=True
+        )
+        account = SocialAccount.objects.create(
+            user=user, provider="kakao", uid="uid-only"
+        )
+        self.client.force_login(user)
+
+        response = self.delete(
+            "/_allauth/browser/v1/account/providers",
+            {"provider": "kakao", "account": account.uid},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["errors"][0]["code"], "no_password")
+        self.assertTrue(SocialAccount.objects.filter(pk=account.pk).exists())
+
+    def test_account_delete_anonymizes_user_and_clears_local_auth_state(self) -> None:
+        user = self.user_model.objects.create_user(
+            "delete@example.com", "valid-pass-123"
+        )
+        EmailAddress.objects.create(
+            user=user, email=user.email, primary=True, verified=True
+        )
+        SocialAccount.objects.create(user=user, provider="kakao", uid="uid-delete")
+        self.client.force_login(user)
+        self.get_csrf_token()
+
+        with patch("apps.accounts.services.unlink_kakao_user") as unlink:
+            response = self.client.delete(
+                "/accounts/delete",
+                headers={"X-CSRFToken": self.client.cookies["csrftoken"].value},
+            )
+
+        self.assertEqual(response.status_code, 204)
+        unlink.assert_called_once_with("uid-delete")
+        user.refresh_from_db()
+        self.assertFalse(user.is_active)
+        self.assertIsNotNone(user.deleted_at)
+        self.assertTrue(user.email.startswith("deleted-"))
+        self.assertLessEqual(len(user.username), 32)
+        self.assertFalse(user.has_usable_password())
+        self.assertFalse(EmailAddress.objects.filter(user=user).exists())
+        self.assertFalse(SocialAccount.objects.filter(user=user).exists())
+        self.assertFalse(UserSession.objects.filter(user=user).exists())
+        self.assertEqual(
+            self.client.get("/_allauth/browser/v1/auth/session").status_code, 401
+        )
+
+    def test_account_delete_requires_authentication_and_csrf(self) -> None:
+        response = self.client.delete("/accounts/delete")
+        self.assertEqual(response.status_code, 403)
+
+        user = self.user_model.objects.create_user(
+            "csrf-delete@example.com", "valid-pass-123"
+        )
+        self.client.force_login(user)
+        response = self.client.delete("/accounts/delete")
+        self.assertEqual(response.status_code, 403)
 
     def test_unverified_user_cannot_complete_password_login(self) -> None:
         user = self.user_model.objects.create_user(
@@ -191,9 +292,14 @@ class HeadlessAccountAuthTests(TestCase):
             headers={"X-CSRFToken": csrf_token},
         )
 
-    def delete(self, path: str) -> Any:
+    def delete(self, path: str, payload: dict[str, str] | None = None) -> Any:
         csrf_token = self.get_csrf_token()
-        return self.client.delete(path, headers={"X-CSRFToken": csrf_token})
+        return self.client.delete(
+            path,
+            data=json.dumps(payload or {}),
+            content_type="application/json",
+            headers={"X-CSRFToken": csrf_token},
+        )
 
     def get_csrf_token(self) -> str:
         response = self.client.get("/_allauth/browser/v1/config")

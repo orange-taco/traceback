@@ -1,5 +1,22 @@
 # Traceback Backend
 
+## Project decisions
+
+현재 상태와 다음 작업은 [`docs/current/README.md`](docs/current/README.md),
+전체 시스템의 확정 결정은 [`docs/system.md`](docs/system.md), Phase 범위는
+[`docs/build-plan.md`](docs/build-plan.md), 작업 목록은 [`docs/todo.md`](docs/todo.md)를 기준으로 확인한다.
+
+## AI task workflow
+
+새 AI 세션은 항상 다음 순서로 시작한다.
+
+1. 코드베이스와 작업트리를 확인한다.
+2. `docs/system.md`에서 큰 흐름과 확정 결정을 확인한다.
+3. 사용자 검토가 필요한 설계 결정을 의논하고 문서에 기록한다.
+4. 구현하고 테스트한 뒤 task를 닫는다.
+
+task가 끝나면 현재 세션을 종료하고, 다음 task는 새 AI 세션에서 시작한다.
+
 ## Local development
 
 Local development uses Docker Compose PostgreSQL by default. Django can run

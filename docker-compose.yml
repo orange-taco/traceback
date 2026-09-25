@@ -10,12 +10,6 @@ services:
         condition: service_healthy
     env_file:
       - ${APP_ENV_FILE:-.env}
-    healthcheck:
-      test: ["CMD", "python", "scripts/healthcheck.py"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
     networks:
       - backend
     ports:

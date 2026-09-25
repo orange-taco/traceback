@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     "allauth.headless",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.kakao",
+    "allauth.usersessions",
     "rest_framework",
     "apps.accounts",
     "apps.core",
@@ -122,6 +123,7 @@ REST_FRAMEWORK = {
 FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")
 KAKAO_REST_API_KEY = os.getenv("KAKAO_REST_API_KEY", "")
 KAKAO_CLIENT_SECRET = os.getenv("KAKAO_CLIENT_SECRET", "")
+KAKAO_ADMIN_KEY = os.getenv("KAKAO_ADMIN_KEY", "")
 
 ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*"]
