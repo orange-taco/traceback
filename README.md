@@ -31,7 +31,7 @@ uv sync --all-groups
 uv run pre-commit install
 ```
 
-Development and production servers also use a local, untracked `.env` file.
+AWS development and production EC2 servers each use an untracked `.env` file.
 Use `.env.dev.git` or `.env.prod.git` as the versioned template, copy the
 selected template to `.env`, and replace every `replace-*` value before starting
 the server. Docker Compose reads application settings from that `.env` file.
@@ -71,11 +71,11 @@ checks and the full test suite before pushes. A failing hook blocks the operatio
 Render and validate the production configuration:
 
 ```sh
-APP_IMAGE=traceback-production:local docker compose --env-file .env.example -f docker-compose.yml -f docker-compose_prod.yml config
+APP_ENV_FILE=.env.prod.git APP_IMAGE=traceback-production:local docker compose --env-file .env.prod.git -f docker-compose.yml -f docker-compose_prod.yml config
 ```
 
-Staging and production use the same production image, settings, and Compose
-overlay. Each server injects its own untracked `.env`; the production overlay
+AWS development and production use the same Docker image and Compose overlay.
+Each server injects its own untracked `.env`; the overlay
 passes that file directly to the app container. It removes the local source
 mount, host port, and PostgreSQL container and requires an external
 `TRACEBACK_DATABASE_URL`.
@@ -85,8 +85,17 @@ mount, host port, and PostgreSQL container and requires an external
 - Feature branches open pull requests into `development`; CI runs quality and tests.
 - The only production release path is a pull request from `development` into `main`.
 - A `development` to `main` pull request also runs the production container smoke test.
-- Merging into `main` publishes an immutable production image to ECR and deploys it
-  to production EC2 through AWS Systems Manager.
+- Merging into `development` builds one production-target Docker image, pushes it
+  to ECR under the commit SHA, and deploys its digest to the development EC2.
+- Merging `development` into `main` deploys that same ECR image digest to the
+  production EC2 after confirming that the development deployment succeeded.
+  Use a merge commit or fast-forward merge so the development commit remains
+  in `main` history; squash merges cannot identify the image to promote.
+- GitHub Environments `development` and `production` require `AWS_DEPLOY_ROLE_ARN`,
+  `AWS_REGION`, `ECR_REPOSITORY`, and their respective `DEVELOPMENT_INSTANCE_ID`
+  or `PRODUCTION_INSTANCE_ID`. Both environments must point to the same ECR
+  repository and AWS Region. The EC2 instances need ECR pull and SSM access,
+  `/opt/traceback` with the Compose files, and their own populated `.env`.
 - Protect `main` in GitHub so it only accepts pull requests from `development`,
   requires CI, and requires production environment approval where appropriate.
 

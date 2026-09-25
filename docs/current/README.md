@@ -8,17 +8,21 @@
 - 현재 브랜치는 `phase-0d-pr8-hardening`이며 PR #8 배포 설정을 보강 중이다.
 - Kakao provider unlink, account deletion, 사용자별 세션 추적이 구현되어 있다.
 - 로컬 메일은 console, AWS development/production 메일은 SES SMTP를 사용한다.
+- `development` push는 ECR 이미지를 빌드해 development EC2에 배포하고,
+  `main` push는 development에서 성공한 동일 digest를 production EC2에 배포한다.
 
 ## Validation
 
-- 기존 `development`의 Backend SQLite suite: 39 passed, 96% coverage
-- 기존 Ruff, format, mypy, Django check, yamllint, Compose 검증 통과
-- 이 브랜치의 rebase 후 검증은 아직 진행하지 않았다.
+- 최신 `development` 위로 rebase 후 Backend SQLite suite 39 passed,
+  96.18% coverage.
+- 배포 workflow YAML/셸 구문, Compose 환경 템플릿 구성 및 diff check 통과.
+- 실제 AWS development/production 배포는 아직 검증하지 않았다.
 
 ## Next action
 
 - PR #8의 남은 문서 리뷰(브랜치명과 인증 경로)를 처리한다.
-- AWS development/production EC2 분리와 ECR 이미지 승격 방식을 구현한다.
+- AWS development/production EC2, GitHub Environment, ECR 권한을 준비하고
+  실제 배포에서 같은 image digest가 사용되는지 검증한다.
 - 이후 실제 배포, SES, client QA를 검증한다.
 
 ## Maintenance

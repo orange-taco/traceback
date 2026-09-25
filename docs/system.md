@@ -58,10 +58,10 @@ codebase check → system/design check → user decision review → implementati
 ## Infrastructure
 
 - Python/dependency: `uv` + `pyproject.toml` + `uv.lock`
-- Development: Docker Compose PostgreSQL, local file storage
-- Staging/production: AWS, managed PostgreSQL, S3-compatible storage
+- Local: Docker Compose PostgreSQL, local file storage
+- AWS development/production: 별도 EC2와 DB를 사용한다.
 - App: Gunicorn + Uvicorn worker + Django ASGI
-- Runtime: EC2 + Docker Compose, production image는 ECR에서 배포
+- Runtime: GitHub Actions가 `development` 커밋의 production image를 한 번 빌드해 ECR에 저장한다. Development EC2에서 검증한 동일 image digest를 `main` 배포 때 production EC2가 실행한다.
 - Migration: CI는 임시 DB에서 검증하고, 실제 환경의 `migrate --noinput`은 CD에서 새 애플리케이션 실행 전에 수행한다.
 - Branch flow: feature → `development` → `main`
 - Secrets: untracked environment/secret store; repository에는 placeholder만 둔다.
@@ -74,4 +74,4 @@ codebase check → system/design check → user decision review → implementati
 - Celery/background job과 queue는 비동기 작업이 실제로 필요할 때 도입한다.
 - abandoned account cleanup은 가입 완료 상태·보존 기간·정리 범위를 먼저 확정한 뒤 추가한다.
 - Coupon, notification, CS, address, preorder 상세는 해당 Phase에서 결정한다.
-- AWS network, ECR lifecycle, S3/CDN, secret rotation, APM 상세는 staging 전 확정한다.
+- AWS network, ECR lifecycle, S3/CDN, secret rotation, APM 상세는 AWS development 첫 배포 전 확정한다.

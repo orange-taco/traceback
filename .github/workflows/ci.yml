@@ -46,7 +46,8 @@ jobs:
       - run: docker compose --env-file .env.example config --quiet
       - env:
           APP_IMAGE: traceback-production:ci
-        run: docker compose --env-file .env.example -f docker-compose.yml -f docker-compose_prod.yml config --quiet
+          APP_ENV_FILE: .env.prod.git
+        run: docker compose --env-file .env.prod.git -f docker-compose.yml -f docker-compose_prod.yml config --quiet
       - run: docker build --target production .
 
   test:
@@ -90,7 +91,7 @@ jobs:
     if: github.event_name == 'pull_request' && github.base_ref == 'main'
     runs-on: ubuntu-latest
     env:
-      APP_ENV_FILE: .env.example
+      APP_ENV_FILE: .env.prod.git
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
         with:
@@ -98,12 +99,12 @@ jobs:
       - run: docker build --target production -t traceback-production-smoke:${{ github.sha }} .
       - env:
           APP_IMAGE: traceback-production-smoke:${{ github.sha }}
-        run: docker compose --env-file .env.example -f docker-compose.yml -f docker-compose_prod.yml up -d --no-build --wait
+        run: docker compose --env-file .env.prod.git -f docker-compose.yml -f docker-compose_prod.yml up -d --no-build --wait
       - if: always()
         env:
           APP_IMAGE: traceback-production-smoke:${{ github.sha }}
-        run: docker compose --env-file .env.example -f docker-compose.yml -f docker-compose_prod.yml logs --no-color
+        run: docker compose --env-file .env.prod.git -f docker-compose.yml -f docker-compose_prod.yml logs --no-color
       - if: always()
         env:
           APP_IMAGE: traceback-production-smoke:${{ github.sha }}
-        run: docker compose --env-file .env.example -f docker-compose.yml -f docker-compose_prod.yml down -v
+        run: docker compose --env-file .env.prod.git -f docker-compose.yml -f docker-compose_prod.yml down -v

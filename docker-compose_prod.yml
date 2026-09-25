@@ -5,7 +5,7 @@ services:
     command: !reset []
     depends_on: !reset []
     env_file:
-      - .env
+      - ${APP_ENV_FILE:-.env}
     init: true
     read_only: true
     restart: unless-stopped
