@@ -65,7 +65,7 @@ codebase check → system/design check → user decision review → implementati
 - Migration: CI는 임시 DB에서 검증하고, 실제 환경의 `migrate --noinput`은 CD에서 새 애플리케이션 실행 전에 수행한다.
 - Branch flow: feature → `development` → `main`
 - Secrets: untracked environment/secret store; repository에는 placeholder만 둔다.
-- AWS 환경별 `.env`는 각 서버에서 관리하고, Git에는 `.env.dev.git`/`.env.prod.git` 템플릿만 둔다. Compose는 서버의 `.env`를 app 컨테이너에 전달한다.
+- GitHub Environment 변수 목록은 `.env.dev.git`/`.env.prod.git`에, EC2 런타임 변수 목록은 `config/server.env.example`에 둔다. 각 서버의 비밀값은 추적하지 않는 `/opt/traceback/.env`에 넣고 Compose가 app 컨테이너에 전달한다.
 - CI는 GitHub-hosted runner를 사용한다.
 - Local email은 console mailer로 출력하고, AWS 환경은 SES SMTP(STARTTLS, 587)를 사용한다.
 

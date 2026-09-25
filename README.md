@@ -31,13 +31,15 @@ uv sync --all-groups
 uv run pre-commit install
 ```
 
-AWS development and production EC2 servers each use an untracked `.env` file.
-Use `.env.dev.git` or `.env.prod.git` as the versioned template, copy the
-selected template to `.env`, and replace every `replace-*` value before starting
-the server. Docker Compose reads application settings from that `.env` file.
-The GitHub `production` Environment stores deployment values such as the AWS
-role, region, ECR repository, and EC2 instance ID; it does not automatically
-populate the server `.env`.
+`.env.dev.git` and `.env.prod.git` are inventories for GitHub Environments
+`development` and `production`. Register their four named values as Environment
+variables in GitHub. CI uses fixed test values and needs no GitHub Environment.
+The Docker image is stored in ECR; no Docker Hub token is needed.
+
+Each EC2 uses a separate untracked `/opt/traceback/.env` for Django runtime
+values. Copy `config/server.env.example` to that path and replace the placeholders
+with values for that server. GitHub Environment variables are not copied there.
+The Kakao Admin Key is required for account unlink.
 
 Start the local PostgreSQL service:
 
@@ -71,7 +73,7 @@ checks and the full test suite before pushes. A failing hook blocks the operatio
 Render and validate the production configuration:
 
 ```sh
-APP_ENV_FILE=.env.prod.git APP_IMAGE=traceback-production:local docker compose --env-file .env.prod.git -f docker-compose.yml -f docker-compose_prod.yml config
+APP_ENV_FILE=config/ci-production.env APP_IMAGE=traceback-production:local docker compose --env-file config/ci-production.env -f docker-compose.yml -f docker-compose_prod.yml config
 ```
 
 AWS development and production use the same Docker image and Compose overlay.

@@ -10,12 +10,15 @@
 - 로컬 메일은 console, AWS development/production 메일은 SES SMTP를 사용한다.
 - `development` push는 ECR 이미지를 빌드해 development EC2에 배포하고,
   `main` push는 development에서 성공한 동일 digest를 production EC2에 배포한다.
+- `.env.dev.git`/`.env.prod.git`는 GitHub Environment 변수 목록이고,
+  EC2 `/opt/traceback/.env`의 변수 목록은 `config/server.env.example`이다.
 
 ## Validation
 
 - 최신 `development` 위로 rebase 후 Backend SQLite suite 39 passed,
   96.18% coverage.
-- 배포 workflow YAML/셸 구문, Compose 환경 템플릿 구성 및 diff check 통과.
+- 배포 workflow YAML/셸 구문, 공통 SSM 스크립트 모의 실행,
+  CI 운영 smoke 환경파일 Compose 구성 및 diff check 통과.
 - 실제 AWS development/production 배포는 아직 검증하지 않았다.
 
 ## Next action
