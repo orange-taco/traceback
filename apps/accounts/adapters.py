@@ -23,7 +23,6 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):  # type: ignore[misc]
     def validate_disconnect(
         self, account: SocialAccount, accounts: QuerySet[SocialAccount]
     ) -> None:
-        super().validate_disconnect(account, accounts)
         if account.provider == "kakao":
             try:
                 unlink_kakao_user(account.uid)
