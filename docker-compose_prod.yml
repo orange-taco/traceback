@@ -9,6 +9,7 @@ services:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY is required}
       TRACEBACK_DATABASE_URL: ${TRACEBACK_DATABASE_URL:?TRACEBACK_DATABASE_URL is required}
       DJANGO_SETTINGS_MODULE: config.settings.production
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:?FRONTEND_BASE_URL is required}
     init: true
     read_only: true
     restart: unless-stopped
