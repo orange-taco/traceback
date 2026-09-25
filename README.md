@@ -33,8 +33,10 @@ uv run pre-commit install
 
 `.env.dev.git` and `.env.prod.git` are inventories for GitHub Environments
 `development` and `production`. Register their four named values as Environment
-variables in GitHub. CI uses fixed test values and needs no GitHub Environment.
-The Docker image is stored in ECR; no Docker Hub token is needed.
+variables in GitHub, following [`docs/deployment.md`](docs/deployment.md) for
+OIDC, IAM, ECR, SSM and EC2 setup. CI's quality/test jobs use fixed test values;
+only the downstream deployment jobs use GitHub Environments. The image is
+stored in ECR; no Docker Hub token is needed.
 
 Each EC2 uses a separate untracked `/opt/traceback/.env` for Django runtime
 values. Copy `config/server.env.example` to that path and replace the placeholders
@@ -86,11 +88,14 @@ mount, host port, and PostgreSQL container and requires an external
 
 - Feature branches open pull requests into `development`; CI runs quality and tests.
 - The only production release path is a pull request from `development` into `main`.
-- A `development` to `main` pull request also runs the production container smoke test.
-- Merging into `development` builds one production-target Docker image, pushes it
-  to ECR under the commit SHA, and deploys its digest to the development EC2.
-- Merging `development` into `main` deploys that same ECR image digest to the
-  production EC2 after confirming that the development deployment succeeded.
+- A `development` to `main` pull request also starts the production container,
+  applies migrations in its temporary CI database, and waits for HTTP health.
+- A `development` push runs CI quality and tests first; only then does it build
+  one production-target Docker image, push it to ECR under the commit SHA, and
+  deploy its digest to the development EC2 through SSM.
+- A `main` push also runs CI quality and tests first. It then deploys that same
+  ECR image digest to production, after confirming successful development CI
+  (including deployment) for the source commit. Production never rebuilds it.
   Use a merge commit or fast-forward merge so the development commit remains
   in `main` history; squash merges cannot identify the image to promote.
 - GitHub Environments `development` and `production` require `AWS_DEPLOY_ROLE_ARN`,
@@ -99,7 +104,10 @@ mount, host port, and PostgreSQL container and requires an external
   repository and AWS Region. The EC2 instances need ECR pull and SSM access,
   `/opt/traceback` with the Compose files, and their own populated `.env`.
 - Protect `main` in GitHub so it only accepts pull requests from `development`,
-  requires CI, and requires production environment approval where appropriate.
+  requires CI, and requires production Environment approval before deployment.
+  See [`docs/deployment.md`](docs/deployment.md) for the manual setup and release
+  validation checklist and [`docs/todo.md`](docs/todo.md) for the AWS/GitHub setup
+  checklist; neither GitHub Environments nor AWS resources are created by the workflows.
 
 Run the same checks enforced by CI:
 

@@ -20,7 +20,12 @@ commands_json="$(jq -nc \
     "cd /opt/traceback",
     "docker compose version --short",
     ("aws ecr get-login-password --region " + $region + " | docker login --username AWS --password-stdin " + $registry),
-    ("APP_IMAGE=" + $image + " docker compose --env-file .env -f docker-compose.yml -f docker-compose_prod.yml pull app"),
+    ("docker pull " + $image),
+    ("docker run --rm --entrypoint cat " + $image + " /app/docker-compose.yml > docker-compose.yml.next"),
+    ("docker run --rm --entrypoint cat " + $image + " /app/docker-compose_prod.yml > docker-compose_prod.yml.next"),
+    "mv docker-compose.yml.next docker-compose.yml",
+    "mv docker-compose_prod.yml.next docker-compose_prod.yml",
+    ("APP_IMAGE=" + $image + " docker compose --env-file .env -f docker-compose.yml -f docker-compose_prod.yml config --quiet"),
     ("APP_IMAGE=" + $image + " docker compose --env-file .env -f docker-compose.yml -f docker-compose_prod.yml run --rm app python manage.py migrate --noinput"),
     ("APP_IMAGE=" + $image + " docker compose --env-file .env -f docker-compose.yml -f docker-compose_prod.yml up -d --no-build --wait app")
   ]}')"
@@ -32,15 +37,21 @@ command_id="$(aws ssm send-command \
   --query 'Command.CommandId' \
   --output text)"
 
-if ! aws ssm wait command-executed \
-  --command-id "$command_id" \
-  --instance-id "$INSTANCE_ID"; then
-  aws ssm get-command-invocation \
+# The AWS CLI waiter stops after about 100 seconds, which can be shorter than
+# the image pull and migration. Poll for up to ten minutes instead.
+status=Pending
+for ((attempt = 0; attempt < 120; attempt++)); do
+  status="$(aws ssm get-command-invocation \
     --command-id "$command_id" \
-    --instance-id "$INSTANCE_ID" || true
-  exit 1
-fi
+    --instance-id "$INSTANCE_ID" \
+    --query Status --output text 2>/dev/null || true)"
+  case "$status" in
+    Success|Failed|Cancelled|TimedOut) break ;;
+  esac
+  sleep 5
+done
 
 aws ssm get-command-invocation \
   --command-id "$command_id" \
   --instance-id "$INSTANCE_ID"
+test "$status" = Success

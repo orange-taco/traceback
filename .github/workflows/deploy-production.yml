@@ -1,9 +1,7 @@
 name: Deploy production
 
 on:
-  push:
-    branches:
-      - main
+  workflow_call:
 
 concurrency:
   group: production
@@ -17,6 +15,7 @@ permissions:
 jobs:
   deploy:
     name: Deploy production EC2
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -37,13 +36,27 @@ jobs:
         run: |
           source_sha="$(git merge-base HEAD origin/development)"
           test -n "$source_sha"
-          dev_deploy_succeeded="$(gh run list \
+          dev_deploy_succeeded=false
+          while IFS= read -r run_id; do
+            test -n "$run_id" || continue
+            if [ "$(gh run view "$run_id" \
+              --repo "$GITHUB_REPOSITORY" \
+              --json jobs \
+              --jq 'any(.jobs[]; (.name | endswith("Deploy development EC2")) and .conclusion == "success")')" = true ]; then
+              dev_deploy_succeeded=true
+              break
+            fi
+          done < <(gh run list \
             --repo "$GITHUB_REPOSITORY" \
-            --workflow deploy-development.yml \
+            --workflow ci.yml \
+            --branch development \
+            --event push \
             --commit "$source_sha" \
-            --json conclusion \
-            --jq 'any(.[]; .conclusion == "success")')"
+            --json databaseId,conclusion \
+            --jq '.[] | select(.conclusion == "success") | .databaseId')
           test "$dev_deploy_succeeded" = true
+          tag_policy="$(aws ecr describe-repositories --repository-names "$ECR_REPOSITORY" --query 'repositories[0].imageTagMutability' --output text)"
+          test "$tag_policy" = IMMUTABLE
           digest="$(aws ecr describe-images \
             --repository-name "$ECR_REPOSITORY" \
             --image-ids "imageTag=$source_sha" \
