@@ -14,7 +14,6 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):  # type: ignore[misc]
         request: HttpRequest,
         sociallogin: SocialLogin,
     ) -> None:
-        super().pre_social_login(request, sociallogin)
         if sociallogin.is_existing:
             return
         if not any(address.verified for address in sociallogin.email_addresses):
