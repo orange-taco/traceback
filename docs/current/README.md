@@ -19,7 +19,7 @@
 
 ## Next action
 
-- 소유자가 `docs/todo.md`의 GitHub Environment·OIDC/IAM·ECR·EC2/RDS·네트워크 항목을 준비하고 대상 계정/리전/인스턴스를 확인한다. 새 리소스 생성 전 비용·범위를 승인받는다.
+- 소유자가 `docs/todo.md`의 Phase 0 순서에 따라 개발 환경부터 준비하고 대상 계정·리전·비용을 확인한다.
 - 설정 후 development 배포/HTTP·DB smoke를 검증한다. Production은 source SHA·digest·migration 영향 확인과 명시적 승인 뒤 배포한다.
 
 ## Maintenance
