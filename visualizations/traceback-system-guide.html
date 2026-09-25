@@ -1,3 +1,11 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TRACEBACK System Guide</title>
+</head>
+<body>
 <div id="traceback-guide" aria-labelledby="guide-title">
   <style>
     #traceback-guide { --guide-bg: light-dark(#f4f7fb, #0f141a); --guide-surface: light-dark(#ffffff, #18212b); --guide-text: light-dark(#18212b, #edf2f7); --guide-muted: light-dark(#5b6775, #aab5c2); --guide-accent: light-dark(#6d28d9, #b89aff); --guide-warn: light-dark(#b45309, #f4b45f); color: var(--guide-text); font: 14px/1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; max-width: 1120px; margin: 0 auto; }
@@ -180,7 +188,6 @@
       }));
     })();
   </script>
-</div>
       </section>
     </main>
   </div>
@@ -196,5 +203,7 @@
         panels.forEach((panel) => { panel.toggleAttribute("hidden", panel.dataset.guidePanel !== selected); });
       }));
     })();
-  </script>
+</script>
 </div>
+</body>
+</html>
