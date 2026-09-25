@@ -13,14 +13,14 @@
 
 ## Validation
 
-- Backend SQLite suite: 39 passed
-- Ruff, mypy, diff check passed
-- PostgreSQL migration: `allauth.usersessions.0001_initial` applied
-- Docker PostgreSQL test DB는 현재 계정의 CREATE DATABASE 권한이 필요하다.
+- Backend SQLite suite: 39 passed, 96% coverage
+- Ruff, format, mypy, Django check, yamllint, and diff check passed
+- Compose production config rendered successfully with PostgreSQL readiness healthcheck
+- Local PostgreSQL test validation remains unavailable while the `db` service hostname is not reachable.
 
 ## Next action
 
-- 현재 task의 변경분을 검증하고 커밋·푸시한다.
+- PR #9 CodeRabbit re-review 결과를 확인한다.
 - 이후 client QA와 Phase 0 배포 검증을 진행한다.
 
 ## Maintenance

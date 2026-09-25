@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from email.message import Message
 from io import BytesIO
 from unittest.mock import MagicMock, Mock, patch
 from urllib.error import HTTPError
@@ -73,7 +74,7 @@ class KakaoProviderTests(SimpleTestCase):
             "https://kapi.kakao.com/v1/user/unlink",
             400,
             "already unlinked",
-            hdrs=None,
+            hdrs=Message(),
             fp=BytesIO(b'{"code": -101, "msg": "user not found"}'),
         )
 

@@ -1037,30 +1037,30 @@ html&gt;body{padding:0}&lt;/style&gt;
 &lt;body&gt;
 &lt;div id=&quot;traceback-guide&quot; aria-labelledby=&quot;guide-title&quot;&gt;
   &lt;style&gt;
-    #traceback-guide { --guide-bg: light-dark(#0f1720, #0f141a); --guide-surface: light-dark(#ffffff, #18212b); --guide-text: light-dark(#18212b, #edf2f7); --guide-muted: light-dark(#697686, #aab5c2); color: var(--guide-text); font: 14px/1.45 system-ui, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif; max-width: 1120px; margin: 0 auto; }
+    #traceback-guide { --guide-bg: light-dark(#f4f7fb, #0f141a); --guide-surface: light-dark(#ffffff, #18212b); --guide-text: light-dark(#18212b, #edf2f7); --guide-muted: light-dark(#5b6775, #aab5c2); --guide-accent: light-dark(#6d28d9, #b89aff); --guide-warn: light-dark(#b45309, #f4b45f); color: var(--guide-text); font: 14px/1.45 system-ui, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif; max-width: 1120px; margin: 0 auto; }
     #traceback-guide * { box-sizing: border-box; }
     #traceback-guide .guide-shell { display: grid; grid-template-columns: 180px minmax(0, 1fr); min-height: 620px; background: var(--guide-bg); border-radius: 16px; overflow: hidden; }
     #traceback-guide .guide-sidebar { padding: 22px 14px; background: color-mix(in srgb, var(--guide-bg) 88%, var(--guide-text)); }
     #traceback-guide .guide-brand { color: var(--guide-text); font-weight: 700; letter-spacing: .04em; padding: 0 10px 22px; }
     #traceback-guide .guide-nav { display: grid; gap: 6px; }
     #traceback-guide .guide-nav button { border: 0; border-radius: 8px; background: transparent; color: var(--guide-muted); cursor: pointer; padding: 10px; text-align: left; font: inherit; }
-    #traceback-guide .guide-nav button[aria-selected=&quot;true&quot;] { background: color-mix(in srgb, var(--guide-text) 12%, transparent); color: var(--guide-text); }
+    #traceback-guide .guide-nav button[aria-current=&quot;page&quot;] { background: color-mix(in srgb, var(--guide-text) 12%, transparent); color: var(--guide-text); }
     #traceback-guide .guide-main { background: var(--guide-surface); padding: 28px; min-width: 0; }
     #traceback-guide .guide-page h1 { font-size: 24px; margin: 0 0 5px; }
     #traceback-guide .guide-page &gt; p { color: var(--guide-muted); margin: 0 0 22px; }
     #traceback-guide .guide-map { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 20px 0; }
     #traceback-guide .guide-domain { border: 1px solid color-mix(in srgb, var(--guide-text) 18%, transparent); border-top: 4px solid var(--guide-muted); border-radius: 10px; padding: 16px; }
-    #traceback-guide .guide-domain.active { border-top-color: var(--af-purple); }
+    #traceback-guide .guide-domain.active { border-top-color: var(--guide-accent); }
     #traceback-guide .guide-domain strong { display: block; margin-bottom: 5px; }
     #traceback-guide .guide-domain small { color: var(--guide-muted); }
-    #traceback-guide .guide-note { border-left: 3px solid var(--af-orange); color: var(--guide-muted); margin-top: 22px; padding-left: 12px; }
+    #traceback-guide .guide-note { border-left: 3px solid var(--guide-warn); color: var(--guide-muted); margin-top: 22px; padding-left: 12px; }
     @media (max-width: 680px) { #traceback-guide .guide-shell { grid-template-columns: 1fr; } #traceback-guide .guide-sidebar { padding: 14px; } #traceback-guide .guide-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); } #traceback-guide .guide-main { padding: 18px; } #traceback-guide .guide-map { grid-template-columns: 1fr; } }
   &lt;/style&gt;
   &lt;div class=&quot;guide-shell&quot;&gt;
     &lt;aside class=&quot;guide-sidebar&quot;&gt;
       &lt;div class=&quot;guide-brand&quot;&gt;TRACEBACK&lt;br /&gt;SYSTEM GUIDE&lt;/div&gt;
       &lt;nav class=&quot;guide-nav&quot; aria-label=&quot;Guide sections&quot;&gt;
-        &lt;button type=&quot;button&quot; data-guide-page=&quot;overview&quot; aria-selected=&quot;true&quot;&gt;Overview&lt;/button&gt;
+        &lt;button type=&quot;button&quot; data-guide-page=&quot;overview&quot; aria-current=&quot;page&quot;&gt;Overview&lt;/button&gt;
         &lt;button type=&quot;button&quot; data-guide-page=&quot;auth&quot;&gt;Auth flow&lt;/button&gt;
         &lt;button type=&quot;button&quot; data-guide-page=&quot;catalog&quot;&gt;Catalog&lt;/button&gt;
         &lt;button type=&quot;button&quot; data-guide-page=&quot;reference&quot;&gt;Reference&lt;/button&gt;
@@ -1152,16 +1152,16 @@ html&gt;body{padding:0}&lt;/style&gt;
         &lt;line class=&quot;af-line af-line-active&quot; x1=&quot;730&quot; y1=&quot;150&quot; x2=&quot;788&quot; y2=&quot;150&quot; /&gt;
         &lt;circle class=&quot;af-dot&quot; cx=&quot;220&quot; cy=&quot;150&quot; r=&quot;4&quot; /&gt;
         &lt;rect class=&quot;af-node af-node-blue&quot; x=&quot;20&quot; y=&quot;112&quot; width=&quot;170&quot; height=&quot;76&quot; rx=&quot;12&quot; /&gt;
-        &lt;text class=&quot;af-label&quot; x=&quot;105&quot; y=&quot;137&quot;&gt;Client request&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;105&quot; y=&quot;156&quot;&gt;our frontend&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;105&quot; y=&quot;173&quot;&gt;DELETE providers&lt;/text&gt;
+        &lt;text class=&quot;af-label&quot; x=&quot;105&quot; y=&quot;137&quot;&gt;Provider disconnect&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;105&quot; y=&quot;156&quot;&gt;DELETE /_allauth/...&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;105&quot; y=&quot;173&quot;&gt;Kakao + password check&lt;/text&gt;
         &lt;rect class=&quot;af-node af-node-orange&quot; x=&quot;250&quot; y=&quot;112&quot; width=&quot;120&quot; height=&quot;76&quot; rx=&quot;12&quot; /&gt;
-        &lt;text class=&quot;af-label&quot; x=&quot;310&quot; y=&quot;137&quot;&gt;allauth&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;310&quot; y=&quot;156&quot;&gt;library method&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;310&quot; y=&quot;173&quot;&gt;no_password&lt;/text&gt;
+        &lt;text class=&quot;af-label&quot; x=&quot;310&quot; y=&quot;137&quot;&gt;allauth validation&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;310&quot; y=&quot;156&quot;&gt;no_password&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;310&quot; y=&quot;173&quot;&gt;may reject social-only&lt;/text&gt;
         &lt;rect class=&quot;af-node af-node-blue&quot; x=&quot;430&quot; y=&quot;112&quot; width=&quot;120&quot; height=&quot;76&quot; rx=&quot;12&quot; /&gt;
-        &lt;text class=&quot;af-label&quot; x=&quot;490&quot; y=&quot;137&quot;&gt;Client request&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;490&quot; y=&quot;156&quot;&gt;our frontend&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;490&quot; y=&quot;173&quot;&gt;DELETE account&lt;/text&gt;
+        &lt;text class=&quot;af-label&quot; x=&quot;490&quot; y=&quot;137&quot;&gt;Account deletion&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;490&quot; y=&quot;156&quot;&gt;DELETE /accounts/delete&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;490&quot; y=&quot;173&quot;&gt;calls delete_account()&lt;/text&gt;
         &lt;rect class=&quot;af-node af-node-purple&quot; x=&quot;610&quot; y=&quot;112&quot; width=&quot;120&quot; height=&quot;76&quot; rx=&quot;12&quot; /&gt;
-        &lt;text class=&quot;af-label&quot; x=&quot;670&quot; y=&quot;137&quot;&gt;delete_account()&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;670&quot; y=&quot;156&quot;&gt;orchestrates&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;670&quot; y=&quot;173&quot;&gt;remote → local&lt;/text&gt;
+        &lt;text class=&quot;af-label&quot; x=&quot;670&quot; y=&quot;137&quot;&gt;unlink_kakao_user()&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;670&quot; y=&quot;156&quot;&gt;first: Admin Key POST&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;670&quot; y=&quot;173&quot;&gt;failure → 503 provider_unavailable&lt;/text&gt;
         &lt;rect class=&quot;af-node af-node-green&quot; x=&quot;790&quot; y=&quot;112&quot; width=&quot;150&quot; height=&quot;76&quot; rx=&quot;12&quot; /&gt;
-        &lt;text class=&quot;af-label&quot; x=&quot;865&quot; y=&quot;137&quot;&gt;Kakao API&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;865&quot; y=&quot;156&quot;&gt;unlink consent&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;865&quot; y=&quot;173&quot;&gt;-101 = already OK&lt;/text&gt;
-        &lt;text class=&quot;af-legend&quot; x=&quot;480&quot; y=&quot;225&quot; text-anchor=&quot;middle&quot;&gt;then local DB/UserSession cleanup runs in atomic()&lt;/text&gt;
+        &lt;text class=&quot;af-label&quot; x=&quot;865&quot; y=&quot;137&quot;&gt;Local cleanup&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;865&quot; y=&quot;156&quot;&gt;after Kakao success&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;865&quot; y=&quot;173&quot;&gt;anonymize + delete rows&lt;/text&gt;
+        &lt;text class=&quot;af-legend&quot; x=&quot;480&quot; y=&quot;225&quot; text-anchor=&quot;middle&quot;&gt;Kakao -101 is idempotent success; only then local atomic cleanup runs&lt;/text&gt;
       &lt;/g&gt;
 
       &lt;g data-panel=&quot;email-kakao&quot; hidden&gt;
@@ -1212,7 +1212,7 @@ html&gt;body{padding:0}&lt;/style&gt;
       buttons.forEach((button) =&gt; button.addEventListener(&quot;click&quot;, () =&gt; {
         const selected = button.dataset.flow;
         buttons.forEach((item) =&gt; item.setAttribute(&quot;aria-pressed&quot;, String(item === button)));
-        panels.forEach((panel) =&gt; { panel.hidden = panel.dataset.panel !== selected; });
+        panels.forEach((panel) =&gt; { panel.toggleAttribute(&quot;hidden&quot;, panel.dataset.panel !== selected); });
         if (status) status.textContent = messages[selected] || &quot;&quot;;
       }));
     })();
@@ -1229,8 +1229,8 @@ html&gt;body{padding:0}&lt;/style&gt;
       const panels = [...root.querySelectorAll(&quot;[data-guide-panel]&quot;)];
       buttons.forEach((button) =&gt; button.addEventListener(&quot;click&quot;, () =&gt; {
         const selected = button.dataset.guidePage;
-        buttons.forEach((item) =&gt; item.setAttribute(&quot;aria-selected&quot;, String(item === button)));
-        panels.forEach((panel) =&gt; { panel.hidden = panel.dataset.guidePanel !== selected; });
+        buttons.forEach((item) =&gt; item.toggleAttribute(&quot;aria-current&quot;, item === button));
+        panels.forEach((panel) =&gt; { panel.toggleAttribute(&quot;hidden&quot;, panel.dataset.guidePanel !== selected); });
       }));
     })();
   &lt;/script&gt;
