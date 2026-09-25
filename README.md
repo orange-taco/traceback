@@ -35,6 +35,9 @@ Development and production servers also use a local, untracked `.env` file.
 Use `.env.dev.git` or `.env.prod.git` as the versioned template, copy the
 selected template to `.env`, and replace every `replace-*` value before starting
 the server. Docker Compose reads application settings from that `.env` file.
+The GitHub `production` Environment stores deployment values such as the AWS
+role, region, ECR repository, and EC2 instance ID; it does not automatically
+populate the server `.env`.
 
 Start the local PostgreSQL service:
 
