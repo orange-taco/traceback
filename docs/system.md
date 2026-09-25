@@ -66,6 +66,7 @@ codebase check → system/design check → user decision review → implementati
 - Branch flow: feature → `development` → `main`
 - Secrets: untracked environment/secret store; repository에는 placeholder만 둔다.
 - CI는 GitHub-hosted runner를 사용한다.
+- Local email은 console mailer로 출력하고, AWS 환경은 SES SMTP(STARTTLS, 587)를 사용한다.
 
 ## Deferred
 
