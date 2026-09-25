@@ -133,6 +133,19 @@ class HeadlessAccountAuthTests(TestCase):
             self.client.get("/_allauth/browser/v1/auth/session").status_code, 401
         )
 
+    @override_settings(
+        SOCIALACCOUNT_PROVIDERS={
+            "kakao": {
+                "APPS": [
+                    {
+                        "client_id": "test-client-id",
+                        "secret": "test-client-secret",
+                        "key": "",
+                    }
+                ]
+            }
+        }
+    )
     def test_authenticated_user_can_disconnect_local_social_account(self) -> None:
         user = self.user_model.objects.create_user(
             "disconnect@example.com", "valid-pass-123"
