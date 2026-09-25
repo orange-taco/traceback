@@ -26,6 +26,7 @@ class KakaoProviderTests(SimpleTestCase):
             request.data.decode(), "target_id_type=user_id&target_id=5047590774"
         )
 
+    @override_settings(KAKAO_ADMIN_KEY="")
     def test_unlink_requires_admin_key(self) -> None:
         with self.assertRaisesRegex(KakaoUnlinkError, "not configured"):
             unlink_kakao_user("5047590774")
@@ -39,4 +40,26 @@ class KakaoProviderTests(SimpleTestCase):
         urlopen.return_value = response
 
         with self.assertRaisesRegex(KakaoUnlinkError, "did not match"):
+            unlink_kakao_user("5047590774")
+
+    @override_settings(KAKAO_ADMIN_KEY="admin-key")
+    @patch("apps.accounts.providers.urllib.request.urlopen")
+    def test_unlink_rejects_non_object_json_payload(self, urlopen: Mock) -> None:
+        response = MagicMock()
+        response.read.return_value = b"[]"
+        response.__enter__.return_value = response
+        urlopen.return_value = response
+
+        with self.assertRaisesRegex(KakaoUnlinkError, "did not match"):
+            unlink_kakao_user("5047590774")
+
+    @override_settings(KAKAO_ADMIN_KEY="admin-key")
+    @patch("apps.accounts.providers.urllib.request.urlopen")
+    def test_unlink_converts_response_read_errors(self, urlopen: Mock) -> None:
+        response = MagicMock()
+        response.read.side_effect = TimeoutError("timed out")
+        response.__enter__.return_value = response
+        urlopen.return_value = response
+
+        with self.assertRaisesRegex(KakaoUnlinkError, "request failed"):
             unlink_kakao_user("5047590774")

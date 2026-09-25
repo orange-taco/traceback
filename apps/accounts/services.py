@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 
 from allauth.account.models import EmailAddress
 from allauth.socialaccount.models import SocialAccount
+from allauth.usersessions.models import UserSession
 from django.contrib.auth import get_user_model
-from django.contrib.sessions.models import Session
 from django.db import transaction
 from django.utils import timezone
 
@@ -50,6 +50,5 @@ def delete_account(user: User) -> None:
                 ]
             )
 
-        for session in Session.objects.all():
-            if str(locked_user.pk) == session.get_decoded().get("_auth_user_id"):
-                session.delete()
+    for session in list(UserSession.objects.filter(user_id=user.pk)):
+        session.end()

@@ -8,6 +8,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 from allauth.account.models import EmailAddress, get_emailconfirmation_model
 from allauth.socialaccount.models import SocialAccount, SocialLogin
 from allauth.socialaccount.providers.kakao.views import KakaoOAuth2Adapter
+from allauth.usersessions.models import UserSession
 from django.contrib.auth import get_user_model
 from django.contrib.sessions.models import Session
 from django.core import mail
@@ -203,6 +204,7 @@ class HeadlessAccountAuthTests(TestCase):
         self.assertFalse(user.has_usable_password())
         self.assertFalse(EmailAddress.objects.filter(user=user).exists())
         self.assertFalse(SocialAccount.objects.filter(user=user).exists())
+        self.assertFalse(UserSession.objects.filter(user=user).exists())
         self.assertEqual(
             self.client.get("/_allauth/browser/v1/auth/session").status_code, 401
         )

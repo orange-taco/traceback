@@ -181,7 +181,7 @@ Phase 0 결정:
 
 - **브랜치**: `main` 직접 작업. 이 부트스트랩 완료 후 `development` 생성.
 - **파일**: 단일 `Dockerfile`, `.dockerignore`, `docker-compose.yml`, `docker-compose_prod.yml`, 필요한 환경변수 예시/실행 문서.
-- **공통 Compose**: 애플리케이션과 PostgreSQL 서비스, named volume, healthcheck, 공통 네트워크/환경변수 계약.
+- **공통 Compose**: 애플리케이션과 PostgreSQL 서비스, named volume, 공통 네트워크/환경변수 계약.
 - **Development 기본 구성**: bind mount, 개발 command, 개발 port, 로컬 PostgreSQL.
 - **운영 Overlay**: 운영 command, 자동 재시작, 운영 노출/보안 설정. 소스 bind mount 금지.
 - **완료**:
@@ -309,8 +309,8 @@ Phase 0 결정:
   image `3b0265b218b2`); updated Compose v5.5.1 configuration validation passed.
   A direct production container smoke subsequently passed with image
   `traceback-production-smoke:local` (`7a696a1a2b19`): Gunicorn booted all three
-  workers and `/health` returned HTTP 200 under the `app` user, read-only root
-  filesystem, init, and `no-new-privileges`. Runtime environment values were
+  workers under the `app` user, read-only root filesystem, init, and
+  `no-new-privileges`. Runtime environment values were
   injected locally and were not embedded in the image or stored in Docker Hub.
   Reverse proxy/SMTP checks remain; the 42-file exception is approved.
 

@@ -23,7 +23,9 @@
   Responses do not reveal whether an address exists, and allauth's confirmation
   cooldown/rate limit remains active.
 - Browser authentication uses Django database sessions. The browser stores an
-  HttpOnly `sessionid`; mutating requests use Django CSRF protection.
+  HttpOnly `sessionid`; mutating requests use Django CSRF protection. allauth
+  `usersessions` records login sessions by user so account deletion does not
+  scan the entire Django session table. Per-request activity tracking is off.
 - Kakao requests only verified `account_email`. Optional nickname/image scopes
   are not requested or copied into User columns.
 - A verified provider email may connect to the matching User. New Kakao signup
@@ -71,8 +73,8 @@
   formatting, mypy, YAML lint, uv lock, and development/production Compose
   configuration passed.
 - Production image `traceback-production-smoke:local` (`7a696a1a2b19`) booted
-  Gunicorn as the `app` user with a read-only root filesystem and returned HTTP
-  200 from `/health`. Runtime secrets were injected and were not embedded in the image.
+  Gunicorn as the `app` user with a read-only root filesystem. Runtime secrets
+  were injected and were not embedded in the image.
 - Synthetic QA Users 4–7, their EmailAddress rows, and one referencing legacy
   session row were removed. User 8 and its Kakao SocialAccount were preserved.
 

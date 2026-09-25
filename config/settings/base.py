@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     "allauth.headless",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.kakao",
+    "allauth.usersessions",
     "rest_framework",
     "apps.accounts",
     "apps.core",

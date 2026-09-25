@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import json
-import urllib.error
 import urllib.parse
 import urllib.request
+from http.client import HTTPException
 
 from django.conf import settings
 
@@ -30,9 +30,14 @@ def unlink_kakao_user(uid: str) -> None:
     )
     try:
         with urllib.request.urlopen(request, timeout=10) as response:
-            payload = json.loads(response.read().decode() or "{}")
-    except (urllib.error.URLError, urllib.error.HTTPError, json.JSONDecodeError) as exc:
+            raw_payload = response.read()
+    except (OSError, HTTPException) as exc:
         raise KakaoUnlinkError("Kakao unlink request failed.") from exc
 
-    if str(payload.get("id")) != str(uid):
+    try:
+        payload = json.loads(raw_payload.decode() or "{}")
+    except (UnicodeError, json.JSONDecodeError) as exc:
+        raise KakaoUnlinkError("Kakao unlink request failed.") from exc
+
+    if not isinstance(payload, dict) or str(payload.get("id")) != str(uid):
         raise KakaoUnlinkError("Kakao unlink response did not match the user.")
