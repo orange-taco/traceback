@@ -7,7 +7,7 @@
 - Phase 0 Foundation의 account/auth 서버 slice가 구현되어 있다.
 - 현재 브랜치는 `phase-0d-pr8-hardening`이며 GitHub-hosted runner + AWS OIDC + SSM 배포 설정을 준비했다. 기존 미커밋 변경은 보존했다.
 - Kakao provider unlink, account deletion, 사용자별 세션 추적이 구현되어 있다.
-- 로컬 메일은 console, AWS development/production 메일은 SES SMTP를 사용한다.
+- 로컬 메일은 console, AWS development/production 메일은 SES SMTP를 사용한다. `.env.example`과 `config/server.env.example`에 SES 인증 변수 이름을 명시했다.
 - `development`/`main` push의 quality·test 성공 뒤에만 배포 job이 호출된다. Development는 SHA 이미지가 이미 있으면 재사용하고, production은 성공한 development CI의 SHA로 조회한 동일 digest를 승격한다. EC2는 이미지 속 Compose 파일을 반영하고 migration 후 HTTP/DB healthcheck가 통과한 앱을 실행한다.
 - `.env.dev.git`/`.env.prod.git`는 GitHub Environment 변수 목록이고,
   EC2 `/opt/traceback/.env`의 변수 목록은 `config/server.env.example`이다. AWS/GitHub 수동 설정은 `docs/deployment.md`에 정리했다.
