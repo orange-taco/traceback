@@ -16,6 +16,7 @@
 - Backend SQLite suite: 39 passed, 96% coverage
 - Ruff, format, mypy, Django check, yamllint, and diff check passed
 - Compose production config rendered successfully with PostgreSQL readiness healthcheck
+- Auth flow guide was browser-verified after the readability and ownership-label redesign.
 - Local PostgreSQL test validation remains unavailable while the `db` service hostname is not reachable.
 
 ## Next action

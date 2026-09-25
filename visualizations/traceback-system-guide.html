@@ -73,7 +73,34 @@
     #auth-flow-visualizer .af-controls { display: flex; gap: 8px; margin-bottom: 12px; }
     #auth-flow-visualizer button { appearance: none; border: 1px solid var(--af-border); border-radius: 8px; background: var(--af-surface); color: var(--af-text); cursor: pointer; padding: 9px 12px; font: inherit; }
     #auth-flow-visualizer button[aria-pressed="true"] { border-color: var(--af-blue); box-shadow: 0 0 0 2px color-mix(in srgb, var(--af-blue) 22%, transparent); }
-    #auth-flow-visualizer .af-canvas { background: var(--af-bg); border: 1px solid var(--af-border); border-radius: 12px; padding: 8px; overflow: hidden; }
+    #auth-flow-visualizer .af-canvas { display: none; }
+    #auth-flow-visualizer .af-explainer { display: grid; gap: 16px; }
+    #auth-flow-visualizer .af-rationale { display: none !important; }
+    #auth-flow-visualizer .af-intro { color: var(--af-muted); margin: 0; }
+    #auth-flow-visualizer .af-legend-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    #auth-flow-visualizer .af-owner { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--af-border); border-radius: 999px; color: var(--af-muted); padding: 4px 9px; font-size: 12px; }
+    #auth-flow-visualizer .af-owner::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--af-muted); }
+    #auth-flow-visualizer .af-owner.frontend::before { background: var(--af-blue); }
+    #auth-flow-visualizer .af-owner.library::before { background: var(--af-orange); }
+    #auth-flow-visualizer .af-owner.custom::before { background: var(--af-purple); }
+    #auth-flow-visualizer .af-owner.external::before { background: var(--af-green); }
+    #auth-flow-visualizer .af-owner.database::before { background: var(--af-green); }
+    #auth-flow-visualizer .af-route { display: grid; gap: 10px; }
+    #auth-flow-visualizer .af-route[hidden] { display: none; }
+    #auth-flow-visualizer .af-route-title { margin: 0; font-size: 15px; }
+    #auth-flow-visualizer .af-route-note { color: var(--af-muted); font-size: 12px; margin: 0; }
+    #auth-flow-visualizer .af-steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 24px; }
+    #auth-flow-visualizer .af-step { position: relative; min-width: 0; min-height: 158px; border: 1px solid var(--af-border); border-top: 4px solid var(--af-blue); border-radius: 12px; background: var(--af-surface); padding: 14px; }
+    #auth-flow-visualizer .af-step.library { border-top-color: var(--af-orange); }
+    #auth-flow-visualizer .af-step.custom { border-top-color: var(--af-purple); }
+    #auth-flow-visualizer .af-step.external, #auth-flow-visualizer .af-step.database { border-top-color: var(--af-green); }
+    #auth-flow-visualizer .af-step:not(:last-child)::after { content: "→"; position: absolute; right: -20px; top: 50%; color: var(--af-blue); font-size: 20px; transform: translateY(-50%); }
+    #auth-flow-visualizer .af-step-number { display: block; color: var(--af-blue); font-size: 12px; font-weight: 700; margin-bottom: 7px; }
+    #auth-flow-visualizer .af-step h4 { font-size: 14px; line-height: 1.25; margin: 0 0 8px; overflow-wrap: anywhere; }
+    #auth-flow-visualizer .af-step p { color: var(--af-muted); font-size: 12px; line-height: 1.45; margin: 0 0 8px; overflow-wrap: anywhere; }
+    #auth-flow-visualizer .af-step code { color: var(--af-text); display: block; font-size: 10px; line-height: 1.35; overflow-wrap: anywhere; white-space: normal; }
+    #auth-flow-visualizer .af-branch { border-left: 3px solid var(--af-orange); color: var(--af-muted); font-size: 12px; line-height: 1.5; margin: 0; padding: 8px 0 8px 12px; }
+    #auth-flow-visualizer .af-branch strong { color: var(--af-text); }
     #auth-flow-visualizer svg { display: block; width: 100%; height: auto; overflow: visible; }
     #auth-flow-visualizer .af-node { fill: var(--af-surface); stroke: var(--af-border); stroke-width: 1.5; }
     #auth-flow-visualizer .af-node-blue { stroke: var(--af-blue); }
@@ -98,13 +125,49 @@
     @keyframes af-flow { to { stroke-dashoffset: -16; } }
     @keyframes af-pulse { 50% { opacity: .35; r: 6; } }
     @media (prefers-reduced-motion: reduce) { #auth-flow-visualizer .af-line-active, #auth-flow-visualizer .af-dot { animation: none; } }
-    @media (max-width: 620px) { #auth-flow-visualizer .af-label { font-size: 12px; } #auth-flow-visualizer .af-sub { font-size: 9px; } #auth-flow-visualizer .af-rationale { grid-template-columns: 1fr; } #auth-flow-visualizer .af-reason::after { content: "↓"; right: auto; left: 50%; top: auto; bottom: -14px; transform: translateX(-50%); } #auth-flow-visualizer .af-reason:last-child::after { display: none; } }
+    @media (max-width: 900px) { #auth-flow-visualizer .af-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } #auth-flow-visualizer .af-step:nth-child(2)::after, #auth-flow-visualizer .af-step:nth-child(4)::after { content: "↓"; right: auto; top: auto; bottom: -22px; left: 50%; transform: translateX(-50%); } #auth-flow-visualizer .af-step:nth-child(3)::after { display: none; } }
+    @media (max-width: 620px) { #auth-flow-visualizer .af-label { font-size: 12px; } #auth-flow-visualizer .af-sub { font-size: 9px; } #auth-flow-visualizer .af-rationale { grid-template-columns: 1fr; } #auth-flow-visualizer .af-reason::after { content: "↓"; right: auto; left: 50%; top: auto; bottom: -14px; transform: translateX(-50%); } #auth-flow-visualizer .af-reason:last-child::after { display: none; } #auth-flow-visualizer .af-steps { grid-template-columns: 1fr; } #auth-flow-visualizer .af-step::after, #auth-flow-visualizer .af-step:nth-child(2)::after, #auth-flow-visualizer .af-step:nth-child(4)::after { content: "↓"; display: block; right: auto; top: auto; bottom: -22px; left: 50%; transform: translateX(-50%); } #auth-flow-visualizer .af-step:last-child::after { display: none; } }
   </style>
 
   <h2 id="auth-flow-title">TRACEBACK account unlink</h2>
   <div class="af-controls" role="group" aria-label="Account type">
     <button type="button" data-flow="kakao-only" aria-pressed="true">Kakao-only</button>
     <button type="button" data-flow="email-kakao" aria-pressed="false">Email + Kakao</button>
+  </div>
+
+  <div class="af-explainer">
+    <p class="af-intro">버튼을 누른 브라우저 요청이 어떤 코드와 서비스로 이동하는지 단계별로 읽어보세요. 카드 위 색상은 실행 주체를 뜻합니다.</p>
+    <div class="af-legend-row" aria-label="Flow ownership legend">
+      <span class="af-owner frontend">브라우저 / API endpoint</span>
+      <span class="af-owner library">allauth 라이브러리</span>
+      <span class="af-owner custom">TRACEBACK 코드</span>
+      <span class="af-owner external">Kakao 외부 서비스</span>
+      <span class="af-owner database">우리 DB 상태</span>
+    </div>
+    <section class="af-route" data-flow-panel="kakao-only" aria-labelledby="kakao-delete-title">
+      <h3 class="af-route-title" id="kakao-delete-title">Kakao-only 계정 삭제</h3>
+      <p class="af-route-note">계정 삭제는 provider 연결 해제와 별도 endpoint입니다. Kakao 연결 해제가 성공한 뒤에만 로컬 계정을 정리합니다.</p>
+      <div class="af-steps">
+        <article class="af-step frontend"><span class="af-step-number">01 · 시작</span><h4>사용자 브라우저</h4><p>사용자가 “계정 삭제”를 누릅니다.</p><code>DELETE /accounts/delete</code></article>
+        <article class="af-step custom"><span class="af-step-number">02 · 진입점</span><h4>AccountDeletionView</h4><p>로그인과 CSRF를 확인하고 삭제 서비스를 호출합니다.</p><code>apps/accounts/views.py</code></article>
+        <article class="af-step custom"><span class="af-step-number">03 · 원격 먼저</span><h4>unlink_kakao_user()</h4><p>서버의 Kakao Admin Key로 동의 철회를 요청합니다.</p><code>apps/accounts/providers.py</code></article>
+        <article class="af-step external"><span class="af-step-number">04 · 외부 확인</span><h4>Kakao API</h4><p>성공한 사용자 ID를 반환합니다. 이미 끊겼으면 -101도 성공으로 봅니다.</p><code>POST /v1/user/unlink</code></article>
+        <article class="af-step database"><span class="af-step-number">05 · 로컬 정리</span><h4>우리 DB + 세션</h4><p>사용자를 익명화·비활성화하고 연결·이메일·세션을 정리합니다.</p><code>apps/accounts/services.py · atomic()</code></article>
+      </div>
+      <p class="af-branch"><strong>실패하면:</strong> Kakao 오류는 <code>503 provider_unavailable</code>로 응답하고 로컬 익명화는 시작하지 않습니다.</p>
+    </section>
+    <section class="af-route" data-flow-panel="email-kakao" hidden aria-labelledby="provider-disconnect-title">
+      <h3 class="af-route-title" id="provider-disconnect-title">Email + Kakao 연결 해제</h3>
+      <p class="af-route-note">이 경로는 계정 삭제가 아니라 Kakao 연결만 해제합니다. 이메일 로그인은 유지됩니다.</p>
+      <div class="af-steps">
+        <article class="af-step frontend"><span class="af-step-number">01 · 시작</span><h4>사용자 브라우저</h4><p>사용자가 “Kakao 연결 해제”를 누릅니다.</p><code>DELETE /_allauth/browser/v1/account/providers</code></article>
+        <article class="af-step library"><span class="af-step-number">02 · 검증</span><h4>allauth Headless</h4><p>provider와 account를 확인하고 계정 상태를 검증합니다.</p><code>DeleteProvider · Input.clean()</code></article>
+        <article class="af-step custom"><span class="af-step-number">03 · 정책</span><h4>SocialAccountAdapter</h4><p>Social-only 계정의 password 조건을 확인합니다.</p><code>apps/accounts/adapters.py</code></article>
+        <article class="af-step custom"><span class="af-step-number">04 · 원격</span><h4>unlink_kakao_user()</h4><p>Kakao 동의를 철회합니다. -101은 이미 목표 상태입니다.</p><code>Admin Key POST</code></article>
+        <article class="af-step database"><span class="af-step-number">05 · 완료</span><h4>SocialAccount 삭제</h4><p>원격 성공 뒤 우리 DB에서 Kakao 연결 행만 삭제합니다.</p><code>connect.disconnect()</code></article>
+      </div>
+      <p class="af-branch"><strong>Social-only 계정이면:</strong> allauth가 <code>400 no_password</code>를 반환하며 Kakao 연결은 유지됩니다.</p>
+    </section>
   </div>
 
   <div class="af-canvas">
@@ -170,7 +233,7 @@
     <div class="af-reason"><span class="af-reason-index">03</span><strong>Local state is atomic</strong><p>원격 성공 뒤 User·SocialAccount·EmailAddress·UserSession을 한 transaction으로 정리합니다.</p></div>
   </div>
 
-  <p class="af-status" aria-live="polite" data-status>Kakao-only path: allauth 차단 후 계정탈퇴 서비스로 이동 · remote unlink 후 local atomic cleanup</p>
+  <p class="af-status" aria-live="polite" data-status>현재 흐름: Kakao-only 계정 삭제 · 원격 연결 해제 후 로컬 계정 정리</p>
 
   <script>
     (() => {
@@ -179,11 +242,12 @@
       const buttons = [...root.querySelectorAll("button[data-flow]")];
       const panels = [...root.querySelectorAll("[data-panel]")];
       const status = root.querySelector("[data-status]");
-      const messages = { "kakao-only": "Kakao-only path: allauth 차단 후 계정탈퇴 서비스로 이동 · remote unlink 후 local atomic cleanup", "email-kakao": "Email + Kakao path: allauth → adapter → Kakao(-101 OK) → SocialAccount 삭제" };
+      const messages = { "kakao-only": "현재 흐름: Kakao-only 계정 삭제 · 원격 연결 해제 후 로컬 계정 정리", "email-kakao": "현재 흐름: Email + Kakao 연결 해제 · 이메일 로그인은 유지" };
       buttons.forEach((button) => button.addEventListener("click", () => {
         const selected = button.dataset.flow;
         buttons.forEach((item) => item.setAttribute("aria-pressed", String(item === button)));
         panels.forEach((panel) => { panel.toggleAttribute("hidden", panel.dataset.panel !== selected); });
+        root.querySelectorAll("[data-flow-panel]").forEach((panel) => { panel.toggleAttribute("hidden", panel.dataset.flowPanel !== selected); });
         if (status) status.textContent = messages[selected] || "";
       }));
     })();
