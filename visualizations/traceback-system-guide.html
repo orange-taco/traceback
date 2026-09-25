@@ -60,6 +60,7 @@
       max-width: 980px; margin: 0 auto;
     }
     #auth-flow-visualizer * { box-sizing: border-box; }
+    #auth-flow-visualizer [hidden] { display: none !important; }
     #auth-flow-visualizer h2 { font-size: 20px; margin: 0 0 12px; }
     #auth-flow-visualizer .af-controls { display: flex; gap: 8px; margin-bottom: 12px; }
     #auth-flow-visualizer button { appearance: none; border: 1px solid var(--af-border); border-radius: 8px; background: var(--af-surface); color: var(--af-text); cursor: pointer; padding: 9px 12px; font: inherit; }
@@ -79,10 +80,17 @@
     #auth-flow-visualizer .af-dot { fill: var(--af-blue); animation: af-pulse 1.4s ease-in-out infinite; }
     #auth-flow-visualizer .af-legend { fill: var(--af-muted); font-size: 11px; }
     #auth-flow-visualizer .af-status { color: var(--af-muted); margin: 10px 0 0; text-align: center; }
+    #auth-flow-visualizer .af-rationale { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+    #auth-flow-visualizer .af-reason { position: relative; border: 1px solid var(--af-border); border-radius: 10px; background: var(--af-surface); padding: 12px 12px 12px 42px; }
+    #auth-flow-visualizer .af-reason::after { content: "→"; position: absolute; right: -9px; top: 50%; color: var(--af-blue); font-size: 18px; transform: translateY(-50%); }
+    #auth-flow-visualizer .af-reason:last-child::after { display: none; }
+    #auth-flow-visualizer .af-reason-index { position: absolute; left: 12px; top: 12px; color: var(--af-blue); font-weight: 700; }
+    #auth-flow-visualizer .af-reason strong { display: block; font-size: 13px; }
+    #auth-flow-visualizer .af-reason p { color: var(--af-muted); font-size: 12px; margin: 4px 0 0; }
     @keyframes af-flow { to { stroke-dashoffset: -16; } }
     @keyframes af-pulse { 50% { opacity: .35; r: 6; } }
     @media (prefers-reduced-motion: reduce) { #auth-flow-visualizer .af-line-active, #auth-flow-visualizer .af-dot { animation: none; } }
-    @media (max-width: 620px) { #auth-flow-visualizer .af-label { font-size: 12px; } #auth-flow-visualizer .af-sub { font-size: 9px; } }
+    @media (max-width: 620px) { #auth-flow-visualizer .af-label { font-size: 12px; } #auth-flow-visualizer .af-sub { font-size: 9px; } #auth-flow-visualizer .af-rationale { grid-template-columns: 1fr; } #auth-flow-visualizer .af-reason::after { content: "↓"; right: auto; left: 50%; top: auto; bottom: -14px; transform: translateX(-50%); } #auth-flow-visualizer .af-reason:last-child::after { display: none; } }
   </style>
 
   <h2 id="auth-flow-title">TRACEBACK account unlink</h2>
@@ -113,10 +121,10 @@
         <rect class="af-node af-node-blue" x="430" y="112" width="120" height="76" rx="12" />
         <text class="af-label" x="490" y="137">Client request</text><text class="af-sub" x="490" y="156">our frontend</text><text class="af-sub" x="490" y="173">DELETE account</text>
         <rect class="af-node af-node-purple" x="610" y="112" width="120" height="76" rx="12" />
-        <text class="af-label" x="670" y="137">delete_account()</text><text class="af-sub" x="670" y="156">our function</text><text class="af-sub" x="670" y="173">local anonymize</text>
+        <text class="af-label" x="670" y="137">delete_account()</text><text class="af-sub" x="670" y="156">orchestrates</text><text class="af-sub" x="670" y="173">remote → local</text>
         <rect class="af-node af-node-green" x="790" y="112" width="150" height="76" rx="12" />
-        <text class="af-label" x="865" y="137">Kakao + User</text><text class="af-sub" x="865" y="156">remote unlink</text><text class="af-sub" x="865" y="173">then local delete</text>
-        <text class="af-legend" x="480" y="225" text-anchor="middle">adapter.validate_disconnect() is skipped</text>
+        <text class="af-label" x="865" y="137">Kakao API</text><text class="af-sub" x="865" y="156">unlink consent</text><text class="af-sub" x="865" y="173">-101 = already OK</text>
+        <text class="af-legend" x="480" y="225" text-anchor="middle">then local DB/UserSession cleanup runs in atomic()</text>
       </g>
 
       <g data-panel="email-kakao" hidden>
@@ -136,7 +144,7 @@
         <text class="af-label" x="670" y="137">unlink_kakao_user()</text><text class="af-sub" x="670" y="156">our function</text><text class="af-sub" x="670" y="173">Admin Key POST</text>
         <rect class="af-node af-node-green" x="790" y="112" width="150" height="76" rx="12" />
         <text class="af-label" x="865" y="137">connect.disconnect()</text><text class="af-sub" x="865" y="156">allauth library</text><text class="af-sub" x="865" y="173">SocialAccount.delete()</text>
-        <text class="af-legend" x="480" y="225" text-anchor="middle">email login remains active</text>
+        <text class="af-legend" x="480" y="225" text-anchor="middle">remote consent first; local Kakao row removed after success</text>
       </g>
 
       <g aria-label="Legend">
@@ -148,7 +156,13 @@
     </svg>
   </div>
 
-  <p class="af-status" aria-live="polite" data-status>Kakao-only path: allauth 차단 후 계정탈퇴 서비스로 이동</p>
+  <div class="af-rationale" aria-label="Why the unlink order is remote first">
+    <div class="af-reason"><span class="af-reason-index">01</span><strong>Remote state first</strong><p>Kakao 동의철회는 우리 DB transaction으로 되돌릴 수 없는 외부 변경입니다.</p></div>
+    <div class="af-reason"><span class="af-reason-index">02</span><strong>-101 is idempotent success</strong><p>이미 연결이 끊겼다면 목표 상태에 도달한 것이므로 HTTP 400이어도 계속 진행합니다.</p></div>
+    <div class="af-reason"><span class="af-reason-index">03</span><strong>Local state is atomic</strong><p>원격 성공 뒤 User·SocialAccount·EmailAddress·UserSession을 한 transaction으로 정리합니다.</p></div>
+  </div>
+
+  <p class="af-status" aria-live="polite" data-status>Kakao-only path: allauth 차단 후 계정탈퇴 서비스로 이동 · remote unlink 후 local atomic cleanup</p>
 
   <script>
     (() => {
@@ -157,7 +171,7 @@
       const buttons = [...root.querySelectorAll("button[data-flow]")];
       const panels = [...root.querySelectorAll("[data-panel]")];
       const status = root.querySelector("[data-status]");
-      const messages = { "kakao-only": "Kakao-only path: allauth 차단 후 계정탈퇴 서비스로 이동", "email-kakao": "Email + Kakao path: allauth → adapter → Kakao → SocialAccount 삭제" };
+      const messages = { "kakao-only": "Kakao-only path: allauth 차단 후 계정탈퇴 서비스로 이동 · remote unlink 후 local atomic cleanup", "email-kakao": "Email + Kakao path: allauth → adapter → Kakao(-101 OK) → SocialAccount 삭제" };
       buttons.forEach((button) => button.addEventListener("click", () => {
         const selected = button.dataset.flow;
         buttons.forEach((item) => item.setAttribute("aria-pressed", String(item === button)));

@@ -6,3 +6,5 @@ reviews:
     drafts: true
     base_branches:
       - development
+  path_filters:
+    - "!visualizations/**"

@@ -1097,6 +1097,7 @@ html&gt;body{padding:0}&lt;/style&gt;
       max-width: 980px; margin: 0 auto;
     }
     #auth-flow-visualizer * { box-sizing: border-box; }
+    #auth-flow-visualizer [hidden] { display: none !important; }
     #auth-flow-visualizer h2 { font-size: 20px; margin: 0 0 12px; }
     #auth-flow-visualizer .af-controls { display: flex; gap: 8px; margin-bottom: 12px; }
     #auth-flow-visualizer button { appearance: none; border: 1px solid var(--af-border); border-radius: 8px; background: var(--af-surface); color: var(--af-text); cursor: pointer; padding: 9px 12px; font: inherit; }
@@ -1116,10 +1117,17 @@ html&gt;body{padding:0}&lt;/style&gt;
     #auth-flow-visualizer .af-dot { fill: var(--af-blue); animation: af-pulse 1.4s ease-in-out infinite; }
     #auth-flow-visualizer .af-legend { fill: var(--af-muted); font-size: 11px; }
     #auth-flow-visualizer .af-status { color: var(--af-muted); margin: 10px 0 0; text-align: center; }
+    #auth-flow-visualizer .af-rationale { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+    #auth-flow-visualizer .af-reason { position: relative; border: 1px solid var(--af-border); border-radius: 10px; background: var(--af-surface); padding: 12px 12px 12px 42px; }
+    #auth-flow-visualizer .af-reason::after { content: &quot;→&quot;; position: absolute; right: -9px; top: 50%; color: var(--af-blue); font-size: 18px; transform: translateY(-50%); }
+    #auth-flow-visualizer .af-reason:last-child::after { display: none; }
+    #auth-flow-visualizer .af-reason-index { position: absolute; left: 12px; top: 12px; color: var(--af-blue); font-weight: 700; }
+    #auth-flow-visualizer .af-reason strong { display: block; font-size: 13px; }
+    #auth-flow-visualizer .af-reason p { color: var(--af-muted); font-size: 12px; margin: 4px 0 0; }
     @keyframes af-flow { to { stroke-dashoffset: -16; } }
     @keyframes af-pulse { 50% { opacity: .35; r: 6; } }
     @media (prefers-reduced-motion: reduce) { #auth-flow-visualizer .af-line-active, #auth-flow-visualizer .af-dot { animation: none; } }
-    @media (max-width: 620px) { #auth-flow-visualizer .af-label { font-size: 12px; } #auth-flow-visualizer .af-sub { font-size: 9px; } }
+    @media (max-width: 620px) { #auth-flow-visualizer .af-label { font-size: 12px; } #auth-flow-visualizer .af-sub { font-size: 9px; } #auth-flow-visualizer .af-rationale { grid-template-columns: 1fr; } #auth-flow-visualizer .af-reason::after { content: &quot;↓&quot;; right: auto; left: 50%; top: auto; bottom: -14px; transform: translateX(-50%); } #auth-flow-visualizer .af-reason:last-child::after { display: none; } }
   &lt;/style&gt;
 
   &lt;h2 id=&quot;auth-flow-title&quot;&gt;TRACEBACK account unlink&lt;/h2&gt;
@@ -1150,10 +1158,10 @@ html&gt;body{padding:0}&lt;/style&gt;
         &lt;rect class=&quot;af-node af-node-blue&quot; x=&quot;430&quot; y=&quot;112&quot; width=&quot;120&quot; height=&quot;76&quot; rx=&quot;12&quot; /&gt;
         &lt;text class=&quot;af-label&quot; x=&quot;490&quot; y=&quot;137&quot;&gt;Client request&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;490&quot; y=&quot;156&quot;&gt;our frontend&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;490&quot; y=&quot;173&quot;&gt;DELETE account&lt;/text&gt;
         &lt;rect class=&quot;af-node af-node-purple&quot; x=&quot;610&quot; y=&quot;112&quot; width=&quot;120&quot; height=&quot;76&quot; rx=&quot;12&quot; /&gt;
-        &lt;text class=&quot;af-label&quot; x=&quot;670&quot; y=&quot;137&quot;&gt;delete_account()&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;670&quot; y=&quot;156&quot;&gt;our function&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;670&quot; y=&quot;173&quot;&gt;local anonymize&lt;/text&gt;
+        &lt;text class=&quot;af-label&quot; x=&quot;670&quot; y=&quot;137&quot;&gt;delete_account()&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;670&quot; y=&quot;156&quot;&gt;orchestrates&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;670&quot; y=&quot;173&quot;&gt;remote → local&lt;/text&gt;
         &lt;rect class=&quot;af-node af-node-green&quot; x=&quot;790&quot; y=&quot;112&quot; width=&quot;150&quot; height=&quot;76&quot; rx=&quot;12&quot; /&gt;
-        &lt;text class=&quot;af-label&quot; x=&quot;865&quot; y=&quot;137&quot;&gt;Kakao + User&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;865&quot; y=&quot;156&quot;&gt;remote unlink&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;865&quot; y=&quot;173&quot;&gt;then local delete&lt;/text&gt;
-        &lt;text class=&quot;af-legend&quot; x=&quot;480&quot; y=&quot;225&quot; text-anchor=&quot;middle&quot;&gt;adapter.validate_disconnect() is skipped&lt;/text&gt;
+        &lt;text class=&quot;af-label&quot; x=&quot;865&quot; y=&quot;137&quot;&gt;Kakao API&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;865&quot; y=&quot;156&quot;&gt;unlink consent&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;865&quot; y=&quot;173&quot;&gt;-101 = already OK&lt;/text&gt;
+        &lt;text class=&quot;af-legend&quot; x=&quot;480&quot; y=&quot;225&quot; text-anchor=&quot;middle&quot;&gt;then local DB/UserSession cleanup runs in atomic()&lt;/text&gt;
       &lt;/g&gt;
 
       &lt;g data-panel=&quot;email-kakao&quot; hidden&gt;
@@ -1173,7 +1181,7 @@ html&gt;body{padding:0}&lt;/style&gt;
         &lt;text class=&quot;af-label&quot; x=&quot;670&quot; y=&quot;137&quot;&gt;unlink_kakao_user()&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;670&quot; y=&quot;156&quot;&gt;our function&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;670&quot; y=&quot;173&quot;&gt;Admin Key POST&lt;/text&gt;
         &lt;rect class=&quot;af-node af-node-green&quot; x=&quot;790&quot; y=&quot;112&quot; width=&quot;150&quot; height=&quot;76&quot; rx=&quot;12&quot; /&gt;
         &lt;text class=&quot;af-label&quot; x=&quot;865&quot; y=&quot;137&quot;&gt;connect.disconnect()&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;865&quot; y=&quot;156&quot;&gt;allauth library&lt;/text&gt;&lt;text class=&quot;af-sub&quot; x=&quot;865&quot; y=&quot;173&quot;&gt;SocialAccount.delete()&lt;/text&gt;
-        &lt;text class=&quot;af-legend&quot; x=&quot;480&quot; y=&quot;225&quot; text-anchor=&quot;middle&quot;&gt;email login remains active&lt;/text&gt;
+        &lt;text class=&quot;af-legend&quot; x=&quot;480&quot; y=&quot;225&quot; text-anchor=&quot;middle&quot;&gt;remote consent first; local Kakao row removed after success&lt;/text&gt;
       &lt;/g&gt;
 
       &lt;g aria-label=&quot;Legend&quot;&gt;
@@ -1185,7 +1193,13 @@ html&gt;body{padding:0}&lt;/style&gt;
     &lt;/svg&gt;
   &lt;/div&gt;
 
-  &lt;p class=&quot;af-status&quot; aria-live=&quot;polite&quot; data-status&gt;Kakao-only path: allauth 차단 후 계정탈퇴 서비스로 이동&lt;/p&gt;
+  &lt;div class=&quot;af-rationale&quot; aria-label=&quot;Why the unlink order is remote first&quot;&gt;
+    &lt;div class=&quot;af-reason&quot;&gt;&lt;span class=&quot;af-reason-index&quot;&gt;01&lt;/span&gt;&lt;strong&gt;Remote state first&lt;/strong&gt;&lt;p&gt;Kakao 동의철회는 우리 DB transaction으로 되돌릴 수 없는 외부 변경입니다.&lt;/p&gt;&lt;/div&gt;
+    &lt;div class=&quot;af-reason&quot;&gt;&lt;span class=&quot;af-reason-index&quot;&gt;02&lt;/span&gt;&lt;strong&gt;-101 is idempotent success&lt;/strong&gt;&lt;p&gt;이미 연결이 끊겼다면 목표 상태에 도달한 것이므로 HTTP 400이어도 계속 진행합니다.&lt;/p&gt;&lt;/div&gt;
+    &lt;div class=&quot;af-reason&quot;&gt;&lt;span class=&quot;af-reason-index&quot;&gt;03&lt;/span&gt;&lt;strong&gt;Local state is atomic&lt;/strong&gt;&lt;p&gt;원격 성공 뒤 User·SocialAccount·EmailAddress·UserSession을 한 transaction으로 정리합니다.&lt;/p&gt;&lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;p class=&quot;af-status&quot; aria-live=&quot;polite&quot; data-status&gt;Kakao-only path: allauth 차단 후 계정탈퇴 서비스로 이동 · remote unlink 후 local atomic cleanup&lt;/p&gt;
 
   &lt;script&gt;
     (() =&gt; {
@@ -1194,7 +1208,7 @@ html&gt;body{padding:0}&lt;/style&gt;
       const buttons = [...root.querySelectorAll(&quot;button[data-flow]&quot;)];
       const panels = [...root.querySelectorAll(&quot;[data-panel]&quot;)];
       const status = root.querySelector(&quot;[data-status]&quot;);
-      const messages = { &quot;kakao-only&quot;: &quot;Kakao-only path: allauth 차단 후 계정탈퇴 서비스로 이동&quot;, &quot;email-kakao&quot;: &quot;Email + Kakao path: allauth → adapter → Kakao → SocialAccount 삭제&quot; };
+      const messages = { &quot;kakao-only&quot;: &quot;Kakao-only path: allauth 차단 후 계정탈퇴 서비스로 이동 · remote unlink 후 local atomic cleanup&quot;, &quot;email-kakao&quot;: &quot;Email + Kakao path: allauth → adapter → Kakao(-101 OK) → SocialAccount 삭제&quot; };
       buttons.forEach((button) =&gt; button.addEventListener(&quot;click&quot;, () =&gt; {
         const selected = button.dataset.flow;
         buttons.forEach((item) =&gt; item.setAttribute(&quot;aria-pressed&quot;, String(item === button)));

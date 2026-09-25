@@ -1,106 +1,31 @@
 # Current Work
 
-새 세션은 이 문서를 현재 상태와 다음 행동의 단일 진입점으로 사용한다.
-세부 계약은 관련 기준 문서에서만 관리한다.
+새 AI 세션은 이 문서와 [`../system.md`](../system.md)를 먼저 읽는다.
 
-## Current State
+## Current state
 
-- Phase: Phase 0 — Foundation
-- Backend branch: `phase-0c-account-deletion`
-- Current slice: django-allauth Headless server authentication completion
-- Server implementation, PostgreSQL contract tests, production image, and direct
-  production container smoke are complete.
-- Client 구현과 실제 Kakao browser acceptance는 별도 후속 작업이다.
-- Phase 1 Catalog는 Phase 0의 남은 검증 전에는 시작하지 않는다.
-
-## Implemented Contract
-
-- Email signup, mandatory email verification, login, logout, password reset,
-  password change, and Kakao OAuth use django-allauth Headless.
-- Unverified email users can request a new confirmation link through the custom
-  `POST /accounts/email/verify/resend` endpoint because the current link-based
-  flow has no equivalent allauth Headless endpoint.
-  Responses do not reveal whether an address exists, and allauth's confirmation
-  cooldown/rate limit remains active.
-- Browser authentication uses Django database sessions. The browser stores an
-  HttpOnly `sessionid`; mutating requests use Django CSRF protection. allauth
-  `usersessions` records login sessions by user so account deletion does not
-  scan the entire Django session table. Per-request activity tracking is off.
-- Kakao requests only verified `account_email`. Optional nickname/image scopes
-  are not requested or copied into User columns.
-- A verified provider email may connect to the matching User. New Kakao signup
-  requires a verified email; an existing provider identity may re-login without it.
-- allauth Headless `GET/DELETE /_allauth/browser/v1/account/providers` manages
-  connected providers. Kakao remote unlink uses `KAKAO_ADMIN_KEY` before the
-  local connection is removed. Account
-  `DELETE /accounts/delete` follows the same provider-first order, then removes local auth rows
-  and anonymizes/deactivates the User.
-- A single Kakao-only account without a usable password cannot unlink through
-  allauth until an alternate password exists; the client offers explicit account
-  deletion instead.
-- allauth owns `EmailAddress` and `SocialAccount`; legacy account auth models were
-  migrated and removed by `accounts.0004`.
-- React Router uses same-origin `/_allauth` and `/accounts` routes. Production
-  proxying must preserve the original Host and `X-Forwarded-Proto`.
-- Staff API permissions use Django sessions with `IsAdminUser`. Django admin and
-  SimpleJWT are not part of the current contract.
-
-## Configuration Contract
-
-- `ACCOUNT_LOGIN_METHODS = {"email"}`
-- `ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*"]`
-- `ACCOUNT_EMAIL_VERIFICATION = "mandatory"`
-- Password minimum: 8 characters
-- Email confirmation lifetime: 1 day
-- Email confirmation send limit: 2 per 3 minutes per email and 3 per minute per IP
-- Headless client: browser only
-- Local frontend: `http://localhost:5173`
-- Local provider callback: `http://localhost:8000/accounts/kakao/login/callback/`
+- Phase 0 Foundation의 account/auth 서버 slice가 구현되어 있다.
+- django-allauth Headless email/password와 Kakao OAuth를 사용한다.
+- Kakao provider unlink와 account deletion이 구현되어 있다.
+- `allauth.usersessions`로 사용자별 세션을 추적·종료한다.
+- TRACEBACK 시스템의 큰 구조와 확정 결정은 [`../system.md`](../system.md)에 있다.
+- 다음 큰 단계는 client QA와 Phase 0 배포 검증이다.
 
 ## Validation
 
-- Commit `818e8e9`: remote CI Quality, Test, and CodeRabbit checks passed.
-- Current cleanup command `DJANGO_SETTINGS_MODULE=config.settings.test
-  TRACEBACK_DATABASE_URL=sqlite:///:memory: uv run pytest` ran the full local
-  suite: 32 tests passed with 96.37% coverage, including resend rate limits.
-- PostgreSQL command `docker compose exec -T -e
-  DJANGO_SETTINGS_MODULE=config.settings.test app pytest` passed 29 tests with
-  96.60% coverage before the current cleanup. OAuth provider responses were mocked.
-- A fresh migration run passed. A separate migration fixture with
-  `Case@Test.com` and `case@test.com` stopped at `accounts.0003` with the intended
-  clear case-insensitive duplicate error, before allauth lowercased User emails.
-- Live PostgreSQL Django check, migration application/drift checks, Ruff,
-  formatting, mypy, YAML lint, uv lock, and development/production Compose
-  configuration passed.
-- Production image `traceback-production-smoke:local` (`7a696a1a2b19`) booted
-  Gunicorn as the `app` user with a read-only root filesystem. Runtime secrets
-  were injected and were not embedded in the image.
-- Synthetic QA Users 4–7, their EmailAddress rows, and one referencing legacy
-  session row were removed. User 8 and its Kakao SocialAccount were preserved.
+- Backend SQLite suite: 39 passed
+- Ruff, mypy, diff check passed
+- PostgreSQL migration: `allauth.usersessions.0001_initial` applied
+- Docker PostgreSQL test DB는 현재 계정의 CREATE DATABASE 권한이 필요하다.
 
-## Remaining Validation
+## Next action
 
-1. Complete the current CodeRabbit follow-up and confirm remote CI.
-2. Verify the production same-origin reverse proxy and real SMTP delivery.
-3. In the separate client slice, complete password-change UI and actual Kakao
-   cross-route browser acceptance, including logout and PostgreSQL row counts.
-4. Record Phase 0 completion in `docs/build-plan.md` only after these checks pass.
+- 현재 task의 변경분을 검증하고 커밋·푸시한다.
+- 이후 client QA와 Phase 0 배포 검증을 진행한다.
 
-## Client Handoff
+## Maintenance
 
-- Add the password-change screen using
-  `POST /_allauth/browser/v1/account/password/change`. Support social-only users
-  setting their first password without `current_password`.
-- Run social signup → password reset → email login → Kakao re-login and verified
-  email signup → Kakao auto-connect in a real browser.
-- Await logout before reading the session again and verify the final unauthenticated
-  state and HttpOnly cookie behavior.
-- Follow `../traceback-client/AGENTS.md`; keep client changes in that repository.
-
-## Relevant Docs
-
-- Phase/checkpoint: [`../build-plan.md`](../build-plan.md)
-- API contract: [`../api-spec.md`](../api-spec.md)
-- Models and column purposes: [`../domain-model.md`](../domain-model.md)
-- Runtime and deployment: [`../infrastructure-decisions.md`](../infrastructure-decisions.md)
-- Commands: [`../../README.md`](../../README.md)
+- 이 문서는 현재 상태·검증·다음 세션 진입점만 유지한다.
+- 선택적 미래 backlog는 [`../todo.md`](../todo.md)에서 관리한다. 이는 새 세션의 필수 작업 목록이 아니다.
+- task 종료 시 오래된 현재 작업, 검증, 다음 행동을 실제 코드 상태에 맞게 갱신한다.
+- 과거 완료 이력과 긴 검증 로그는 남기지 않는다.

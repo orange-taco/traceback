@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+from io import BytesIO
 from unittest.mock import MagicMock, Mock, patch
+from urllib.error import HTTPError
 
 from django.test import SimpleTestCase, override_settings
 
@@ -63,3 +65,16 @@ class KakaoProviderTests(SimpleTestCase):
 
         with self.assertRaisesRegex(KakaoUnlinkError, "request failed"):
             unlink_kakao_user("5047590774")
+
+    @override_settings(KAKAO_ADMIN_KEY="admin-key")
+    @patch("apps.accounts.providers.urllib.request.urlopen")
+    def test_unlink_accepts_already_unlinked_response(self, urlopen: Mock) -> None:
+        urlopen.side_effect = HTTPError(
+            "https://kapi.kakao.com/v1/user/unlink",
+            400,
+            "already unlinked",
+            hdrs=None,
+            fp=BytesIO(b'{"code": -101, "msg": "user not found"}'),
+        )
+
+        unlink_kakao_user("5047590774")

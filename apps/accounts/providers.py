@@ -4,6 +4,7 @@ import json
 import urllib.parse
 import urllib.request
 from http.client import HTTPException
+from urllib.error import HTTPError
 
 from django.conf import settings
 
@@ -31,6 +32,14 @@ def unlink_kakao_user(uid: str) -> None:
     try:
         with urllib.request.urlopen(request, timeout=10) as response:
             raw_payload = response.read()
+    except HTTPError as exc:
+        try:
+            error_payload = json.loads(exc.read().decode() or "{}")
+        except (OSError, HTTPException, UnicodeError, json.JSONDecodeError) as error:
+            raise KakaoUnlinkError("Kakao unlink request failed.") from error
+        if isinstance(error_payload, dict) and str(error_payload.get("code")) == "-101":
+            return
+        raise KakaoUnlinkError("Kakao unlink request failed.") from exc
     except (OSError, HTTPException) as exc:
         raise KakaoUnlinkError("Kakao unlink request failed.") from exc
 
