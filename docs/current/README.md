@@ -17,9 +17,9 @@
 
 ## Next action
 
-- PR #8 배포 설정과 문서의 남은 CodeRabbit 항목을 하나씩 처리한다.
-- 개발/운영 EC2 분리와 ECR 이미지 승격 방식을 구현 전에 확정한다.
-- 이후 client QA와 Phase 0 배포 검증을 진행한다.
+- PR #8의 남은 문서 리뷰(브랜치명과 인증 경로)를 처리한다.
+- AWS development/production EC2 분리와 ECR 이미지 승격 방식을 구현한다.
+- 이후 실제 배포, SES, client QA를 검증한다.
 
 ## Maintenance
 
