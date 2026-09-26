@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="TRACEBACK 시스템, 인증, CI/CD와 코드 읽기 안내">
+  <meta name="description" content="TRACEBACK 시스템, 인증, CI/CD와 세 워크플로 전체 코드 해설">
   <title>TRACEBACK · 코드 안내</title>
   <style>
     :root { color-scheme:light dark; --bg:#f5f7fa; --surface:#fff; --ink:#17212b; --muted:#586879; --line:#cbd5e1; --blue:#2563c7; --green:#147a4b; --purple:#7044b7; font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; }
@@ -15,13 +15,13 @@
   <main>
     <p class="eyebrow">TRACEBACK · Phase 0 guide</p>
     <h1>흐름을 보고, 코드를 따라 읽기</h1>
-    <p class="lead">현재 구현된 인증과 배포 경로를 실제 파일에 연결했습니다. 주문·결제·출고는 아직 계획 단계로 구분했습니다. 처음에는 전체 지도부터, 배포가 궁금하다면 CI/CD부터 읽으세요.</p>
-    <div class="route" aria-label="추천 읽기 순서"><span>① 전체 구조<small>구현 상태와 계획 구분</small></span><b aria-hidden="true">→</b><span>② 실행 흐름<small>인증 또는 CI/CD</small></span><b aria-hidden="true">→</b><span>③ 코드 지도<small>파일별 입력·판단·결과</small></span></div>
+    <p class="lead">현재 구현된 인증과 배포 경로를 실제 파일에 연결했습니다. 주문·결제·출고는 아직 계획 단계로 구분했습니다. CI/CD 흐름을 본 뒤 세 워크플로 파일을 처음부터 끝까지 읽을 수 있습니다.</p>
+    <div class="route" aria-label="추천 읽기 순서"><span>① 전체 구조<small>구현 상태와 계획 구분</small></span><b aria-hidden="true">→</b><span>② 실행 흐름<small>인증 또는 CI/CD</small></span><b aria-hidden="true">→</b><span>③ 워크플로 전체 코드<small>세 YAML 원문과 구간별 해설</small></span></div>
     <nav class="cards" aria-label="가이드 바로가기">
       <a class="card" href="traceback-system-guide.html#overview"><small>01 · System</small><h2>전체 구조</h2><p>고객 흐름, 현재 구현 범위, 다음 Phase를 한눈에 봅니다.</p></a>
       <a class="card" href="traceback-system-guide.html#auth"><small>02 · Runtime</small><h2>인증 흐름</h2><p>브라우저 요청부터 allauth, TRACEBACK 코드, DB 상태 변경까지 따라갑니다.</p></a>
       <a class="card" href="traceback-system-guide.html#delivery"><small>03 · Delivery</small><h2>CI/CD 흐름</h2><p>PR 검증, 개발 배포, 운영 승격을 분리해서 보고 세 가지 SHA를 이해합니다.</p></a>
-      <a class="card" href="traceback-system-guide.html#code"><small>04 · Source</small><h2>코드 지도</h2><p>구현 파일과 배포 파일을 입력·판단·결과 순서로 읽고 원본으로 이동합니다.</p></a>
+      <a class="card" href="traceback-system-guide.html#code"><small>04 · Source</small><h2>워크플로 전체 코드</h2><p>ci.yml, deploy-development.yml, deploy-production.yml의 모든 줄을 원문과 설명으로 읽습니다.</p></a>
     </nav>
     <p class="note">실제 AWS 배포는 아직 검증되지 않았습니다. GitHub <code>development</code> Environment의 배포 변수와 AWS 리소스 설정은 별도 작업입니다.</p>
   </main>
