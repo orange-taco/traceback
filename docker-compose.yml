@@ -30,7 +30,7 @@ services:
     networks:
       - backend
     ports:
-      - "${TRACEBACK_POSTGRES_PORT:-15432}:5432"
+      - "127.0.0.1:${TRACEBACK_POSTGRES_PORT:-15432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 

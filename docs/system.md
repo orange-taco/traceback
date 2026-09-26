@@ -65,7 +65,8 @@ codebase check → system/design check → user decision review → implementati
 - CI/CD: GitHub-hosted runner만 사용하며 `quality`와 `test`가 성공한 push에서만 환경별 CD를 호출한다. GitHub Actions는 OIDC로 환경별 제한된 AWS IAM Role을 인수하고, SSM으로 각 환경의 EC2에 배포한다. 장기 AWS Access Key는 GitHub에 저장하지 않는다.
 - 환경 분리: GitHub Environment는 development/production으로 나누고 앱 EC2·DB도 별도로 둔다. 앱 EC2는 SSM 관리 권한과 지정 ECR image pull 권한만 받는다. Production은 development에서 배포 성공한 동일 image digest만 승격하며 새로 빌드하지 않는다.
 - Migration: CI는 임시 DB에서 검증하고, 실제 환경의 `migrate --noinput`은 CD에서 새 애플리케이션 실행 전에 수행한다.
-- Branch flow: feature → `development` → `main`
+- Branch flow: feature → `development` → `main`. Release PRs use a merge commit;
+  production promotes the image for its development parent commit.
 - Secrets: 현재 각 EC2의 `/opt/traceback/.env`에 런타임 비밀값을 보관한다. Secrets Manager 전환은 별도 결정이다. Repository에는 placeholder만 둔다.
 - GitHub Environment 변수 목록은 `.env.dev.git`/`.env.prod.git`에, EC2 런타임 변수 목록은 `config/server.env.example`에 둔다. 각 서버의 비밀값은 추적하지 않는 `/opt/traceback/.env`에 넣고 Compose가 app 컨테이너에 전달한다.
 - AWS/GitHub 수동 설정과 배포 검증 절차는 [`deployment.md`](deployment.md)를 따른다.

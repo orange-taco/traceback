@@ -50,7 +50,12 @@ def _get_error_code(exc: Exception, status_code: int) -> str:
 
 
 def _split_error_payload(data: Any) -> tuple[str, Any]:
-    if isinstance(data, dict) and "detail" in data and len(data) == 1:
+    if (
+        isinstance(data, dict)
+        and "detail" in data
+        and len(data) == 1
+        and isinstance(data["detail"], str)
+    ):
         return str(data["detail"]), {}
     if isinstance(data, list):
         return "Validation failed.", {"non_field_errors": data}

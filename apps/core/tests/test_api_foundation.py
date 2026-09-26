@@ -25,6 +25,13 @@ class ValidationProbeView(GenericAPIView[Any]):
         raise serializers.ValidationError({"field": ["invalid"]})
 
 
+class DetailValidationProbeView(GenericAPIView[Any]):
+    permission_classes = [AllowAny]
+
+    def get(self, request):  # type: ignore[no-untyped-def]
+        raise serializers.ValidationError({"detail": ["required"]})
+
+
 class NumberListView(GenericAPIView[Any]):
     permission_classes = [AllowAny]
     pagination_class = StandardPageNumberPagination
@@ -46,6 +53,7 @@ class StaffProbeView(GenericAPIView[Any]):
 
 urlpatterns = [
     path("probe/error", ValidationProbeView.as_view()),
+    path("probe/detail-error", DetailValidationProbeView.as_view()),
     path("probe/numbers", NumberListView.as_view()),
     path("probe/staff", StaffProbeView.as_view()),
 ]
@@ -66,6 +74,13 @@ class CommonAPIContractTests(SimpleTestCase):
                 "request_id": "req-err",
             },
         )
+
+    def test_detail_field_validation_error_preserves_field_name(self) -> None:
+        response = self.client.get("/probe/detail-error")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["message"], "Validation failed.")
+        self.assertEqual(response.json()["details"], {"detail": ["required"]})
 
     def test_pagination_uses_shared_contract(self) -> None:
         response = self.client.get("/probe/numbers?page_size=2")

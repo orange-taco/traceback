@@ -50,15 +50,16 @@ docker compose --env-file .env up -d db
 ```
 
 The local database is published on host port `15432` to avoid conflicts with
-locally installed PostgreSQL. Django requires `TRACEBACK_DATABASE_URL` and does
-not fall back to `DATABASE_URL`, so project-local `.env` values cannot be
-silently shadowed by a shell-level database URL.
+locally installed PostgreSQL. The `.env` database URL uses the Compose service
+name `db`, so host-run commands override it with `localhost:15432`. Adjust the
+credentials and port below if you changed the local PostgreSQL defaults. Django
+requires `TRACEBACK_DATABASE_URL` and does not fall back to `DATABASE_URL`.
 
 Run Django on the host:
 
 ```sh
-uv run --env-file .env python manage.py migrate
-uv run --env-file .env python manage.py runserver
+TRACEBACK_DATABASE_URL=postgresql://traceback:development-only@localhost:15432/traceback uv run --env-file .env python manage.py migrate
+TRACEBACK_DATABASE_URL=postgresql://traceback:development-only@localhost:15432/traceback uv run --env-file .env python manage.py runserver
 ```
 
 Or run the application container against the Compose database:
@@ -96,8 +97,8 @@ mount, host port, and PostgreSQL container and requires an external
 - A `main` push also runs CI quality and tests first. It then deploys that same
   ECR image digest to production, after confirming successful development CI
   (including deployment) for the source commit. Production never rebuilds it.
-  Use a merge commit or fast-forward merge so the development commit remains
-  in `main` history; squash merges cannot identify the image to promote.
+  Merge the `development` PR with a merge commit. Production reads that commit's
+  development parent to identify the image to promote.
 - GitHub Environments `development` and `production` require `AWS_DEPLOY_ROLE_ARN`,
   `AWS_REGION`, `ECR_REPOSITORY`, and their respective `DEVELOPMENT_INSTANCE_ID`
   or `PRODUCTION_INSTANCE_ID`. Both environments must point to the same ECR

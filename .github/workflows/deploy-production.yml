@@ -23,7 +23,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a  # v4
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
@@ -31,11 +31,18 @@ jobs:
         id: image
         env:
           AWS_REGION: ${{ vars.AWS_REGION }}
+          BEFORE_SHA: ${{ github.event.before }}
           ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          source_sha="$(git merge-base HEAD origin/development)"
-          test -n "$source_sha"
+          source_sha="$(git rev-parse --verify HEAD^2 2>/dev/null)" || {
+            echo "Production release must use a merge commit." >&2
+            exit 1
+          }
+          if [ "$(git rev-parse --verify HEAD^1)" != "$BEFORE_SHA" ]; then
+            echo "Production release must be one merge commit on main." >&2
+            exit 1
+          fi
           dev_deploy_succeeded=false
           while IFS= read -r run_id; do
             test -n "$run_id" || continue
