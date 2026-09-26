@@ -1,0 +1,79 @@
+name: Deploy production
+
+on:
+  workflow_call:
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+permissions:
+  actions: read
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    name: Deploy production EC2
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a  # v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Resolve image deployed to development
+        id: image
+        env:
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          BEFORE_SHA: ${{ github.event.before }}
+          ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          source_sha="$(git rev-parse --verify HEAD^2 2>/dev/null)" || {
+            echo "Production release must use a merge commit." >&2
+            exit 1
+          }
+          if [ "$(git rev-parse --verify HEAD^1)" != "$BEFORE_SHA" ]; then
+            echo "Production release must be one merge commit on main." >&2
+            exit 1
+          fi
+          dev_deploy_succeeded=false
+          while IFS= read -r run_id; do
+            test -n "$run_id" || continue
+            if [ "$(gh run view "$run_id" \
+              --repo "$GITHUB_REPOSITORY" \
+              --json jobs \
+              --jq 'any(.jobs[]; (.name | endswith("Deploy development EC2")) and .conclusion == "success")')" = true ]; then
+              dev_deploy_succeeded=true
+              break
+            fi
+          done < <(gh run list \
+            --repo "$GITHUB_REPOSITORY" \
+            --workflow ci.yml \
+            --branch development \
+            --event push \
+            --commit "$source_sha" \
+            --json databaseId,conclusion \
+            --jq '.[] | select(.conclusion == "success") | .databaseId')
+          test "$dev_deploy_succeeded" = true
+          tag_policy="$(aws ecr describe-repositories --repository-names "$ECR_REPOSITORY" --query 'repositories[0].imageTagMutability' --output text)"
+          test "$tag_policy" = IMMUTABLE
+          digest="$(aws ecr describe-images \
+            --repository-name "$ECR_REPOSITORY" \
+            --image-ids "imageTag=$source_sha" \
+            --query 'imageDetails[0].imageDigest' --output text)"
+          test -n "$digest"
+          test "$digest" != None
+          account_id="$(aws sts get-caller-identity --query Account --output text)"
+          echo "uri=${account_id}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}@${digest}" >> "$GITHUB_OUTPUT"
+      - env:
+          APP_IMAGE: ${{ steps.image.outputs.uri }}
+          INSTANCE_ID: ${{ vars.PRODUCTION_INSTANCE_ID }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+        run: bash .github/scripts/deploy-ec2.sh

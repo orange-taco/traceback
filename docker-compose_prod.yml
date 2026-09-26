@@ -1,0 +1,39 @@
+services:
+  app:
+    build: !reset null
+    image: ${APP_IMAGE:?APP_IMAGE is required}
+    command: !reset []
+    depends_on: !reset []
+    env_file:
+      - ${APP_ENV_FILE:-.env}
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import os, urllib.request;
+          host = os.environ['DJANGO_ALLOWED_HOSTS'].split(',')[0].strip();
+          request = urllib.request.Request(
+          'http://127.0.0.1:8000/_allauth/browser/v1/config',
+          headers={'Host': host});
+          urllib.request.urlopen(request, timeout=3)
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    init: true
+    read_only: true
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+    ports: !reset []
+    volumes: !reset []
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+  db: !reset null

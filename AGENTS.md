@@ -1,0 +1,104 @@
+# Codex Working Rules
+
+This repository implements the TRACEBACK commerce backend.
+
+## Session Start
+
+Every new AI session must follow the four gates below in order. Do not implement
+before the required gate is complete.
+
+1. **Codebase check**: read the root README, `docs/current/README.md`,
+   and `docs/system.md`; verify the branch and working tree; inspect the source,
+   tests, and configuration that the task may affect. This establishes the real
+   code state before using conversation context.
+2. **Design check**: read the relevant section of `docs/system.md` and
+   `docs/build-plan.md`; compare the requested work with the large system flow
+   and confirmed decisions. Do not reread unrelated historical detail.
+3. **Decision review**: identify business, API, security, persistence,
+   authentication, infrastructure, or other architectural choices that need the
+   user's review. Present concrete options and tradeoffs, wait for the user's
+   decision, then record the decision in `docs/system.md` or `docs/build-plan.md`.
+   If no reviewable decision exists, record that implementation can proceed.
+4. **Implementation and verification**: only after gates 1–3, change code,
+   tests, and affected docs; run proportional validation; update the checkpoint.
+
+Do not assume a phase is complete from conversation context alone.
+
+## User-Readable Rules
+
+- Keep `AGENTS_korea.md` as the Korean, user-readable companion to this AI-facing rule file.
+- Whenever `AGENTS.md` changes in a way that affects how work is planned, confirmed, implemented, verified, or reported, update `AGENTS_korea.md` in the same slice.
+- Do not copy implementation-only prompt wording into `AGENTS_korea.md`; explain the practical user-facing convention instead.
+
+## Phase Checks
+
+- Treat `docs/build-plan.md` as the phase scope and completion authority.
+- Before starting a new phase, compare the code, tests, and checkpoint against that phase's completion criteria.
+- Start Phase 1 only after Phase 0 completion criteria are satisfied and recorded.
+- If Phase 0 is incomplete, continue Phase 0 work instead of starting Catalog work.
+- Keep the resume checkpoint aligned with the real code state before stopping work.
+- After finishing development work, update `docs/current/README.md` so a new session can see the current state, next action, completed scope, and remaining validation without reading the full docs set.
+- Keep `docs/current/README.md` short and snapshot-like, including only the current
+  next action and validation state. Do not append task history there.
+- Use `docs/todo.md` only for optional future backlog. Read it when a related future
+  area is selected; it is not a mandatory task list for every new session.
+- Treat each user task as one bounded work slice. When the slice is complete, update
+  the checkpoint, report the result, and end the AI session. Do not carry completed
+  work into an implicit next task; the next task starts in a new AI session.
+
+## Branching
+
+- Create task branches from `development`.
+- Use branch names that make the phase obvious, such as `phase-0-foundation` or `phase-1-catalog`.
+- Do not do feature work directly on `main` or `development`.
+- When creating a PR, use `development` as the base branch unless the user explicitly instructs otherwise.
+- Before switching or creating branches, check for existing user changes and preserve them.
+
+## Change Scope
+
+- Keep each slice independently testable and PR-sized.
+- Follow the 30-file slice limit unless the user explicitly approves an exception.
+- Update only the docs affected by the code or phase decision.
+- If implementation reveals a design issue, record it in `docs/build-plan.md` before treating the work as complete.
+- Remove temporary implementation notes from docs or `AGENTS.md` once the implemented code makes them obsolete.
+- Do not let planning-only instructions become permanent rules unless they still guide future work.
+
+## Decision Points
+
+- Continue implementation without stopping for user confirmation unless the decision falls into one of these categories: PR review handling, business/product choice, technical stack/architecture choice, or external integration that the user must perform directly.
+- Treat business/product choices broadly: product behavior, API contract, model semantics, UX policy, security policy, and operational policy require confirmation when they change or decide business meaning.
+- Treat technical choices broadly: framework, library, architecture, infrastructure, persistence, authentication mechanism, deployment, and integration pattern changes require confirmation when they are not already implied by existing docs.
+- If a choice is low-risk and already implied by existing docs, make the call, implement it, and record it only when it will guide future work.
+- Present 2-3 concrete options with the implementation impact and tradeoff of each option.
+- Recommend one option when there is a clear engineering reason, but wait for the user's selection before implementing the decision.
+- After the user chooses, record the decision in the relevant doc only if it will guide future work.
+- If a decision note becomes unnecessary after implementation, remove or collapse it instead of leaving stale planning text.
+
+## Frontend Work
+
+- Frontend implementation lives in `../traceback-client`, even when the user gives the instruction from this backend repository session.
+- Before starting frontend work, read `../traceback-client/AGENTS.md` and follow the client-side rules there.
+- Check the branch and working tree in both repositories when a task crosses backend and frontend boundaries.
+- Do not create frontend files inside this backend repository unless the user explicitly asks for backend-served assets.
+
+## Model Documentation
+
+- Models are the most important implementation artifact; after model work, document the purpose of each model and column in a readable artifact.
+- The artifact can be Markdown or HTML, but it must be easy to scan in a new session.
+- Each column purpose must be justified by the minimal MVP scope or an explicit requirement.
+- If a column is only for future expansion and not required now, do not add it; record the deferred idea in the relevant docs instead.
+- Keep the model-purpose document aligned with the actual migrations before stopping work.
+
+## Test Organization
+
+- Each Django app owns its tests under `apps/<app>/tests/`. Do not put another app's model, serializer, view, service, or provider tests under `apps/core/tests`.
+- Keep `apps/core/tests` for core cross-cutting behavior only, such as request IDs, common error formatting, pagination, health checks, and shared permission probes.
+- Split API tests by public view surface:
+  - one `test_<resource>_view.py` per `GenericAPIView` when the view has distinct behavior;
+  - one `test_<resource>_viewset.py` per `ViewSet`;
+  - closely coupled framework-provided endpoints may share a file, such as `test_token_views.py` for SimpleJWT obtain/refresh.
+- Split serializer tests by serializer when the serializer has custom behavior, using `test_<serializer_subject>_serializer.py`.
+- Put domain model and manager tests in `test_models.py` unless the app grows enough to justify model-specific files.
+- Put service tests in `test_<service_subject>_service.py` and provider/client tests in `test_<provider_subject>_provider.py`.
+- Prioritize business model behavior, constraints, state transitions, calculations, concurrency, and idempotency. Do not add field-by-field tests for framework behavior unless the project adds custom validation, custom mapping, or security-sensitive read/write exposure.
+- View/API tests should verify the external contract: status code, request/response shape, authentication/permission behavior, and important database side effects. Do not duplicate every service branch in view tests when service tests already cover it.
