@@ -23,6 +23,9 @@ future domains without reducing the explanation to a table or a prose-only page.
 - Treat it as a small documentation site: keep a shared shell, domain navigation,
   overview, and one visual section per documented subsystem. Preserve existing
   sections when adding a new domain.
+- Keep `docs/artifact/index.html` as the single mobile entry point. Link each new
+  guide from that index and give the guide a visible return link to the index.
+  Group future topics there without requiring readers to save separate URLs.
 - Make the explanation visual-first with SVG or CSS diagrams, lanes, arrows,
   highlights, and state transitions. Do not turn the main explanation into tables or
   prose cards.
