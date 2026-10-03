@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="TRACEBACK 개발 서버의 실제 EIP·Route 53 설정과 도메인, DNS, 유동 IP 개념 및 다음 배포 단계를 그림으로 설명합니다.">
-  <title>개발 서버 주소와 EIP 이해하기</title>
+  <title>3. 개발 서버 주소와 EIP 이해하기</title>
   <link rel="icon" href="data:,">
   <style>
     :root{color-scheme:light;--bg:#f3f6f8;--paper:#fff;--ink:#172b38;--muted:#526978;--line:#cfdae1;--soft:#eaf0f4;--blue:#176b91;--bluebg:#e8f4f9;--green:#247653;--greenbg:#e8f4ed;--amber:#9a5b1d;--amberbg:#fff3e4;--red:#a44343;--redbg:#fbeeee;--purple:#6656a2;--purplebg:#f0edfa;font-family:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif}
@@ -84,7 +84,7 @@
         <div class="node dns"><span class="tag">프런트 SSR</span><strong>Vercel Environment</strong><small>예: 백엔드 origin 주소</small></div>
       </div>
       <div class="callout"><strong>주소 설정과 같은 원리:</strong> 설정값은 그 값을 읽는 프로그램이 실행되는 곳에 저장합니다. 로컬 파일은 GitHub나 EC2로 자동 복사되지 않습니다. 비밀값과 공개 가능한 설정값도 구별해야 합니다.</div>
-      <p style="margin-top:14px"><a href="dev-server-first-deployment.html#env">전체 환경 가이드에서 환경변수 이름, GitHub·EC2·Vercel 등록 위치, 비밀값 관리 방법 보기 →</a></p>
+      <p style="margin-top:14px"><a href="2-dev-server-first-deployment.html#env">전체 환경 가이드에서 환경변수 이름, GitHub·EC2·Vercel 등록 위치, 비밀값 관리 방법 보기 →</a></p>
     </div>
   </section>
 
@@ -102,7 +102,7 @@
     </div>
   </section>
 
-  <footer class="foot"><p><strong>확인한 실제 설정:</strong> AWS Route 53 registered domain, hosted zone 및 A 레코드 화면; EC2 Elastic IP allocation/association 화면. 비밀 키, 비밀번호, 개인 연락처는 포함하지 않았습니다.</p><p><strong>가격 출처:</strong> <a href="https://aws.amazon.com/vpc/pricing/" target="_blank" rel="noreferrer">AWS VPC Pricing — Public IPv4 주소 요금</a>. 주소 비용은 공개 요율 $0.005/IP-hour를 단순 환산한 값이며 리전·사용 조건과 별도 리소스 비용을 포함하지 않습니다. <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/how-ec2-instance-stop-start-works.html" target="_blank" rel="noreferrer">EC2 중지/시작 시 동작</a>.</p><p><strong>다음 읽을 문서:</strong> <a href="dev-server-first-deployment.html#cicd-iam">GitHub Actions·IAM·ECR 배포 설정</a> — 여기서 다루는 IP·도메인·DNS와 별도로, AWS 인증과 컨테이너 배포를 설명합니다.</p><p>현재 실행 상태와 AWS 콘솔은 바뀔 수 있습니다. 이 문서의 실제 값 확인 날짜: 2026-10-03.</p></footer>
+  <footer class="foot"><p><strong>확인한 실제 설정:</strong> AWS Route 53 registered domain, hosted zone 및 A 레코드 화면; EC2 Elastic IP allocation/association 화면. 비밀 키, 비밀번호, 개인 연락처는 포함하지 않았습니다.</p><p><strong>가격 출처:</strong> <a href="https://aws.amazon.com/vpc/pricing/" target="_blank" rel="noreferrer">AWS VPC Pricing — Public IPv4 주소 요금</a>. 주소 비용은 공개 요율 $0.005/IP-hour를 단순 환산한 값이며 리전·사용 조건과 별도 리소스 비용을 포함하지 않습니다. <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/how-ec2-instance-stop-start-works.html" target="_blank" rel="noreferrer">EC2 중지/시작 시 동작</a>.</p><p><strong>다음 읽을 문서:</strong> <a href="2-dev-server-first-deployment.html#cicd-iam">GitHub Actions·IAM·ECR 배포 설정</a> — 여기서 다루는 IP·도메인·DNS와 별도로, AWS 인증과 컨테이너 배포를 설명합니다.</p><p>현재 실행 상태와 AWS 콘솔은 바뀔 수 있습니다. 이 문서의 실제 값 확인 날짜: 2026-10-03.</p></footer>
 </main>
 <script>
   const buttons = [...document.querySelectorAll('[data-ip]')];

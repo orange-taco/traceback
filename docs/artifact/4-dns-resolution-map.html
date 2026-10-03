@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="DNS 조회, 도메인 등록과 DNS 관리, Route 53 개발 서버 레코드 자동화와 EC2 IP 변화를 시각적으로 설명합니다.">
-  <title>DNS와 도메인 운영 이해하기</title>
+  <title>4. DNS와 도메인 운영 이해하기</title>
   <link rel="icon" href="data:,">
   <style>
     :root {
@@ -714,7 +714,7 @@ C-root → 192.33.4.12
         <p class="tiny-note">예를 들어 “가비아 등록 + Route 53 DNS”는 가비아에서 한 번 등록한 뒤, 가비아 도메인 설정의 NS를 Route 53 값으로 바꾸는 조합입니다. “Route 53 등록 + Cloudflare DNS/프록시”도 가능하지만, 등록을 Route 53에 두고 네임서버를 Cloudflare로 위임하는 별도 구성입니다. 공급자와 상품별 TLD·기능·가격 조건은 등록 시점에 확인하세요.</p>
         <div class="one-purchase"><b>도메인은 한 번만 등록합니다.</b> 등록은 도메인 이름의 사용권을 연 단위로 확보하는 일이고, DNS 관리는 그 이름 아래 레코드가 어디를 가리킬지 정하는 일입니다. Route 53에서 등록하면 Route 53이 등록업체이자 DNS 관리업체가 됩니다.</div>
         <p class="tiny-note"><b>AWS Route 53</b>는 도메인 등록과 권한 DNS를 제공하지만 웹 요청을 대신 전달하는 프록시/CDN은 아닙니다. <b>Cloudflare</b>는 DNS 관리 외에도 프록시·캐시·보안 기능을 제공합니다. Cloudflare 프록시를 쓰려면 Cloudflare가 권한 DNS가 되도록 등록업체에서 네임서버를 바꿔야 합니다. Route 53 hosted zone에는 월 요금이 따로 있습니다. 가격과 지원 TLD는 등록 전 확인하세요.</p>
-        <p class="status-note"><b>TRACEBACK 사례:</b> <code>dev-traceback.com</code>은 Route 53에서 ACTIVE 상태이고 등록 네임서버와 public hosted zone이 일치합니다. API용 <code>api.dev-traceback.com</code> A 레코드는 EIP <code>3.34.78.140</code>을 가리킵니다. DNS 설정이 끝났다는 것은 이름이 IP를 찾는다는 뜻입니다. HTTPS 인증서, Nginx, API 애플리케이션까지 준비됐다는 뜻은 아닙니다. 현재 API 서버는 아직 배포 전입니다. <a href="development-ip-domain-guide.html">우리 EIP와 도메인 설정의 자세한 설명 →</a></p>
+        <p class="status-note"><b>TRACEBACK 사례:</b> <code>dev-traceback.com</code>은 Route 53에서 ACTIVE 상태이고 등록 네임서버와 public hosted zone이 일치합니다. API용 <code>api.dev-traceback.com</code> A 레코드는 EIP <code>3.34.78.140</code>을 가리킵니다. DNS 설정이 끝났다는 것은 이름이 IP를 찾는다는 뜻입니다. HTTPS 인증서, Nginx, API 애플리케이션까지 준비됐다는 뜻은 아닙니다. 현재 API 서버는 아직 배포 전입니다. <a href="3-development-ip-domain-guide.html">우리 EIP와 도메인 설정의 자세한 설명 →</a></p>
       </div>
     </section>
 
@@ -751,7 +751,7 @@ C-root → 192.33.4.12
     </div>
     <footer>
       <p>그림은 설명을 위한 대표 경로입니다. 실제 A 응답 IP는 위치·시점에 따라 달라지고, CNAME·AAAA 조회, DNSSEC, 전송 재시도 등으로 패킷 수가 늘 수 있습니다. 위임 응답의 IP(glue)는 조건에 따라 포함되며, 없으면 Resolver가 NS 이름의 주소를 별도로 조회합니다.</p>
-      <p><strong>이 주제 다음에 보기:</strong> <a href="development-ip-domain-guide.html">DNS 이름을 우리 개발 서버의 EIP에 연결한 사례</a> · <a href="dev-server-first-deployment.html#proxy">Nginx와 ALB가 DNS 다음에 요청을 받는 방식</a></p>
+      <p><strong>이 주제 다음에 보기:</strong> <a href="3-development-ip-domain-guide.html">DNS 이름을 우리 개발 서버의 EIP에 연결한 사례</a> · <a href="2-dev-server-first-deployment.html#proxy">Nginx와 ALB가 DNS 다음에 요청을 받는 방식</a></p>
       <nav class="sources" aria-label="기술 참고 자료">
         <strong>참고 자료</strong>
         <ul class="source-list">
@@ -769,7 +769,7 @@ C-root → 192.33.4.12
         <li><a href="https://developers.cloudflare.com/dns/proxy-status/">Cloudflare DNS 프록시</a></li>
         <li><a href="https://developers.cloudflare.com/dns/nameservers/">Cloudflare 네임서버</a></li>
         <li><a href="https://vercel.com/docs/routing/rewrites">Vercel rewrite</a></li>
-        <li><a href="dev-server-first-deployment.html#cicd-iam">TRACEBACK 배포의 GitHub Actions·IAM·ECR 흐름</a> — DNS 자체와 배포 권한은 다른 주제입니다.</li>
+        <li><a href="2-dev-server-first-deployment.html#cicd-iam">TRACEBACK 배포의 GitHub Actions·IAM·ECR 흐름</a> — DNS 자체와 배포 권한은 다른 주제입니다.</li>
         </ul>
       </nav>
     </footer>
