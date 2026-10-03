@@ -13,14 +13,50 @@
     @media(max-width:480px){main{width:calc(100% - 24px);padding-top:24px}.steps{grid-template-columns:1fr}.facts{grid-template-columns:1fr 1fr}.costline{grid-template-columns:1fr;gap:6px}.section{margin-top:28px}.stamp{font-size:.72rem}}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
   </style>
+  <style>
+    .config-source { margin:14px 0 0; padding:14px; background:#102a43; color:#edf6fb; border-radius:8px; overflow:auto; font: .78rem/1.55 ui-monospace,SFMono-Regular,Menlo,monospace; }
+    .steps { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    @media (max-width:700px) { .steps { grid-template-columns:1fr; } }
+    .pdf-export { position:fixed; right:18px; bottom:18px; z-index:1000; border:1px solid #164d68; border-radius:999px; padding:10px 16px; background:#fff; color:#123c50; box-shadow:0 8px 24px #102a4333; font:700 14px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; cursor:pointer; }
+    .pdf-export:focus-visible { outline:3px solid #efa92b; outline-offset:3px; }
+    @page { size:A4; margin:14mm; }
+    @media print {
+      html { scroll-behavior:auto; }
+      body { background:#fff!important; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+      .pdf-export, main > nav, nav[role="tablist"], .sidebar, .hero-nav, .nav, .selector, .tabs, .step-controls, .next-tab, .flow-controls, .top { display:none!important; }
+      .hero, .masthead, .intro { background:#fff!important; color:#17212b!important; box-shadow:none!important; }
+      .hero p, .hero .eyebrow, .masthead p, .intro p { color:#33495c!important; }
+      [hidden], .panel[hidden], .flow[hidden], .option[hidden] { display:block!important; }
+      .shell, .diagram-wrap, .diagram-frame, .workflow-source, .flow, .canvas { overflow:visible!important; }
+      pre, .workflow-source { max-height:none!important; overflow:visible!important; white-space:pre-wrap!important; }
+      pre code, .workflow-source code, .workflow-line { width:auto!important; min-width:0!important; white-space:pre-wrap!important; overflow-wrap:anywhere!important; }
+      .workflow-block-body { grid-template-columns:1fr!important; }
+      svg, img, .diagram, .flow-diagram { max-width:100%!important; min-width:0!important; height:auto; }
+      h1, h2, h3, h4 { break-after:avoid; }
+    }
+  </style>
 </head>
 <body>
+  <button type="button" class="pdf-export" onclick="window.print()" aria-label="전체 문서를 PDF로 저장">PDF로 저장</button>
+  <script>
+    (() => {
+      let closedBeforePrint = [];
+      window.addEventListener("beforeprint", () => {
+        closedBeforePrint = [...document.querySelectorAll("details:not([open])")];
+        closedBeforePrint.forEach((detail) => { detail.open = true; });
+      });
+      window.addEventListener("afterprint", () => {
+        closedBeforePrint.forEach((detail) => { detail.open = false; });
+        closedBeforePrint = [];
+      });
+    })();
+  </script>
 <main>
   <header class="header">
     <div class="intro"><div class="eyebrow">TRACEBACK · DEVELOPMENT INFRA</div><h1>개발 서버 주소,<br>지금 무엇을 설정했나</h1><p>도메인, DNS, 고정 IP가 어떤 관계인지와 현재 AWS에서 끝낸 설정을 실제 값으로 따라가 봅니다.</p></div>
     <div class="stamp">AWS 콘솔 확인 기준<br><strong>2026년 10월 3일 · 서울 리전</strong></div>
   </header>
-  <nav aria-label="문서 목차"><a href="#now">현재 구성</a><a href="#terms">IP·도메인·DNS</a><a href="#choice">유동 IP와 EIP</a><a href="#why">서버 도메인의 이유</a><a href="#env">환경변수 원리</a><a href="#deploy-flow">설정이 쓰이는 흐름</a></nav>
+  <nav aria-label="문서 목차"><a href="#now">현재 구성</a><a href="#terms">IP·도메인·DNS</a><a href="#choice">유동 IP와 EIP</a><a href="#setup">AWS 설정 순서</a><a href="#why">서버 도메인의 이유</a><a href="#env">환경변수 원리</a><a href="#deploy-flow">설정이 쓰이는 흐름</a></nav>
 
   <section class="section" id="now">
     <div class="sect-head"><h2>현재 연결된 주소</h2><p>초록은 AWS에서 설정 완료, 점선은 아직 연결되지 않은 단계입니다.</p></div>
@@ -34,6 +70,15 @@
       <div class="route"><span>요청이 실제 서비스에 도착하려면</span><b>EC2 보안 그룹</b><span>→</span><b>Nginx + TLS</b><span>→</span><b>Django 앱</b><span>→</span><b>Private RDS</b><span class="status wait"><i></i>아직 배포 전</span></div>
       <div class="callout"><strong>중요:</strong> 도메인과 EIP를 연결한 것까지 완료했습니다. 이 설정만으로 API가 동작하거나 HTTPS가 생기지는 않습니다. EC2에 앱과 Nginx를 올리고 TLS 인증서를 설정해야 합니다.</div>
       <div class="facts" aria-label="현재 실제 설정"><div class="fact"><small>AWS 계정 / 리전</small><strong>traceback · ap-northeast-2</strong></div><div class="fact"><small>개발 EC2</small><strong>traceback-development-app</strong></div><div class="fact"><small>인스턴스 ID</small><strong class="mono">i-051f85a1ac4e64a2c</strong></div><div class="fact"><small>Elastic IP</small><strong class="mono">3.34.78.140</strong></div><div class="fact"><small>도메인 등록</small><strong>dev-traceback.com · ACTIVE</strong></div><div class="fact"><small>Route 53 레코드</small><strong class="mono">api.dev-traceback.com → 3.34.78.140</strong></div></div>
+      <pre class="config-source"><code>Route 53 public hosted zone (AWS 콘솔 설정, 저장소 코드 아님)
+Name: api.dev-traceback.com  Type: A  TTL: 300  Value: 3.34.78.140
+
+Vercel Production 환경변수 (2026-10-03 저장됨, 새 배포 전)
+DJANGO_ORIGIN=https://api.dev-traceback.com
+
+// traceback-client/vercel.ts: 값을 읽는 실제 코드
+const configuredOrigin = process.env.DJANGO_ORIGIN?.trim();</code></pre>
+      <p style="margin-top:10px">Route 53은 A 레코드를 DNS 응답으로 사용합니다. Vercel은 배포할 때 <a href="https://github.com/orange-taco/traceback-client/blob/development/vercel.ts">client의 <code>vercel.ts</code></a>가 읽는 <code>DJANGO_ORIGIN</code>으로 API rewrite를 만듭니다. 저장소에 AWS DNS 설정용 IaC 파일은 없으므로 위 첫 두 줄은 현재 콘솔값을 읽기 쉬운 형태로 옮긴 것입니다. Vercel 변수는 저장했지만 새 배포와 API HTTPS 연결 전에는 실제 rewrite가 완성되지 않습니다.</p>
     </div>
   </section>
 
@@ -59,6 +104,17 @@
     <div class="canvas" style="margin-top:12px"><div class="costline"><strong>공인 IPv4 주소 1개<br>연속 30일 사용</strong><div class="bar"><span>약 $3.60 / 월</span></div></div><div class="costline"><strong>기본 공인 IP<br>EC2를 10일만 실행</strong><div class="bar"><span class="conditional">약 $1.20*</span></div></div><p class="foot">* IPv4 시간 요율 $0.005 기준 단순 계산. 기본 공인 IP는 EC2 중지 때 해제되고 그 시간에는 이 주소 요금이 들지 않습니다. EIP는 중지 중에도 할당 상태면 30일 약 $3.60가 발생합니다. EC2 컴퓨팅, 스토리지, 도메인 등록 등은 별도입니다.</p></div>
   </section>
 
+  <section class="section" id="setup">
+    <div class="sect-head"><h2>처음부터 같은 구조를 설정한다면</h2><p>일반 순서를 먼저 보고, TRACEBACK의 실제 값은 위 설정 상자와 비교하세요.</p></div>
+    <div class="steps">
+      <article class="step"><strong>도메인과 권한 DNS 준비</strong><p>Route 53 → Registered domains에서 도메인을 등록합니다. Public hosted zone을 만든 뒤 등록 도메인의 네임서버가 hosted zone의 NS와 일치하는지 확인합니다. 다른 등록업체를 써도 DNS 관리자는 따로 정할 수 있습니다.</p><em>현재 Route 53에 등록·연결 완료</em></article>
+      <article class="step"><strong>EC2에 EIP 연결</strong><p>EC2 → Elastic IPs에서 주소를 할당하고 Associate Elastic IP address로 대상 인스턴스를 고릅니다. 주소와 EC2가 같은 리전에 있는지 확인합니다. 고정 IP 대신 기본 공인 IP를 쓴다면 재시작 뒤 DNS 갱신 절차가 필요합니다.</p><em>현재 개발 EC2에 3.34.78.140 연결</em></article>
+      <article class="step"><strong>DNS A 레코드 만들기</strong><p>Route 53 → Hosted zones → 해당 public zone → Create record에서 <code>api</code>, 유형 A, 값 EIP, TTL을 입력합니다. 외부 DNS 조회 결과가 이 IP인지 확인합니다. TRACEBACK은 TTL 300초를 사용합니다.</p><em>현재 A 레코드 확인됨</em></article>
+      <article class="step"><strong>웹 연결은 별도 검증</strong><p>EC2 보안 그룹과 라우팅, Nginx/TLS, Django를 설정한 다음 <code>https://api…</code>가 응답하는지 확인합니다. Vercel의 <code>DJANGO_ORIGIN</code>을 저장했다면 새 배포 후 프런트 rewrite를 확인합니다.</p><em>현재 HTTPS·재배포 대기</em></article>
+    </div>
+    <div class="callout"><strong>다음 상세 절차:</strong> 네트워크 인바운드·아웃바운드와 실제 라우팅 테이블은 <a href="2-dev-server-first-deployment.html#network-audit">2번의 AWS 네트워크 점검</a>, DNS 질의 원리는 <a href="4-dns-resolution-map.html">4번 문서</a>에서 확인합니다.</div>
+  </section>
+
   <section class="section" id="why">
     <div class="sect-head"><h2>서버 도메인은 왜 필요한가</h2><p>사용자 화면의 주소와 API 서버 주소가 맡는 역할이 다릅니다.</p></div>
     <div class="canvas">
@@ -70,7 +126,7 @@
       </div>
       <div class="route"><b>이 주소를 쓰는 이유</b><span>숫자 IP 대신 기억하고 관리하기 쉬운 API 이름</span><span>·</span><span>도메인 이름에 TLS 인증서를 발급해 HTTPS 연결</span><span>·</span><span>Vercel에서 백엔드 API로 안정적으로 전달</span></div>
       <div class="callout"><strong>정확히 말하면:</strong> 모든 네트워크 연결에 도메인이 절대 필수인 것은 아닙니다. 하지만 Vercel SSR이 백엔드 HTTPS 원본을 호출하고, 인증서·쿠키·허용 호스트를 관리하는 일반적인 웹 구성에서는 API 도메인이 자연스러운 주소입니다. 우리 구성은 <code>api.dev-traceback.com</code>을 그 용도로 사용합니다. DNS는 목적지를 알려주고 Nginx와 TLS는 EC2에서 HTTPS 요청을 받아 앱으로 전달합니다.</div>
-      <div class="route"><span>지금 준비된 연결</span><b>Vercel URL</b><span>＋</span><b>Route 53 API 이름</b><span>＋</span><b>EIP → EC2</b><span class="status wait"><i></i>Vercel Django origin / Nginx / 앱은 아직</span></div>
+      <div class="route"><span>지금 준비된 연결</span><b>Vercel URL</b><span>＋</span><b>Route 53 API 이름</b><span>＋</span><b>EIP → EC2</b><span class="status wait"><i></i>Vercel 새 배포 / Nginx / 앱은 아직</span></div>
     </div>
   </section>
 
@@ -97,7 +153,7 @@
         <div class="node"><span class="tag">컨테이너 배포</span><strong>ECR → SSM → EC2</strong><small>이미지 전달·실행<br>Docker 이미지에는 비밀값 없음</small></div><div class="arrow" aria-hidden="true">→</div>
         <div class="node server"><span class="tag">앱 실행</span><strong>EC2 .env → Django → RDS</strong><small>런타임 비밀값은 EC2에 따로 저장<br>DB 연결은 private 경로</small></div>
       </div>
-      <div class="route"><span class="status done"><i></i>완료</span><span>Route 53 A 레코드·EIP 연결과 GitHub OIDC·IAM deploy role·private ECR 준비를 마쳤습니다.</span><span class="status wait"><i></i>연결 대기</span><span>EC2 ECR pull 권한·Docker 앱·Nginx/TLS·Vercel <code>DJANGO_ORIGIN</code>은 아직 설정 전입니다.</span></div>
+      <div class="route"><span class="status done"><i></i>완료</span><span>Route 53 A 레코드·EIP 연결과 GitHub OIDC·IAM deploy role·private ECR 준비를 마쳤습니다. Vercel Production 범위에 <code>DJANGO_ORIGIN</code>도 저장했습니다.</span><span class="status wait"><i></i>연결 대기</span><span>EC2 ECR pull 권한·Docker 앱·Nginx/TLS가 남았고, Vercel 변수는 API HTTPS가 동작한 뒤 재배포해야 적용됩니다.</span></div>
       <div class="callout"><strong>비용도 설정 경로마다 따로 발생:</strong> EIP는 EC2가 중지돼도 시간당 요금이 계속됩니다. RDS는 실행 중 instance-hour 요금이 발생하고, 중지해도 storage/backup 비용이 남을 수 있습니다. 따라서 “환경변수를 넣었다”는 것과 “서비스가 연결되어 실제 동작한다”는 것은 별도 확인 단계입니다.</div>
     </div>
   </section>

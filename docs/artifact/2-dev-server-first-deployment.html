@@ -34,8 +34,41 @@
     @media(max-width:820px){.iam-grid,.shots,.timeline{grid-template-columns:1fr}.var-flow{grid-template-columns:1fr;gap:10px}.var-flow article:not(:last-child)::after{content:"↓";right:auto;left:50%;top:auto;bottom:-17px;z-index:1}.keyline{display:block}.keyline strong{display:block;margin-bottom:4px}.read-order{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:640px){.panel dl{grid-template-columns:1fr;gap:2px}.panel dd{margin-bottom:10px}}
   </style>
+  <style>
+    .pdf-export { position:fixed; right:18px; bottom:18px; z-index:1000; border:1px solid #164d68; border-radius:999px; padding:10px 16px; background:#fff; color:#123c50; box-shadow:0 8px 24px #102a4333; font:700 14px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; cursor:pointer; }
+    .pdf-export:focus-visible { outline:3px solid #efa92b; outline-offset:3px; }
+    @page { size:A4; margin:14mm; }
+    @media print {
+      html { scroll-behavior:auto; }
+      body { background:#fff!important; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+      .pdf-export, main > nav, nav[role="tablist"], .sidebar, .hero-nav, .nav, .selector, .tabs, .step-controls, .next-tab, .flow-controls, .top { display:none!important; }
+      .hero, .masthead, .intro { background:#fff!important; color:#17212b!important; box-shadow:none!important; }
+      .hero p, .hero .eyebrow, .masthead p, .intro p { color:#33495c!important; }
+      [hidden], .panel[hidden], .flow[hidden], .option[hidden] { display:block!important; }
+      .shell, .diagram-wrap, .diagram-frame, .workflow-source, .flow, .canvas { overflow:visible!important; }
+      pre, .workflow-source { max-height:none!important; overflow:visible!important; white-space:pre-wrap!important; }
+      pre code, .workflow-source code, .workflow-line { width:auto!important; min-width:0!important; white-space:pre-wrap!important; overflow-wrap:anywhere!important; }
+      .workflow-block-body { grid-template-columns:1fr!important; }
+      svg, img, .diagram, .flow-diagram { max-width:100%!important; min-width:0!important; height:auto; }
+      h1, h2, h3, h4 { break-after:avoid; }
+    }
+  </style>
 </head>
 <body>
+  <button type="button" class="pdf-export" onclick="window.print()" aria-label="전체 문서를 PDF로 저장">PDF로 저장</button>
+  <script>
+    (() => {
+      let closedBeforePrint = [];
+      window.addEventListener("beforeprint", () => {
+        closedBeforePrint = [...document.querySelectorAll("details:not([open])")];
+        closedBeforePrint.forEach((detail) => { detail.open = true; });
+      });
+      window.addEventListener("afterprint", () => {
+        closedBeforePrint.forEach((detail) => { detail.open = false; });
+        closedBeforePrint = [];
+      });
+    })();
+  </script>
   <header class="hero">
     <div class="wrap">
       <div class="eyebrow">TRACEBACK · AWS development · first release</div>
@@ -46,16 +79,24 @@
       <p class="small">추천 학습 경로: <a href="traceback-system-guide.html">System Guide 전체 지도</a> → <a href="1-aws-ssm-ssh-learning-guide.html">1. 접속</a> → 여기서 설정·선택을 학습하며 <a href="traceback-system-guide.html#code">workflow 원문 설명</a>을 나란히 보기 → <a href="3-development-ip-domain-guide.html">3. IP·도메인</a> → <a href="4-dns-resolution-map.html">4. DNS</a>.</p>
     </div>
   </header>
-  <nav class="nav" aria-label="문서 목차"><div class="wrap"><a href="#status">현재 상태</a><a href="#db-choice">DB 구성</a><a href="#flow">연결 구조</a><a href="#cicd-iam">GitHub·IAM·ECR</a><a href="#deploy-code">배포 코드 해설</a><a href="#proxy">Nginx 위치</a><a href="#glossary">용어</a><a href="#choice">운영 선택</a><a href="#steps">작업 순서</a><a href="#env">환경변수</a><a href="#cost">비용·보안</a></div></nav>
+  <nav class="nav" aria-label="문서 목차"><div class="wrap"><a href="#big-picture">큰 흐름</a><a href="#status">현재 상태</a><a href="#db-choice">DB 구성</a><a href="#flow">연결 구조</a><a href="#cicd-iam">GitHub·IAM·ECR</a><a href="#deploy-code">배포 코드 해설</a><a href="#proxy">Nginx 위치</a><a href="#glossary">용어</a><a href="#choice">운영 선택</a><a href="#steps">작업 순서</a><a href="#env">환경변수</a><a href="#cost">비용·보안</a></div></nav>
 
   <main class="wrap">
+    <section class="section" id="big-picture">
+      <h2>처음 배포할 때 이어지는 두 흐름</h2>
+      <p class="lead">고객 요청은 프런트에서 API와 DB로 흐르고, 새 코드는 GitHub에서 이미지로 만들어 EC2에 전달됩니다. 화살표는 서로 다른 통신이며 아래 상태 표와 세부 설정이 각각의 준비 정도를 설명합니다.</p>
+      <div class="grid two">
+        <article class="panel"><h3>고객 요청 · 아직 끝까지 연결되지 않음</h3><div class="route-diagram" role="img" aria-label="브라우저에서 Vercel, Route 53과 EIP, EC2 Nginx와 Django를 지나 private RDS로 요청이 흐릅니다"><span>브라우저·Vercel</span><b>→</b><span>Route 53·EIP</span><b>→</b><span>EC2 Nginx·Django</span><b>→</b><span>private RDS</span></div><p>DNS/EIP와 Vercel 변수는 저장됐습니다. EC2의 HTTPS·앱·DB 연결과 Vercel 재배포는 남았습니다.</p></article>
+        <article class="panel"><h3>코드 배포 · 자동화 경로 준비됨</h3><div class="route-diagram" role="img" aria-label="GitHub Actions가 OIDC로 AWS 역할을 맡아 ECR에 이미지를 저장하고 SSM으로 EC2 배포 명령을 전합니다"><span>GitHub Actions</span><b>→</b><span>OIDC·ECR 이미지</span><b>→</b><span>SSM 명령</span><b>→</b><span>EC2 Docker</span></div><p>Workflow와 AWS 배포 역할은 준비됐습니다. EC2 ECR pull 권한과 Docker 실행 기반이 남았습니다.</p></article>
+      </div>
+    </section>
     <section class="section" id="status">
       <h2>현재 준비 상태</h2>
       <p class="lead">GitHub와 AWS의 배포 신뢰 경로(OIDC·IAM·ECR)는 준비됐습니다. 첫 배포 전에 EC2가 ECR 이미지를 pull할 권한과 서버 실행 환경을 갖추고, 런타임 설정과 TLS를 완료해야 합니다.</p>
       <div class="grid three">
         <article class="panel"><div class="state"><span class="mark">✓</span><div><span class="badge done">확인됨</span><strong>EC2 · SSM 접속</strong><p><code>traceback-development-app</code>, <code>i-051f85a1ac4e64a2c</code>, Seoul. 로컬에서 <code>aws ssm traceback-dev</code> 접속 가능.</p></div></div></article>
         <article class="panel"><div class="state"><span class="mark">!</span><div><span class="badge pending">미완료</span><strong>EC2 · 앱 실행 준비</strong><p>현재 ECR pull 권한, Docker·Compose, 앱 이미지 및 서버 <code>/opt/traceback/.env</code> 설정이 남아 있습니다. SSM 접속 권한과 네트워크는 준비됐습니다.</p></div></div></article>
-        <article class="panel"><div class="state"><span class="mark">!</span><div><span class="badge pending">미완료</span><strong>Vercel 환경별 Django 연결</strong><p>SSR은 배포됐지만 프로젝트 변수는 0개입니다. Production Branch는 <code>development</code>이며 API HTTPS 연결 전입니다.</p></div></div></article>
+        <article class="panel"><div class="state"><span class="mark">!</span><div><span class="badge pending">변수 저장 · 연결 미검증</span><strong>Vercel 환경별 Django 연결</strong><p>Production Branch는 <code>development</code>입니다. Production 범위에 <code>DJANGO_ORIGIN</code>을 저장했지만, API HTTPS와 새 Vercel 배포가 아직 필요합니다.</p></div></div></article>
         <article class="panel"><div class="state"><span class="mark">✓</span><div><span class="badge done">만들어짐</span><strong>RDS · private PostgreSQL</strong><p>비공개 RDS와 EC2 보안 그룹에서만 허용하는 5432 규칙이 있습니다. 실제 앱 DB 계정·URL 연결 검증은 남았습니다.</p></div></div></article>
         <article class="panel"><div class="state"><span class="mark">✓</span><div><span class="badge done">만들어짐</span><strong>S3 · 비공개 버킷</strong><p>버킷은 비어 있고 업로드 코드·EC2의 S3 권한은 없습니다. 업로드 기능 전까지 연결할 필요가 없습니다.</p></div></div></article>
         <article class="panel"><div class="state"><span class="mark">✓</span><div><span class="badge done">코드 준비됨</span><strong>Django 개발 보안 설정</strong><p><code>config.settings.development</code>는 <code>DEBUG=False</code>와 secure cookie/proxy 설정을 사용합니다. 실제 EC2 환경변수에 allowed host·CSRF origin을 채우고 HTTPS 경로에서 검증해야 합니다.</p></div></div></article>
@@ -452,7 +493,7 @@ test "$status" = Success</code></pre>
         <article class="step"><h3>API 도메인과 reverse proxy 연결</h3><p>이미 준비한 <code>api.dev-traceback.com</code>의 요청을 EC2 안의 Django 앱까지 전달해야 합니다. 현재 선택은 호스트 Nginx가 TLS/HTTPS를 처리하고 같은 EC2의 Docker 앱으로 proxy하는 방식입니다.</p><ul><li>Compose 기본 파일의 localhost publish와 운영 오버레이를 함께 배포합니다. 병합된 포트는 <code>127.0.0.1:8000</code>이라 Nginx는 연결할 수 있고 외부 사용자는 직접 접근하지 못합니다.</li><li>Nginx가 <code>/_allauth</code>, <code>/accounts</code>, <code>/api</code> 요청의 경로를 보존해 upstream으로 전달</li><li><code>X-Forwarded-Proto: https</code>와 원래 Host를 Django에 전달해 HTTPS cookie/CSRF 동작을 검증</li><li>대안은 Nginx 컨테이너 또는 ALB입니다. 같은 EC2의 Nginx 컨테이너는 배포 방식이 달라지고, ALB는 별도 AWS 서비스와 비용이 추가됩니다.</li></ul></article>
         <article class="step"><h3>앱용 DB 사용자와 EC2 비밀값 준비</h3><p>RDS master password를 앱 런타임에 재사용하지 말고, Django용 DB 사용자·DB를 분리합니다. 비밀값은 로컬 Git 파일이나 Vercel frontend에 두지 않습니다.</p><ul><li>각 EC2의 미추적 파일: <code>/opt/traceback/.env</code>, 권한 600</li><li>dev 설정은 <code>DJANGO_SETTINGS_MODULE=config.settings.development</code>; 현재 코드에서 <code>DEBUG=False</code></li><li><code>TRACEBACK_DATABASE_URL</code>은 private RDS endpoint와 앱 DB 계정 사용</li><li><code>FRONTEND_BASE_URL</code>은 Vercel 개발 origin; Django secret, SES, Kakao 값은 환경별 별도 보관</li><li>환경변수 이름과 목적은 이 문서의 환경변수 절에서 확인</li></ul></article>
         <article class="step"><h3>GitHub Environment와 첫 배포 설정</h3><p><code>development</code> Environment와 보호된 <code>development</code> 브랜치는 설정 완료. GitHub가 이 저장소의 OIDC token으로 deploy role을 맡고, SHA-tag 이미지를 ECR에 push한 뒤 <code>DEVELOPMENT_INSTANCE_ID</code>로 지정한 EC2에 SSM 명령을 보냅니다.</p><ul><li><code>AWS_REGION=ap-northeast-2</code> · 리전</li><li><code>ECR_REPOSITORY=traceback</code> · private image repository</li><li><code>AWS_DEPLOY_ROLE_ARN=arn:aws:iam::968579693658:role/traceback-development-deploy</code> · OIDC로 맡는 IAM role 주소</li><li><code>DEVELOPMENT_INSTANCE_ID=i-051f85a1ac4e64a2c</code> · 배포 명령 대상 EC2</li></ul><p><code>.env.dev.git</code>은 기록용입니다. GitHub가 자동으로 읽지 않으므로 저장소 Settings → Environments → development에 별도로 입력합니다. 정적 Access Key는 등록하지 않았습니다.</p></article>
-        <article class="step"><h3>서버 배포 뒤 Vercel 환경별 연결</h3><p>client repo의 <code>vercel.ts</code>는 <code>DJANGO_ORIGIN</code> 하나를 읽어 rewrite를 구성합니다. 2026-10-03 콘솔 기준 프로젝트 변수는 <b>0개</b>입니다. Production Branch가 <code>development</code>인 이 개발 전용 프로젝트에서는 Vercel의 Production scope가 개발 프런트 배포에 적용됩니다.</p><ul><li><b>Production scope:</b> HTTPS가 동작한 뒤 <code>DJANGO_ORIGIN=https://api.dev-traceback.com</code>을 등록하고 재배포합니다. 이 scope의 “Production”은 현재 Vercel 프로젝트에서 <code>development</code> 브랜치 배포를 뜻합니다.</li><li><b>Preview scope:</b> 다른 브랜치와 PR 미리보기 배포에 적용됩니다. Preview URL을 Django의 allowed hosts, CSRF trusted origins, Kakao callback에 허용할 정책을 정하기 전에는 비워 둡니다.</li><li><b>Development scope:</b> <code>vercel dev</code> 및 Vercel CLI가 값을 가져오는 로컬 개발용입니다. 일반 로컬 Vite 개발 서버는 client의 로컬 proxy를 쓰므로 여기에 자동 적용되지 않습니다.</li><li><code>.env.dev</code>는 로컬 파일이며 Vercel에 자동 업로드되지 않습니다. Vercel Dashboard에서 scope를 선택해 직접 등록하고 새 배포에서 확인합니다.</li><li>세 환경 모두 DB 비밀번호, Django secret, SES, Kakao secret은 넣지 않습니다. 현재 <code>vercel.ts</code>가 소비하는 값은 공개 HTTPS origin인 <code>DJANGO_ORIGIN</code>뿐입니다.</li><li>등록 뒤 <code>/_allauth</code>, <code>/accounts</code>, <code>/api</code> rewrite와 cookie/CSRF/Kakao callback을 브라우저에서 검증</li></ul></article>
+        <article class="step"><h3>서버 배포 뒤 Vercel 환경별 연결</h3><p>client repo의 <code>vercel.ts</code>는 <code>DJANGO_ORIGIN</code> 하나를 읽어 rewrite를 구성합니다. 2026-10-03 콘솔에서 Production 범위에 변수를 저장했습니다. Production Branch가 <code>development</code>인 이 개발 전용 프로젝트에서는 이 범위가 개발 프런트 배포에 적용됩니다.</p><ul><li><b>Production scope:</b> <code>DJANGO_ORIGIN=https://api.dev-traceback.com</code> 등록 완료. API HTTPS가 응답한 뒤 Vercel을 재배포해야 새 값이 실제 요청에 적용됩니다.</li><li><b>Preview scope:</b> 다른 브랜치와 PR 미리보기 배포에 적용됩니다. Preview URL의 CSRF trusted origins와 Kakao callback 정책을 정하기 전에는 비워 둡니다.</li><li><b>Development scope:</b> <code>vercel dev</code> 및 Vercel CLI가 값을 가져오는 로컬 개발용입니다. 일반 로컬 Vite 개발 서버는 client의 로컬 proxy를 쓰므로 여기에 자동 적용되지 않습니다.</li><li><code>.env.dev</code>는 로컬 파일이며 Vercel에 자동 업로드되지 않습니다. Vercel Dashboard에 등록한 값과 별개로 관리합니다.</li><li>DB 비밀번호, Django secret, SES, Kakao secret은 Vercel에 넣지 않습니다. 현재 <code>vercel.ts</code>가 소비하는 값은 공개 HTTPS origin인 <code>DJANGO_ORIGIN</code>뿐입니다.</li><li>재배포 뒤 <code>/_allauth</code>, <code>/accounts</code>, <code>/api</code> rewrite와 cookie/CSRF/Kakao callback을 브라우저에서 검증</li></ul></article>
         <article class="step"><h3>외부에서 인증·DB·메일을 검증하고 끄기</h3><p>개발용 Vercel 주소에서 설정 endpoint, 이메일 가입/인증, 로그인/로그아웃, CSRF 변경 요청, Kakao callback과 계정 연결 해제를 확인합니다.</p><ul><li>Vercel에서 <code>/_allauth/browser/v1/config</code>가 200으로 오고 Django에서 DB 응답</li><li>HTTPS cookie, proxy host/protocol, Django allowed hosts와 CSRF 동작 확인</li><li>외부 HTTP/HTTPS에서 앱만 노출되는지 확인; RDS는 계속 private</li><li>메일 발송을 실사용 테스트할 계획이면 SES production access와 verified sender/domain도 확인</li><li>RDS는 테스트 종료 후 중지. S3 업로드 IAM은 기능이 생길 때만 최소 prefix 권한으로 추가</li></ul></article>
       </div>
     </section>
@@ -470,7 +511,7 @@ test "$status" = Success</code></pre>
       <h2>환경변수는 저장 위치마다 목적이 달라요</h2>
       <p class="lead">같은 값 이름이 있더라도 어디에 넣는지와 누가 읽는지 구분합니다. 절대 secret 값을 이 문서나 Git에 적지 않습니다.</p>
       <div class="envgrid">
-        <article class="envbox"><h3>Vercel · 개발 프런트</h3><dl><dt><code>DJANGO_ORIGIN</code></dt><dd>Vercel rewrite의 HTTPS backend origin. HTTPS가 준비되면 dev API 주소를 설정.</dd><dt>Production</dt><dd>이 개발 전용 프로젝트의 Production Branch는 <code>development</code>입니다. Production scope 값이 현재 개발 프런트 배포에 적용됩니다.</dd><dt>Preview</dt><dd>PR/다른 브랜치 미리보기용. preview 도메인을 Django의 host·CSRF·OAuth 허용 목록에 넣을 정책이 정해질 때 연결.</dd><dt>Development</dt><dd><code>vercel dev</code>/CLI 사용 시 적용. 평소 로컬 Vite 서버는 별도 proxy 설정 사용.</dd><dt>로컬 파일</dt><dd><code>.env.dev</code>는 로컬 파일이며 자동 업로드되지 않습니다. 현재 값은 미설정.</dd><dt>비밀값 구분</dt><dd><code>DJANGO_ORIGIN</code>은 공개 origin이라 secret이 아닙니다. DB 암호나 Django/Kakao/SES 비밀값은 프런트 변수에 넣지 않습니다.</dd></dl></article>
+        <article class="envbox"><h3>Vercel · 개발 프런트</h3><dl><dt><code>DJANGO_ORIGIN</code></dt><dd>Production 범위에 <code>https://api.dev-traceback.com</code> 저장 완료. 새 배포와 HTTPS 연결 검증 전입니다.</dd><dt>Production</dt><dd>이 개발 전용 프로젝트의 Production Branch는 <code>development</code>입니다. 새 배포부터 Production 범위 값이 적용됩니다.</dd><dt>Preview</dt><dd>PR/다른 브랜치 미리보기용. preview URL의 CSRF·OAuth 허용 정책이 정해질 때 연결.</dd><dt>Development</dt><dd><code>vercel dev</code>/CLI 사용 시 적용. 평소 로컬 Vite 서버는 별도 proxy 설정 사용.</dd><dt>로컬 파일</dt><dd><code>.env.dev</code>는 로컬 파일이며 자동 업로드되지 않습니다.</dd><dt>비밀값 구분</dt><dd><code>DJANGO_ORIGIN</code>은 공개 origin이라 Config 값입니다. DB 암호나 Django/Kakao/SES 비밀값은 프런트 변수에 넣지 않습니다.</dd></dl></article>
         <article class="envbox"><h3>각 EC2 · `/opt/traceback/.env`</h3><dl><dt><code>DJANGO_SECRET_KEY</code></dt><dd>환경마다 다른 무작위 비밀키.</dd><dt><code>DJANGO_SETTINGS_MODULE</code></dt><dd>dev는 <code>config.settings.development</code>, 현재 <code>DEBUG=False</code>.</dd><dt><code>DJANGO_ALLOWED_HOSTS</code></dt><dd>실제 API 원본 host만 필요한 범위로 등록.</dd><dt><code>TRACEBACK_DATABASE_URL</code></dt><dd>private RDS 주소, 앱 전용 DB username/password, DB 이름.</dd><dt><code>FRONTEND_BASE_URL</code></dt><dd>개발 Vercel origin; confirmation/error redirect 링크가 이 주소 사용.</dd><dt>메일·카카오</dt><dd>SES SMTP credentials 및 Kakao REST/client secret/Admin key는 Django 서버에서만 보관.</dd></dl></article>
         <article class="envbox"><h3>GitHub · `development` Environment variables</h3><dl><dt><code>AWS_REGION</code></dt><dd><code>ap-northeast-2</code> — AWS Seoul</dd><dt><code>ECR_REPOSITORY</code></dt><dd><code>traceback</code> — 실제 생성된 private repository</dd><dt><code>AWS_DEPLOY_ROLE_ARN</code></dt><dd><code>arn:aws:iam::968579693658:role/traceback-development-deploy</code> — GitHub Actions가 OIDC로 맡을 role</dd><dt><code>DEVELOPMENT_INSTANCE_ID</code></dt><dd><code>i-051f85a1ac4e64a2c</code> — SSM 배포 대상 EC2 ID</dd><dt>등록 위치</dt><dd>GitHub repo → Settings → Environments → development. `.env.dev.git`은 자동 반영되지 않음.</dd></dl></article>
         <article class="envbox"><h3>지금은 연결하지 않을 값</h3><dl><dt>S3 bucket IAM</dt><dd>업로드 API 구현 전에는 EC2 role에 S3 권한을 주지 않습니다. private bucket만 유지.</dd><dt>Production 변수</dt><dd>prod 인프라·별도 Vercel project를 준비할 때 다른 secret·DB·origin으로 설정.</dd><dt>RDS master password</dt><dd>Django `TRACEBACK_DATABASE_URL`에 재사용하지 말고, 앱 전용 DB 계정 사용.</dd></dl></article>
@@ -554,7 +595,7 @@ FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:5173").rstr
       <h2>비용과 안전 기준</h2>
       <div class="grid two">
         <article class="panel"><h3>초기 고정비 줄이기</h3><ul><li>당장은 EC2 1대, Single-AZ RDS, NAT Gateway 없음, ALB 없음</li><li>RDS는 개발/테스트 때 켜고 끝난 뒤 중지. 중지 중에도 storage/backup 요금이 남음</li><li>EC2 stop은 시간 비용을 줄일 수 있지만 public IPv4가 바뀔 수 있어 DNS와 TLS origin에 영향</li><li>현재 문서의 RDS 생성 추정 USD 20.87/월은 RDS instance + 20 GiB storage만이며 나머지 요금은 별도</li><li>ECR repository 자체는 월 정액이 아니고 이미지 저장량·인터넷 전송에 따라 과금; 빈 repo에는 저장 이미지 비용 없음</li><li>AWS credit은 bill cap이 아님. 실제 Billing과 Budget alert를 확인</li></ul></article>
-        <article class="panel"><h3>인터넷에 내보내기 전에</h3><ul><li>Django <code>DEBUG=False</code>; secret/key는 EC2 파일에만 보관</li><li>RDS internet access 비활성, 5432 source는 개발 EC2 security group만 허용 — 현재 설정 확인됨</li><li>EC2 inbound 80/443은 전 세계에서 접근 가능하고 22는 닫힘 — 현재 설정 확인됨</li><li>EC2 outbound는 전체 IPv4 허용 — 동작은 하지만 최소 권한은 아님; 사용처 검증 뒤 제한 여부 결정</li><li>기본 VPC의 route table과 network ACL 규칙을 추가 확인</li><li>Vercel Production scope의 `DJANGO_ORIGIN`은 HTTPS 준비 후 등록; Preview scope는 preview host/CSRF 정책 결정 후</li><li>Nginx/TLS, EC2 ECR pull IAM 권한, 런타임 `.env`, 앱 전용 RDS 사용자 준비</li><li>DB migration 전에 RDS backup/restore 지점 확인</li></ul></article>
+        <article class="panel"><h3>인터넷에 내보내기 전에</h3><ul><li>Django <code>DEBUG=False</code>; secret/key는 EC2 파일에만 보관</li><li>RDS internet access 비활성, 5432 source는 개발 EC2 security group만 허용 — 현재 설정 확인됨</li><li>EC2 inbound 80/443은 전 세계에서 접근 가능하고 22는 닫힘 — 현재 설정 확인됨</li><li>EC2 outbound는 전체 IPv4 허용 — 동작은 하지만 최소 권한은 아님; 사용처 검증 뒤 제한 여부 결정</li><li>기본 VPC route table의 IGW 경로는 확인됨; network ACL 규칙은 추가 확인 필요</li><li>Vercel Production 범위의 <code>DJANGO_ORIGIN</code>은 저장됨. API HTTPS 준비 후 재배포·검증; Preview 범위는 CSRF·OAuth 정책 결정 후</li><li>Nginx/TLS, EC2 ECR pull IAM 권한, 런타임 <code>.env</code>, 앱 전용 RDS 사용자 준비</li><li>DB migration 전에 RDS backup/restore 지점 확인</li></ul></article>
       </div>
     </section>
   </main>

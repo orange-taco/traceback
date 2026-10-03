@@ -4,12 +4,12 @@
 
 ## Current state
 
-- AWS development 첫 배포 가이드와 스크립트가 PR #12에 모여 있다. Production EC2는 아직 없다.
+- AWS development 첫 배포 가이드와 스크립트가 PR #12에 모여 있다. Production EC2는 아직 없다. Vercel Production 범위의 `DJANGO_ORIGIN`은 저장됐지만 API HTTPS·프런트 재배포·인증 검증이 남았다.
 - 학습 순서는 [System Guide](../artifact/traceback-system-guide.html)에서, 새 artifact의 필수 작성 기준은 [시각화 스킬](../../.codex/skills/auth-flow-visualizer/SKILL.md)에서 확인한다.
 
 ## Validation / Next action
 
-- PR #12 quality/test 통과. `Deploy development`는 pull request 이벤트에서 조건상 skip됨. 기존 CodeRabbit 지적 5건은 반영했고, 새 review 요청은 rate limit 상태다.
+- 다섯 HTML artifact의 링크·PDF 버튼·인라인 JS 구문과 시각화 스킬 검증 통과. PR #12의 새 CI 결과는 push 후 확인한다. `Deploy development`는 pull request 이벤트에서 조건상 skip된다.
 - PR #12의 새 checks/review 상태를 확인한 뒤 `development`에 병합한다. 실제 AWS 배포는 아직 미검증이며, 선행 설정은 [2번 첫 배포 가이드](../artifact/2-dev-server-first-deployment.html)에 있다.
 
 ## Maintenance

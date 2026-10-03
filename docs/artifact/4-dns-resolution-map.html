@@ -424,8 +424,42 @@
       .walk-step, .tabbar button { transition: none; }
     }
   </style>
+  <style>
+    .config-source { margin:14px 0; padding:13px 15px; overflow:auto; border:1px solid var(--line); border-radius:9px; background:var(--surface); font:.78rem/1.55 ui-monospace,SFMono-Regular,Menlo,monospace; white-space:pre-wrap; }
+    .pdf-export { position:fixed; right:18px; bottom:18px; z-index:1000; border:1px solid #164d68; border-radius:999px; padding:10px 16px; background:#fff; color:#123c50; box-shadow:0 8px 24px #102a4333; font:700 14px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; cursor:pointer; }
+    .pdf-export:focus-visible { outline:3px solid #efa92b; outline-offset:3px; }
+    @page { size:A4; margin:14mm; }
+    @media print {
+      html { scroll-behavior:auto; }
+      body { background:#fff!important; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+      .pdf-export, main > nav, nav[role="tablist"], .sidebar, .hero-nav, .nav, .selector, .tabs, .step-controls, .next-tab, .flow-controls, .top { display:none!important; }
+      .hero, .masthead, .intro { background:#fff!important; color:#17212b!important; box-shadow:none!important; }
+      .hero p, .hero .eyebrow, .masthead p, .intro p { color:#33495c!important; }
+      [hidden], .panel[hidden], .flow[hidden], .option[hidden] { display:block!important; }
+      .shell, .diagram-wrap, .diagram-frame, .workflow-source, .flow, .canvas { overflow:visible!important; }
+      pre, .workflow-source { max-height:none!important; overflow:visible!important; white-space:pre-wrap!important; }
+      pre code, .workflow-source code, .workflow-line { width:auto!important; min-width:0!important; white-space:pre-wrap!important; overflow-wrap:anywhere!important; }
+      .workflow-block-body { grid-template-columns:1fr!important; }
+      svg, img, .diagram, .flow-diagram { max-width:100%!important; min-width:0!important; height:auto; }
+      h1, h2, h3, h4 { break-after:avoid; }
+    }
+  </style>
 </head>
 <body>
+  <button type="button" class="pdf-export" onclick="window.print()" aria-label="전체 문서를 PDF로 저장">PDF로 저장</button>
+  <script>
+    (() => {
+      let closedBeforePrint = [];
+      window.addEventListener("beforeprint", () => {
+        closedBeforePrint = [...document.querySelectorAll("details:not([open])")];
+        closedBeforePrint.forEach((detail) => { detail.open = true; });
+      });
+      window.addEventListener("afterprint", () => {
+        closedBeforePrint.forEach((detail) => { detail.open = false; });
+        closedBeforePrint = [];
+      });
+    })();
+  </script>
   <main>
     <header class="intro">
       <div>
@@ -715,6 +749,10 @@ C-root → 192.33.4.12
         <div class="one-purchase"><b>도메인은 한 번만 등록합니다.</b> 등록은 도메인 이름의 사용권을 연 단위로 확보하는 일이고, DNS 관리는 그 이름 아래 레코드가 어디를 가리킬지 정하는 일입니다. Route 53에서 등록하면 Route 53이 등록업체이자 DNS 관리업체가 됩니다.</div>
         <p class="tiny-note"><b>AWS Route 53</b>는 도메인 등록과 권한 DNS를 제공하지만 웹 요청을 대신 전달하는 프록시/CDN은 아닙니다. <b>Cloudflare</b>는 DNS 관리 외에도 프록시·캐시·보안 기능을 제공합니다. Cloudflare 프록시를 쓰려면 Cloudflare가 권한 DNS가 되도록 등록업체에서 네임서버를 바꿔야 합니다. Route 53 hosted zone에는 월 요금이 따로 있습니다. 가격과 지원 TLD는 등록 전 확인하세요.</p>
         <p class="status-note"><b>TRACEBACK 사례:</b> <code>dev-traceback.com</code>은 Route 53에서 ACTIVE 상태이고 등록 네임서버와 public hosted zone이 일치합니다. API용 <code>api.dev-traceback.com</code> A 레코드는 EIP <code>3.34.78.140</code>을 가리킵니다. DNS 설정이 끝났다는 것은 이름이 IP를 찾는다는 뜻입니다. HTTPS 인증서, Nginx, API 애플리케이션까지 준비됐다는 뜻은 아닙니다. 현재 API 서버는 아직 배포 전입니다. <a href="3-development-ip-domain-guide.html">우리 EIP와 도메인 설정의 자세한 설명 →</a></p>
+        <pre class="config-source"><code>Route 53 public hosted zone · 실제 콘솔 설정
+Name: api.dev-traceback.com
+Type: A    TTL: 300    Value: 3.34.78.140</code></pre>
+        <p class="tiny-note">이 세 값이 권한 DNS의 응답을 정합니다. 현재 이 레코드는 저장소의 IaC 코드가 아닌 Route 53 콘솔에서 관리합니다. DNS 질의는 IP를 얻을 뿐이며 HTTPS와 앱의 정상 동작은 다음 단계에서 따로 확인합니다.</p>
       </div>
     </section>
 
@@ -743,8 +781,13 @@ C-root → 192.33.4.12
         <div class="domain-branches" aria-label="한 도메인에서 프런트와 API 서브도메인으로 나뉘는 구조"><div class="base-domain">등록한 도메인: example.com</div><div class="branch-row"><span>www.example.com</span><i>→</i><span>Vercel 프런트엔드 · 사람이 방문하는 화면</span></div><div class="branch-row"><span>api.example.com</span><i>→</i><span>AWS EC2의 HTTPS API · Django가 요청 처리</span></div></div>
         <p>이 프로젝트의 브라우저 요청은 프런트 주소에서 시작합니다. Vercel은 <code>/api/*</code>, <code>/accounts/*</code>, <code>/_allauth/*</code>를 API 서버로 <b>rewrite</b>합니다. Rewrite는 브라우저 주소를 바꾸지 않고 뒤에서 요청을 다른 서버로 전달하는 방식입니다.</p>
         <div class="request-lines" aria-label="브라우저 화면 요청과 API 요청의 서로 다른 도착 경로"><div class="request-line"><b>화면 요청</b><span>브라우저: www.example.com</span><i>→</i><span>Vercel이 페이지 응답</span></div><div class="request-line"><b>API 요청</b><span>브라우저: www.example.com/api/…</span><i>→</i><span>Vercel rewrite</span><i>→</i><span>https://api.example.com</span><i>→</i><span>EC2 · Django</span></div></div>
+        <pre class="config-source"><code>// traceback-client/vercel.ts · API 경로 설정 발췌
+const configuredOrigin = process.env.DJANGO_ORIGIN?.trim();
+source: "/api/:path*",
+destination: `&#36;{djangoOrigin}/api/:path*`,</code></pre>
+        <p class="tiny-note">Vercel은 배포 시 <code>DJANGO_ORIGIN</code>을 읽어 프런트 주소의 <code>/api/*</code>를 백엔드 HTTPS origin으로 전달합니다. <code>/_allauth/*</code>와 <code>/accounts/*</code>도 같은 방식입니다. <a href="https://github.com/orange-taco/traceback-client/blob/development/vercel.ts">전체 코드</a>에서 세 경로와 HTTPS origin 검증을 볼 수 있습니다.</p>
         <div class="one-purchase"><b>API 도메인도 중요합니다.</b> 주소창에는 주로 프런트 도메인이 보이지만, Vercel은 API 도메인을 DNS로 찾고 유효한 HTTPS 인증서를 확인한 뒤 EC2에 접속해야 합니다. 이 구성에서 API 도메인은 단순한 내부 별명이 아닙니다.</div>
-        <p class="tiny-note"><b>일반적인 그림:</b> <code>example.com</code>은 구조 설명용 예시이며 실제 이름은 DNS 레코드로 정합니다. <b>TRACEBACK 사례:</b> 프런트는 <code>traceback-client-nine.vercel.app</code>, 백엔드 API 이름은 <code>api.dev-traceback.com</code>입니다. API DNS A 레코드는 EIP까지 연결했지만, HTTPS 인증서와 Nginx·Django 앱은 아직 준비되지 않았습니다.</p>
+        <p class="tiny-note"><b>일반적인 그림:</b> <code>example.com</code>은 구조 설명용 예시이며 실제 이름은 DNS 레코드로 정합니다. <b>TRACEBACK 사례:</b> 프런트는 <code>traceback-client-nine.vercel.app</code>, 백엔드 API 이름은 <code>api.dev-traceback.com</code>입니다. API DNS A 레코드는 EIP까지 연결했고 Vercel 변수도 저장했지만, 새 Vercel 배포와 백엔드 HTTPS·Nginx·Django 앱 준비는 남았습니다.</p>
       </div>
     </section>
 

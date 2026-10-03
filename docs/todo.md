@@ -8,9 +8,9 @@
 
 1. [ ] **Vercel 환경별 backend 연결** — development 프로젝트 `traceback-client`의
    SSR 배포와 기본 URL은 확인했다. 현재 이 프로젝트의 Production Branch는
-   `development`이며 Vercel 환경변수는 아직 0개다. HTTPS API가 준비되면
-   `DJANGO_ORIGIN=https://api.dev-traceback.com`을 이 프로젝트의 Production scope에
-   등록하고 재배포한다. Preview scope는 PR 미리보기에서 dev API를 쓸지 정한 뒤 설정한다.
+   `development`이며 Production scope에 Config 변수
+   `DJANGO_ORIGIN=https://api.dev-traceback.com`을 저장했다. HTTPS API가 준비되면
+   재배포해 값을 적용한다. Preview scope는 PR 미리보기에서 dev API를 쓸지 정한 뒤 설정한다.
    Development scope는 `vercel dev`를 사용할 때만 등록하고, 일반 로컬 Vite 실행은
    client의 로컬 proxy 설정을 사용한다. `.env.dev` 파일은 Vercel에 자동 업로드되지 않는다.
    배포 후 `/_allauth`·`/accounts`·API, same-origin session/CSRF, email, Kakao callback을

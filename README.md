@@ -94,6 +94,7 @@ AWS 초기 설정을 처음부터 공부할 때는 [System Guide](docs/artifact/
 [3. IP·도메인](docs/artifact/3-development-ip-domain-guide.html) →
 [4. DNS](docs/artifact/4-dns-resolution-map.html) 순서로 읽는다. 각 가이드는 일반적인
 설정 방법과 선택지, TRACEBACK의 선택 이유, 현재 설정 및 남은 검증을 함께 설명한다.
+각 HTML의 `PDF로 저장` 버튼은 브라우저 인쇄 창을 열며, 거기서 PDF 대상으로 저장한다.
 
 ## Delivery
 

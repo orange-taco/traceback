@@ -11,11 +11,15 @@ future domains without reducing the explanation to a table or a prose-only page.
 
 ## Workflow
 
-- Create or update self-contained HTML artifacts under `docs/artifact/` in the repository.
+- Create or update HTML artifacts under `docs/artifact/` in the repository.
   Use a descriptive filename such as `auth-flow.html` or `aws-ssm-access-guide.html`.
   Do not place generated artifacts inside `.codex/skills/`; that directory contains
   reusable skill instructions and resources. If an artifact is added or moved, update
   the relevant checkpoint or documentation links so readers can find it.
+- Keep diagrams and interaction code in the HTML. Screenshots may live in
+  `docs/artifact/images/`; verify their relative paths and include them in PDF
+  output. Use inline `data:` images when a single portable HTML file is needed,
+  accepting the larger HTML size and harder image replacement.
 - Treat it as a small documentation site: keep a shared shell, domain navigation,
   overview, and one visual section per documented subsystem. Preserve existing
   sections when adding a new domain.
@@ -33,6 +37,9 @@ future domains without reducing the explanation to a table or a prose-only page.
   explicitly. Do not imply a callback or library hook runs unless the source proves it.
 - Use semantic controls, visible labels, `aria-live` where state changes, text
   alternatives, keyboard operation, and responsive layout down to narrow widths.
+- Provide a visible PDF save action. Its print view must include content hidden
+  behind tabs or closed details, preserve diagrams and screenshots, and omit
+  navigation controls; restore the interactive state after printing.
 
 ## Accuracy checks
 

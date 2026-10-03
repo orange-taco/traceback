@@ -37,6 +37,9 @@
     .hero p { max-width: 760px; margin: 20px 0 0; color: #e4f2f5; font-size: 1.08rem; }
     .hero-nav { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 24px; }
     .hero-nav a { padding: 7px 12px; border: 1px solid #ffffff55; border-radius: 999px; color: white; text-decoration: none; font-size: .9rem; }
+    .hero-flow { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:22px; }
+    .hero-flow span { padding:9px 11px; border:1px solid #ffffff77; border-radius:9px; background:#ffffff18; color:#fff; font-size:.86rem; font-weight:700; }
+    .hero-flow b { color:#b9e4ed; }
     section { margin-top: 25px; padding: clamp(20px, 4vw, 34px); border: 1px solid var(--line); border-radius: 18px; background: var(--white); box-shadow: var(--shadow); }
     h2 { margin: 0 0 9px; font-size: clamp(1.4rem, 3vw, 2rem); line-height: 1.25; letter-spacing: -.025em; }
     h3 { margin: 24px 0 8px; font-size: 1.12rem; }
@@ -97,8 +100,43 @@
     }
     @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
   </style>
+  <style>
+    .pdf-export { position:fixed; right:18px; bottom:18px; z-index:1000; border:1px solid #164d68; border-radius:999px; padding:10px 16px; background:#fff; color:#123c50; box-shadow:0 8px 24px #102a4333; font:700 14px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; cursor:pointer; }
+    .pdf-export:focus-visible { outline:3px solid #efa92b; outline-offset:3px; }
+    @page { size:A4; margin:14mm; }
+    @media print {
+      html { scroll-behavior:auto; }
+      body { background:#fff!important; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+      .pdf-export, main > nav, nav[role="tablist"], .sidebar, .hero-nav, .nav, .selector, .tabs, .step-controls, .next-tab, .flow-controls, .top { display:none!important; }
+      .hero, .masthead, .intro { background:#fff!important; color:#17212b!important; box-shadow:none!important; }
+      .hero p, .hero .eyebrow, .masthead p, .intro p { color:#33495c!important; }
+      .hero-flow span { background:#fff!important; color:#17212b!important; border-color:#9bb7c2!important; }
+      .hero-flow b { color:#17212b!important; }
+      [hidden], .panel[hidden], .flow[hidden], .option[hidden] { display:block!important; }
+      .shell, .diagram-wrap, .diagram-frame, .workflow-source, .flow, .canvas { overflow:visible!important; }
+      pre, .workflow-source { max-height:none!important; overflow:visible!important; white-space:pre-wrap!important; }
+      pre code, .workflow-source code, .workflow-line { width:auto!important; min-width:0!important; white-space:pre-wrap!important; overflow-wrap:anywhere!important; }
+      .workflow-block-body { grid-template-columns:1fr!important; }
+      svg, img, .diagram, .flow-diagram { max-width:100%!important; min-width:0!important; height:auto; }
+      h1, h2, h3, h4 { break-after:avoid; }
+    }
+  </style>
 </head>
 <body>
+  <button type="button" class="pdf-export" onclick="window.print()" aria-label="전체 문서를 PDF로 저장">PDF로 저장</button>
+  <script>
+    (() => {
+      let closedBeforePrint = [];
+      window.addEventListener("beforeprint", () => {
+        closedBeforePrint = [...document.querySelectorAll("details:not([open])")];
+        closedBeforePrint.forEach((detail) => { detail.open = true; });
+      });
+      window.addEventListener("afterprint", () => {
+        closedBeforePrint.forEach((detail) => { detail.open = false; });
+        closedBeforePrint = [];
+      });
+    })();
+  </script>
   <div class="top">TRACEBACK · AWS DEVELOPMENT · 학습 가이드</div>
   <main>
     <header class="hero">
@@ -106,6 +144,7 @@
       <h1>EC2에는 어떻게 접속할까?</h1>
       <p>큰 그림이 먼저 필요하면 <a href="traceback-system-guide.html">TRACEBACK System Guide의 전체 흐름</a>을 보세요. 여기서는 네트워크 접속 방식과 AWS 권한을 분리한 뒤 SSH와 SSM을 비교하고, 실제 명령 및 현재 선택을 설명합니다.</p>
       <p>SSH는 내 컴퓨터가 EC2의 22번 포트로 들어가는 원격 접속 방식입니다. 이번 개발 서버는 SSH 포트를 열지 않고, AWS Systems Manager Session Manager(SSM)가 만든 안전한 세션으로 접속합니다. 설정 순서와 네트워크 원리를 각각 살펴봅니다.</p>
+      <div class="hero-flow" role="img" aria-label="로컬 터미널에서 Identity Center로 로그인하고 Session Manager 세션을 시작하면 EC2의 SSM Agent가 연결된 셸을 엽니다"><span>로컬 터미널</span><b>→</b><span>IAM Identity Center 로그인</span><b>→</b><span>Session Manager</span><b>↔</b><span>EC2 SSM Agent · 셸</span></div>
       <nav class="hero-nav" aria-label="문서 목차">
         <a href="#network">네트워크 기초</a><a href="#aws-terms">AWS 용어</a><a href="#path">연결 그림</a><a href="#steps">설정 순서</a><a href="#troubleshooting">문제 해결</a>
       </nav>
