@@ -5,7 +5,7 @@
 ## Current state
 
 - Phase 0 Foundation의 account/auth 서버 slice가 구현되어 있다.
-- 현재 작업 브랜치는 `docs/dev-aws-free-tier-plan`이며 `development`에서 분기했다. Phase 0 기반 CI/CD와 인증 서버 구현이 존재한다.
+- development 배포 설정은 PR [#12](https://github.com/orange-taco/traceback/pull/12), AWS 학습 아티팩트는 PR [#13](https://github.com/orange-taco/traceback/pull/13)에 있다. 둘 다 `development`에서 분기했고 아직 merge하지 않았다. 두 PR의 `Quality`와 `Test`는 통과했으며 배포 job은 PR에서 실행되지 않았다.
 - Kakao provider unlink, account deletion, 사용자별 세션 추적이 구현되어 있다.
 - 로컬 메일은 console, AWS development/production 메일은 SES SMTP를 사용한다. `.env.example`과 `config/server.env.example`에 SES 인증 변수 이름을 명시했다.
 - `development`/`main` push의 quality·test 성공 뒤에만 배포 job이 호출된다. Development는 SHA 이미지가 이미 있으면 재사용하고, production은 성공한 development CI의 SHA로 조회한 동일 digest를 승격한다. EC2는 이미지 속 Compose 파일을 반영하고 migration 후 HTTP/DB healthcheck가 통과한 앱을 실행한다.
@@ -14,7 +14,7 @@
 - AWS development는 서울 리전에 dev EC2와 private S3를 생성했다. EC2는 `t3.micro`, SSH 미개방, SSM 역할이며 Docker/app 배포 전이다. 기본 Session Manager 접속과 SSM Run Command는 EC2 사용 추가 요금이 없다. 선택형 세션 로그 저장이나 유료 SSM 기능은 별도 과금될 수 있다. RDS PostgreSQL 17.11 `db.t4g.micro` Single-AZ가 사용 가능하며 인터넷 액세스가 비활성화됐다. EC2 전용 security group에서만 RDS TCP 5432를 허용한다. 개발·AWS 테스트 중에만 RDS를 켜고 작업 후 중지한다. 생성 화면 추정은 실행 시간·20 GiB storage 기준 USD 20.87/월이다. AWS 계정은 PAID plan에 USD 100 credit이 남아 있으나 지출 한도는 아니다. S3 업로드 코드와 앱 권한은 아직 없다.
 - GitHub development 배포 준비: `development` Environment에 브랜치 제한을 걸고 네 변수를 등록했다. AWS 계정에 GitHub OIDC provider, 개발 전용 `traceback-development-deploy` 최소 권한 역할, private ECR `traceback`(불변 태그/AES-256)을 만들었다. ECR은 아직 비어 있고, EC2 instance role의 ECR pull 권한과 Docker bootstrap은 남아 있다. GitHub development branch protection에서 PR과 `Quality`/`Test` 통과를 요구한다. 이 설정은 development push로 아직 검증하지 않았다.
 - Route 53 `dev-traceback.com`은 ACTIVE 등록 상태이고 hosted zone 네임서버와 등록 네임서버가 일치한다. EIP `3.34.78.140`을 Development EC2에 연결했고 `api.dev-traceback.com` A 레코드(TTL 300초)를 생성했다. EIP는 EC2 중지 중에도 시간당 요금이 발생한다. Nginx·TLS와 백엔드 앱은 아직 배포되지 않았다.
-- 프런트엔드 호스팅은 Vercel이다. `traceback-client` Vercel project가 client 저장소에 연결됐고 Production branch는 development로 설정했다(현재 개발 환경 전용). `https://traceback-client-nine.vercel.app`에서 commit `850b255`의 SSR이 HTTP 200으로 동작한다. allauth 설정 요청은 Django origin 미연결 상태라 404이며, AWS development 서버 배포 후 same-origin 인증 경로·CSRF·Kakao callback 검증이 남아 있다. client의 `.env.dev`에는 frontend origin을 기록했고 Django origin은 비어 있다. Production용 별도 Vercel project는 나중에 만든다.
+- 프런트엔드 호스팅은 Vercel이다. `traceback-client` Vercel project가 client 저장소에 연결됐고 Production branch는 development로 설정했다(현재 개발 환경 전용). `https://traceback-client-nine.vercel.app`에서 commit `850b255`의 SSR이 HTTP 200으로 동작한다. Vercel project Environment Variables는 현재 0개이며, `DJANGO_ORIGIN`은 API HTTPS가 준비된 뒤 Production Environment에 등록한다. allauth 설정 요청은 Django origin 미연결 상태라 404이며, AWS development 서버 배포 후 same-origin 인증 경로·CSRF·Kakao callback 검증이 남아 있다. client의 `.env.dev`에는 frontend origin을 기록했고 Django origin은 비어 있다. Production용 별도 Vercel project는 나중에 만든다.
 - `visualizations/index.html`은 전체 구조·인증·CI/CD·워크플로 전체 코드의 진입점이다. System Guide는 세 워크플로 YAML의 모든 줄(127+87+79줄)을 구간별 원문과 해설로 보여준다.
 - EC2 접속 학습 자료는 [aws-ssm-ssh-learning-guide.html](../artifact/aws-ssm-ssh-learning-guide.html)이다. 일반 네트워크의 SSH/포트/방화벽 개념과 AWS의 SSM/IAM/보안 그룹을 나눠 설명하고, 현재 dev EC2용 AWS CLI SSO 설정 절차를 담았다.
 - 첫 개발 서버 구축, GitHub Actions OIDC·IAM·ECR, `deploy-ec2.sh` 전체 코드 해설, 로컬 수동 ECR push→SSM 배포, Docker volume 차이, 파일별 CI/CD 읽기 순서는 [dev-server-first-deployment.html](../artifact/dev-server-first-deployment.html)에 시각화했다.
