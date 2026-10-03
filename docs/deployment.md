@@ -56,8 +56,8 @@ associated with this EC2 instance's primary private address. Route 53 domain
 `dev-traceback.com` is `ACTIVE`; its registered name servers match the public
 hosted zone. The zone now has `api.dev-traceback.com A 3.34.78.140` with a
 300-second TTL. The record resolves to the EC2 address. Nginx answers HTTP on
-port 80, but TLS and the application are not installed yet, so port 443 refuses
-connections.
+port 80, and the `/.well-known/acme-challenge/` webroot was verified externally.
+TLS and the application are not installed yet, so port 443 refuses connections.
 
 The RDS instance was created on 2026-09-27 and is `Available`. Its endpoint is
 `traceback-development-db.cdgccc6q6aoe.ap-northeast-2.rds.amazonaws.com`. The
