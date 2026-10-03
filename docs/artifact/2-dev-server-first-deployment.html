@@ -127,7 +127,7 @@
 
       <h3>이름이 비슷해 보여도 맡은 일은 다릅니다</h3>
       <div class="keyline"><strong><code>AWS_DEPLOY_ROLE_ARN</code></strong><span>“GitHub Actions가 AWS에서 어떤 역할로 행동할까?”에 답합니다. 현재 값은 <code>arn:aws:iam::968579693658:role/traceback-development-deploy</code>. workflow의 <code>role-to-assume</code>에 전달됩니다. ARN은 역할의 주소이고, 그 자체로 로그인 비밀키는 아닙니다.</span></div>
-      <div class="keyline"><strong><code>DEVELOPMENT_INSTANCE_ID</code></strong><span>“SSM 명령을 어느 EC2로 보낼까?”에 답합니다. 현재 대상은 <code>i-051f85a1ac4e64a2c</code>. GitHub Actions가 이를 <code>INSTANCE_ID</code>로 deploy 스크립트에 넘깁니다. AWS에 인증하거나 권한을 부여하는 값이 아닙니다.</span></div>
+      <div class="keyline"><strong><code>DEVELOPMENT_INSTANCE_ID</code></strong><span>“SSM 명령을 어느 EC2로 보낼까?”에 답합니다. 현재 대상은 <code>i-051f85a1ac4e64a2c</code>. 개발 전용 스크립트가 이 값을 공통 배포 실행기에 넘깁니다. AWS에 인증하거나 권한을 부여하는 값이 아닙니다.</span></div>
       <div class="keyline"><strong><code>AWS_REGION</code></strong><span>리소스가 있는 AWS 리전. 현재 <code>ap-northeast-2</code> (서울)입니다. STS 자격 증명을 받는 호출과 ECR/SSM 요청에 함께 쓰입니다.</span></div>
       <div class="keyline"><strong><code>ECR_REPOSITORY</code></strong><span>이미지 저장소 이름 <code>traceback</code>. 계정 ID와 리전이 포함된 전체 주소는 ECR login/build action이 구성합니다.</span></div>
 
@@ -176,7 +176,7 @@
         <article class="iam-card"><h3>현재 흐름의 큰 비용 요인은 이미지 보관량</h3><p>같은 서울 리전의 ECR↔EC2 데이터 전송은 AWS 가격표상 무료입니다. GitHub-hosted runner에서 ECR로 push하는 전송도 ECR inbound 과금 대상이 아닙니다. 배포 때마다 SHA tag 이미지가 쌓이므로, 오래된 이미지 보관 정책이 없으면 저장 용량이 누적됩니다. 첫 배포 전 수명주기 정책을 정하되, production 승격·rollback에 필요한 digest를 삭제하지 않도록 해야 합니다.</p></article>
       </div>
       <div class="notice warn"><strong>비용 체크:</strong> 지금 만든 ECR은 비어 있고 repository 생성 자체에는 월 정액이 없습니다. 첫 image push부터 저장 용량이 계산됩니다. AWS 크레딧은 청구 상한이 아니므로 <a href="https://aws.amazon.com/ecr/pricing/">Amazon ECR 공식 가격표</a>와 Billing을 확인하세요. 화면에 캡처된 immutable tag 설정은 같은 SHA 이름의 이미지를 덮어쓰지 못하게 해 배포 재현성을 높이지만, 이미지를 자동 삭제하지는 않습니다.</div>
-      <p class="small">더 깊은 접속 인증/SSM 구조는 <a href="aws-ssm-ssh-learning-guide.html">SSH와 SSM 학습 가이드</a>, 도메인과 DNS는 <a href="dns-resolution-map.html">DNS 가이드</a>, IP 선택은 <a href="development-ip-domain-guide.html">개발 IP·도메인 가이드</a>에서 공부합니다. 이 문서는 그 자원들을 CI/CD에 연결하는 전체 흐름을 다룹니다.</p>
+      <p class="small">더 깊은 접속 인증/SSM 구조는 <a href="1-aws-ssm-ssh-learning-guide.html">SSH와 SSM 학습 가이드</a>, 도메인과 DNS는 <a href="4-dns-resolution-map.html">DNS 가이드</a>, IP 선택은 <a href="3-development-ip-domain-guide.html">개발 IP·도메인 가이드</a>에서 공부합니다. 이 문서는 그 자원들을 CI/CD에 연결하는 전체 흐름을 다룹니다.</p>
     </section>
 
     <section class="section" id="deploy-code">
@@ -188,7 +188,7 @@
         <article><b>3 · ci.yml</b><small>PR/push 검사와 CD 호출 조건</small></article>
         <article><b>4 · deploy-development.yml</b><small>development 이미지 build/push 후 EC2 배포</small></article>
         <article><b>5 · deploy-production.yml</b><small>development에서 검증된 동일 이미지 digest 승격</small></article>
-        <article><b>6 · deploy-ec2.sh</b><small>SSM으로 EC2 내부 명령 실행·결과 확인</small></article>
+        <article><b>6 · 환경별 배포 스크립트</b><small>dev/prod 진입점과 공통 SSM 배포 로직</small></article>
       </div>
       <div class="notice"><strong>development와 production 스크립트를 왜 따로 만들지 않나요?</strong> 배포 동작은 같습니다. 환경별 workflow가 서로 다른 GitHub Environment, IAM 역할, EC2 인스턴스 ID와 이미지 선택 규칙을 고릅니다. 공통 셸 스크립트를 하나로 유지하면 dev와 prod의 보안 수정이 한쪽에만 반영되는 실수를 막습니다. 단계가 실제로 달라질 때만 공통 함수를 남기고 별도 스크립트로 분리하는 편이 낫습니다.</div>
 
@@ -225,8 +225,8 @@ export IMAGE_DIGEST="$(aws ecr describe-images \
 export APP_IMAGE="${ECR_REGISTRY}/${ECR_REPOSITORY}@${IMAGE_DIGEST}"
 
 # 준비가 끝난 development EC2에 SSM으로 배포
-export INSTANCE_ID=i-051f85a1ac4e64a2c
-bash .github/scripts/deploy-ec2.sh</code></pre>
+export DEVELOPMENT_INSTANCE_ID=i-051f85a1ac4e64a2c
+bash .github/scripts/deploy-development.sh</code></pre>
       <div class="notice warn"><strong>수동 실행 전 조건:</strong> Docker 플랫폼이 EC2 CPU와 맞아야 해서 현재 t3 계열용으로 <code>linux/amd64</code>를 명시합니다. ECR tag는 immutable이므로 같은 SHA tag를 다시 덮어쓸 수 없습니다. 로컬 IAM 자격에는 ECR push와 SSM 대상/명령 조회 권한이 필요하고, EC2 instance role에는 ECR pull 권한이 필요합니다. 아직 서버 `.env`와 ECR pull 권한이 준비되지 않아 위 명령을 지금 실행해도 첫 배포가 완료되지는 않습니다.</div>
 
       <h3>파일별 맡은 일</h3>
@@ -235,25 +235,43 @@ bash .github/scripts/deploy-ec2.sh</code></pre>
         <article><h3><code>docker-compose.yml</code> · 로컬 개발 기본값</h3><p>Django 개발 서버와 PostgreSQL을 정의합니다. <code>.:/app</code>은 코드 변경을 컨테이너에서 바로 보는 bind mount입니다. <code>postgres_data</code>는 로컬 DB 데이터가 담기는 이름 있는 Docker volume입니다.</p></article>
         <article><h3><code>docker-compose_prod.yml</code> · 운영 overlay</h3><p>기본 Compose 설정에 운영 이미지를 지정하고 개발 서버 명령·DB 의존성을 제거합니다. <code>db: !reset null</code>로 Postgres 컨테이너를 빼고, <code>volumes: !reset []</code>로 소스 bind mount를 제거합니다. 운영 DB는 RDS, 업로드 파일은 S3에 두므로 EC2의 Compose volume에 영구 업무 데이터를 보관하지 않습니다.</p></article>
         <article><h3><code>.github/workflows/ci.yml</code> · 검사와 갈림길</h3><p>PR에서는 Quality/Test를 실행하고, main PR에서는 운영 이미지의 컨테이너 smoke test도 실행합니다. development push에서 검사 둘이 성공하면 development workflow를 호출하고, main push에서만 production workflow를 호출합니다.</p></article>
-        <article><h3><code>deploy-development.yml</code> · build/push/development 배포</h3><p>GitHub OIDC로 개발 deploy role을 맡습니다. ECR tag 규칙을 확인하고, 같은 SHA 이미지가 이미 있으면 재사용합니다. 없으면 운영 target 이미지를 build/push합니다. 이후 ECR digest와 EC2 ID를 공통 스크립트에 넘깁니다.</p></article>
-        <article><h3><code>deploy-production.yml</code> · digest 승격</h3><p>main의 merge commit에서 development 쪽 부모 SHA를 찾고 해당 커밋의 development 배포가 성공했는지 확인합니다. ECR에서 그 SHA의 digest를 읽고 production EC2로 전달합니다. production에서 이미지를 다시 빌드하거나 ECR push하지 않습니다.</p></article>
+        <article><h3><code>deploy-development.yml</code> · build/push/development 배포</h3><p>GitHub OIDC로 개발 deploy role을 맡습니다. ECR tag 규칙을 확인하고, 같은 SHA 이미지가 이미 있으면 재사용합니다. 없으면 운영 target 이미지를 build/push합니다. 이후 <code>deploy-development.sh</code>에 이미지와 개발 EC2 ID를 넘깁니다.</p></article>
+        <article><h3><code>deploy-production.yml</code> · digest 승격</h3><p>main의 merge commit에서 development 쪽 부모 SHA를 찾고 해당 커밋의 development 배포가 성공했는지 확인합니다. ECR에서 그 SHA의 digest를 읽고 <code>deploy-prod.sh</code>를 통해 production EC2로 전달합니다. production에서 이미지를 다시 빌드하거나 ECR push하지 않습니다.</p></article>
       </div>
       <div class="notice"><strong>파일 이름 컨벤션:</strong> <code>docker-compose.yml</code>은 지금도 사용할 수 있고 이전 Compose 이름과 호환됩니다. Docker 문서에서 기본·권장 이름은 <code>compose.yaml</code>이며, 일반적으로 기본 파일과 환경 overlay를 <code>-f</code> 순서로 합칩니다. 우리 파일명은 기능을 알아보기 쉽고 모든 workflow/EC2 배포 코드에서 일관되게 사용 중입니다. 이름만 바꾸면 배포 스크립트가 이미지에서 꺼내는 경로와 CI·문서 참조도 함께 바꿔야 하므로 지금은 유지합니다. 새 프로젝트를 시작하거나 별도 정리할 때 <code>compose.yaml</code> + <code>compose.production.yaml</code>로 한 번에 바꾸면 됩니다. <a href="https://docs.docker.com/compose/how-tos/multiple-compose-files/merge/">Docker Compose 파일 병합 공식 안내</a></div>
 
-      <h3><code>deploy-ec2.sh</code> 전체 코드와 읽는 법</h3>
-      <p>이 파일은 이미지를 만들거나 ECR에 push하지 않습니다. GitHub workflow 또는 로컬에서 실행되어 <b>SSM 명령을 보내고, EC2의 ECR pull·Compose 실행 결과를 기다리는 배포 조정 스크립트</b>입니다. dev와 prod가 함께 호출하는 현재 원본입니다.</p>
+      <h3><code>deploy-development.sh</code>, <code>deploy-prod.sh</code>와 공통 배포 로직</h3>
+      <p>환경별 진입점은 각자의 인스턴스 ID 변수만 확인해 공통 실행기에 넘깁니다. 두 환경이 같은 순서로 배포되므로 SSM 명령 구현은 <code>deploy-common.sh</code> 한 곳에서 관리합니다. 개발·운영 스크립트를 완전히 복제하면 보안 수정이나 배포 순서 변경을 두 파일에 반복 적용해야 하므로, 일반적인 저장소의 재사용 방식에 맞춰 <b>환경별 이름은 분리하고 중복 로직은 공유</b>합니다.</p>
       <details class="script-source">
-        <summary>deploy-ec2.sh 원문 전체 보기 (67줄)</summary>
+        <summary>환경별 스크립트와 공통 스크립트 원문 보기 (공통 64줄)</summary>
+        <h4><code>deploy-development.sh</code> · 8줄</h4>
         <pre><code>#!/usr/bin/env bash
 set -euo pipefail
 
-# Validate the image and deployment target before making an AWS request.
+: "${DEVELOPMENT_INSTANCE_ID:?DEVELOPMENT_INSTANCE_ID is required}"
+export DEPLOY_INSTANCE_ID="$DEVELOPMENT_INSTANCE_ID"
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &amp;&amp; pwd)"
+exec bash "$script_dir/deploy-common.sh"</code></pre>
+        <h4><code>deploy-prod.sh</code> · 8줄</h4>
+        <pre><code>#!/usr/bin/env bash
+set -euo pipefail
+
+: "${PRODUCTION_INSTANCE_ID:?PRODUCTION_INSTANCE_ID is required}"
+export DEPLOY_INSTANCE_ID="$PRODUCTION_INSTANCE_ID"
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &amp;&amp; pwd)"
+exec bash "$script_dir/deploy-common.sh"</code></pre>
+        <h4><code>deploy-common.sh</code> · 64줄</h4>
+        <pre><code>#!/usr/bin/env bash
+set -euo pipefail
+
 : "${APP_IMAGE:?APP_IMAGE is required}"
-: "${INSTANCE_ID:?INSTANCE_ID is required}"
+: "${DEPLOY_INSTANCE_ID:?DEPLOY_INSTANCE_ID is required}"
 : "${AWS_REGION:?AWS_REGION is required}"
 
-if [[ ! "$INSTANCE_ID" =~ ^i-[0-9a-f]+$ ]]; then
-  echo "INSTANCE_ID must be an EC2 instance ID" &gt;&amp;2
+if [[ ! "$DEPLOY_INSTANCE_ID" =~ ^i-[0-9a-f]+$ ]]; then
+  echo "DEPLOY_INSTANCE_ID must be an EC2 instance ID" &gt;&amp;2
   exit 1
 fi
 
@@ -268,7 +286,6 @@ if [[ ! "$APP_IMAGE" =~ ^[0-9]{12}\.dkr\.ecr\.[a-z0-9-]+\.amazonaws\.com/[A-Za-z
 fi
 
 registry="${APP_IMAGE%%/*}"
-# SSM Run Command accepts one JSON object containing the EC2 shell commands.
 commands=(
   "set -eu"
   "cd /opt/traceback"
@@ -285,21 +302,20 @@ commands=(
 )
 commands_json="$(jq -nc --args '$ARGS.positional | {commands: .}' -- "${commands[@]}")"
 
-# Send the deployment sequence to EC2 through SSM; no SSH session is opened.
 command_id="$(aws ssm send-command \
-  --instance-ids "$INSTANCE_ID" \
+  --instance-ids "$DEPLOY_INSTANCE_ID" \
   --document-name AWS-RunShellScript \
   --parameters "$commands_json" \
   --query 'Command.CommandId' \
   --output text)"
 
-# Poll longer than the default AWS CLI waiter because image pulls and migrations
-# may take more than 100 seconds on a small development instance.
+# The default AWS CLI waiter can stop before a small instance finishes pulling
+# the image and applying migrations. Poll for up to ten minutes instead.
 status=Pending
 for ((attempt = 0; attempt &lt; 120; attempt++)); do
   status="$(aws ssm get-command-invocation \
     --command-id "$command_id" \
-    --instance-id "$INSTANCE_ID" \
+    --instance-id "$DEPLOY_INSTANCE_ID" \
     --query Status --output text 2&gt;/dev/null || true)"
   case "$status" in
     Success|Failed|Cancelled|TimedOut) break ;;
@@ -309,15 +325,46 @@ done
 
 aws ssm get-command-invocation \
   --command-id "$command_id" \
-  --instance-id "$INSTANCE_ID"
+  --instance-id "$DEPLOY_INSTANCE_ID"
 test "$status" = Success</code></pre>
       </details>
       <div class="script-notes">
-        <article><h3>1 · 입력값 검사와 digest 고정 (1–24행)</h3><p><code>set -e</code>는 실패한 명령에서 중단, <code>-u</code>는 미설정 변수를 오류 처리, <code>pipefail</code>은 파이프 중간 실패도 오류로 처리합니다. 필수 환경변수 세 개와 EC2 ID·리전 형식을 검사하고, <code>APP_IMAGE</code>가 특정 계정/리전 ECR의 <code>@sha256:...</code> 형식인지 검증합니다. 태그보다 내용이 고정된 digest를 받습니다.</p></article>
-        <article><h3>2 · EC2 안에서 실행할 명령 목록 구성 (24–40행)</h3><p>이미지 주소에서 ECR registry 주소를 분리합니다. Bash 배열에 EC2 명령을 한 줄씩 적고, <code>jq --args</code>가 배열을 SSM의 <code>{ commands: [...] }</code> JSON으로 바꿉니다. 이 방식은 긴 JSON 문자열 안에서 shell 명령을 조립하던 형태보다 각 원격 명령을 읽기 쉽습니다.</p><ul><li>EC2에서 <code>/opt/traceback</code>으로 이동하고 Compose가 설치됐는지 확인</li><li>EC2 instance role의 임시 자격 증명으로 ECR login 후 정확한 digest를 pull</li><li>pull한 이미지에서 그 커밋의 Compose 파일을 꺼내 임시 파일에 저장한 다음 기존 파일과 교체</li><li>서버 `.env`와 두 Compose 파일을 병합해 설정이 유효한지 확인</li><li>새 앱 이미지로 DB migration을 실행하고, 새 앱을 올린 뒤 healthcheck가 통과할 때까지 기다림</li></ul></article>
-        <article><h3>3 · SSM 명령 전송과 완료 대기 (42–67행)</h3><p><code>aws ssm send-command</code>는 shell 접속을 여는 대신 지정 EC2에 Run Command를 보내고 Command ID를 돌려줍니다. 이후 5초 간격으로 최대 120회(10분) 상태를 확인합니다. 마지막으로 표준 출력/오류를 표시하고 최종 상태가 <code>Success</code>인지 검사합니다.</p></article>
+        <article><h3>1 · 환경별 진입점 (각 8행)</h3><p><code>deploy-development.sh</code>는 <code>DEVELOPMENT_INSTANCE_ID</code>, <code>deploy-prod.sh</code>는 <code>PRODUCTION_INSTANCE_ID</code>만 받습니다. 공통 변수 이름으로 바꿔 <code>deploy-common.sh</code>를 호출하므로 workflow의 변수 이름과 어느 서버에 배포할지가 파일 이름만 봐도 드러납니다.</p></article>
+        <article><h3>2 · 공통 입력 검증과 원격 명령 생성 (1–38행)</h3><p>공통 스크립트는 이미지, 인스턴스 ID, 리전을 검증합니다. Bash 배열의 각 항목을 <code>jq --args</code>로 SSM 명령 JSON에 안전하게 넣습니다. EC2에서 ECR login과 정확한 digest pull, 이미지에 담긴 Compose 파일 설치, 설정 검증, migration, 앱 healthcheck까지 수행합니다.</p></article>
+        <article><h3>3 · SSM 전송과 완료 대기 (40–64행)</h3><p><code>aws ssm send-command</code>로 원격 Run Command를 보내고 Command ID를 받습니다. 5초 간격으로 최대 120회(10분) 상태를 확인한 뒤 결과를 표시하고 최종 상태가 <code>Success</code>인지 검사합니다.</p></article>
         <article><h3>볼륨은 환경마다 다르게 다룹니다</h3><p>로컬에서 <code>docker compose down</code>을 하면 컨테이너는 내려가지만 <code>postgres_data</code>는 남아 다음 실행에도 DB 데이터가 유지됩니다. <code>docker compose down -v</code>는 이 로컬 DB 볼륨까지 삭제하므로 초기화할 때만 사용합니다. 운영 overlay는 소스 bind mount와 Postgres 서비스를 제거하고 명시적 Docker volume도 비웁니다. 운영 데이터는 RDS/S3에 남고 EC2에는 실행 중인 컨테이너와 내려받은 이미지 layer가 저장됩니다. EC2 디스크 정리는 DB 볼륨 삭제와 별개이며, 과거 이미지가 rollback에 필요한지 확인한 뒤 보관/정리 정책을 둡니다. <code>docker system prune --volumes</code>처럼 volume까지 한꺼번에 지우는 명령은 운영 서버에서 피합니다.</p></article>
-        <article><h3>현재 코드에서 남은 운영상 한계</h3><p>이 스크립트는 배포 실패 시 이전 버전으로 자동 rollback하지 않습니다. Compose 파일을 새 버전으로 바꾼 뒤 config, migration 또는 healthcheck에서 실패할 수 있으므로 실제 첫 배포 후에는 이전 digest 재배포 절차와 migration 복구 기준을 별도로 연습해야 합니다. dev/prod 실행 파일을 복제해 나누는 것보다 이 공통 동작을 하나로 두고 환경별 권한·대상·승인만 분리하는 것이 현재 구조에 맞습니다.</p></article>
+        <article><h3>현재 코드에서 남은 운영상 한계</h3><p>이 스크립트는 배포 실패 시 이전 버전으로 자동 rollback하지 않습니다. Compose 파일을 새 버전으로 바꾼 뒤 config, migration 또는 healthcheck에서 실패할 수 있으므로 실제 첫 배포 후에는 이전 digest 재배포 절차와 migration 복구 기준을 별도로 연습해야 합니다. 우리 구조는 dev/prod workflow와 스크립트 진입점을 분리하고, 실제 배포 절차는 공통 코드로 관리합니다.</p></article>
+      </div>
+    </section>
+
+    <section class="section" id="network-audit">
+      <h2>AWS 네트워크와 보안 그룹 실제 점검</h2>
+      <p class="lead">아래는 2026-10-03에 AWS 콘솔에서 읽기 전용으로 확인한 개발 환경입니다. 보안 그룹은 서버의 가상 방화벽이고, 서브넷·라우팅은 서버가 인터넷이나 다른 VPC 리소스에 도달하는 경로를 정합니다.</p>
+      <div class="architecture">
+        <article class="selected">
+          <span class="pattern">현재 개발 경로</span><h3>공개 EC2 · 비공개 RDS</h3>
+          <div class="route-diagram" aria-label="Vercel internet traffic passes through EC2 security group and host Nginx to Django; EC2 reaches private RDS on PostgreSQL port 5432"><span>Vercel / 인터넷</span><b>→ 80·443</b><span>EC2 공개 기본 서브넷<br><code>traceback-development-app</code></span><b>→ 5432<br>EC2 SG만 허용</b><span>RDS<br>인터넷 경로 비활성</span></div>
+          <p><b>VPC:</b> <code>vpc-052ff4cb02c74522e</code>, AWS 기본 VPC. 기본 VPC를 쓴다고 곧바로 취약한 것은 아니지만, 여러 서비스와 계정 사용자가 함께 쓰는 기본 네트워크이므로 나중에 운영 규모가 커지면 전용 VPC 설계를 검토합니다.</p>
+          <p><b>EC2 서브넷:</b> <code>subnet-0ddcdfb74ab0d7121</code>, <code>172.31.32.0/20</code>, 서울 <code>ap-northeast-2c</code>의 기본 서브넷입니다. 콘솔에서 기본 서브넷과 퍼블릭 IPv4 자동 할당 활성 상태를 확인했습니다. 인스턴스에는 EIP <code>3.34.78.140</code>가 연결되어 있습니다. 세부 라우트 테이블/네트워크 ACL 규칙은 이번 화면 확인에서 검증하지 못했으므로 아래 체크리스트에 남깁니다.</p>
+        </article>
+        <article>
+          <span class="pattern">인바운드 · 외부에서 EC2로 들어오는 연결</span><h3>80/443 공개, SSH는 닫힘</h3>
+          <ul><li><b>TCP 443 HTTPS → <code>0.0.0.0/0</code></b>: 인터넷 전체에서 HTTPS 접근 허용. 공개 웹 API를 제공할 때 일반적인 규칙입니다.</li><li><b>TCP 80 HTTP → <code>0.0.0.0/0</code></b>: HTTP→HTTPS 이동 또는 HTTP-01 인증서 발급에 사용합니다. DNS-01 인증만 쓴다면 열지 않아도 됩니다.</li><li><b>TCP 22 SSH 규칙 없음</b>: 관리 접속은 SSM 경로를 사용합니다. SSH 접속을 위해 22번을 열 필요가 없습니다.</li><li><b>주의:</b> API 앱과 Nginx를 올리기 전부터 포트는 인터넷에 열려 있습니다. 실제 EC2 OS 방화벽과 Nginx 기본 응답도 배포 후 확인합니다.</li></ul>
+        </article>
+        <article>
+          <span class="pattern">아웃바운드 · EC2에서 밖으로 나가는 연결</span><h3>전체 IPv4 트래픽 허용</h3>
+          <p>현재 EC2 보안 그룹에는 모든 프로토콜·포트에서 <code>0.0.0.0/0</code>으로 나가는 규칙 한 개가 있습니다. ECR 이미지 다운로드, SSM, 패키지 업데이트, HTTPS 외부 호출 등은 가능하지만 목적지와 포트를 제한하지 않은 넓은 규칙입니다. 보안 그룹은 상태 저장 방식이라 허용된 요청에 대한 응답 트래픽은 별도 인바운드 규칙이 필요하지 않습니다.</p>
+          <p><b>첫 개발 배포:</b> 이 설정은 AWS 생성 시 자주 보이는 기본 outbound 정책입니다. 기능상 바로 막히는 항목은 아니지만 최소 권한 정책은 아닙니다. egress를 제한하려면 SSM, ECR API/registry, ECR layer용 S3, 운영체제 업데이트, SES SMTP(사용 시) 목적지를 고려해 테스트하며 좁혀야 합니다. 아직 VPC endpoint/NAT 구성을 추가할 필요는 확인되지 않았습니다.</p>
+        </article>
+        <article class="selected">
+          <span class="pattern">RDS 보안 그룹</span><h3>5432는 개발 EC2 보안 그룹만 허용</h3>
+          <p>RDS의 <code>rds-ec2-1</code> 인바운드 규칙은 PostgreSQL TCP 5432이고, source는 CIDR 전체가 아니라 EC2용 <code>ec2-rds-1</code> 보안 그룹 ID입니다. RDS 콘솔에서 인터넷 액세스 게이트웨이가 비활성이라고 확인했습니다. RDS 자체 아웃바운드 규칙은 없습니다. 이 구조는 개발 DB에 인터넷에서 직접 연결하지 않도록 하는 좋은 경계입니다.</p>
+          <p>EC2→RDS 연결을 실제 확인하려면 Compose `.env`에 RDS endpoint와 앱 전용 DB 계정을 지정한 뒤 Django migration/health check까지 통과해야 합니다. 현재 앱 DB 계정과 EC2 `.env`는 아직 미설정입니다.</p>
+        </article>
+      </div>
+      <div class="grid two" style="margin-top:14px">
+        <article class="panel"><h3>배포 전에 확인할 네트워크 항목</h3><ul><li>EC2 서브넷에 인터넷 게이트웨이 기본 경로(<code>0.0.0.0/0</code>)가 있는지 확인. SSM/ECR 외부 연결이 이를 필요로 함.</li><li>서브넷 연결 네트워크 ACL이 응답용 임시 포트를 차단하지 않는지 확인.</li><li>RDS의 Publicly accessible이 꺼져 있고, DB subnet group의 서브넷이 모두 같은 VPC인지 확인.</li><li>RDS inbound 5432가 EC2 전용 SG만 source로 쓰는지 유지. 현재 콘솔에서 확인됨.</li><li>첫 배포 후 외부에서 80/443만 접근되고 앱 8000은 공개되지 않는지 확인. SSH 22는 열지 않음.</li></ul></article>
+        <article class="panel"><h3>일반적인 1대 개발 서버와 현재 설정 비교</h3><ul><li><b>단순하고 저렴한 시작:</b> 공개 서브넷에 EC2+Nginx, 보안 그룹 80/443, SSM 관리, 같은 VPC의 private RDS. 현재 TRACEBACK의 의도입니다.</li><li><b>현재 콘솔:</b> 기본 VPC·기본 public subnet을 사용하고, DB는 인터넷 경로를 비활성화했으며 EC2 SG source만 허용합니다.</li><li><b>추가로 필요한 앱 구성:</b> Nginx와 TLS, Docker/Compose/AWS CLI, EC2 ECR pull IAM 정책, `/opt/traceback/.env`, Django 앱 DB 계정.</li><li><b>향후 강화:</b> dedicated VPC에서 public proxy/app과 private DB subnet 분리, 목적지별 egress, VPC flow logs/CloudTrail 비용 검토. 초기 실사용 검증에 필수인 별도 VPC endpoint/ALB는 아닙니다.</li></ul></article>
       </div>
     </section>
 
@@ -386,8 +433,8 @@ test "$status" = Success</code></pre>
         <article class="step"><h3>API 도메인과 reverse proxy 연결</h3><p>이미 준비한 <code>api.dev-traceback.com</code>의 요청을 EC2 안의 Django 앱까지 전달해야 합니다. 현재 선택은 호스트 Nginx가 TLS/HTTPS를 처리하고 같은 EC2의 Docker 앱으로 proxy하는 방식입니다.</p><ul><li>Compose 기본 파일의 localhost publish와 운영 오버레이를 함께 배포합니다. 병합된 포트는 <code>127.0.0.1:8000</code>이라 Nginx는 연결할 수 있고 외부 사용자는 직접 접근하지 못합니다.</li><li>Nginx가 <code>/_allauth</code>, <code>/accounts</code>, <code>/api</code> 요청의 경로를 보존해 upstream으로 전달</li><li><code>X-Forwarded-Proto: https</code>와 원래 Host를 Django에 전달해 HTTPS cookie/CSRF 동작을 검증</li><li>대안은 Nginx 컨테이너 또는 ALB입니다. 같은 EC2의 Nginx 컨테이너는 배포 방식이 달라지고, ALB는 별도 AWS 서비스와 비용이 추가됩니다.</li></ul></article>
         <article class="step"><h3>앱용 DB 사용자와 EC2 비밀값 준비</h3><p>RDS master password를 앱 런타임에 재사용하지 말고, Django용 DB 사용자·DB를 분리합니다. 비밀값은 로컬 Git 파일이나 Vercel frontend에 두지 않습니다.</p><ul><li>각 EC2의 미추적 파일: <code>/opt/traceback/.env</code>, 권한 600</li><li>dev 설정은 <code>DJANGO_SETTINGS_MODULE=config.settings.development</code>; 현재 코드에서 <code>DEBUG=False</code></li><li><code>TRACEBACK_DATABASE_URL</code>은 private RDS endpoint와 앱 DB 계정 사용</li><li><code>FRONTEND_BASE_URL</code>은 Vercel 개발 origin; Django secret, SES, Kakao 값은 환경별 별도 보관</li><li>환경변수 이름과 목적은 이 문서의 환경변수 절에서 확인</li></ul></article>
         <article class="step"><h3>GitHub Environment와 첫 배포 설정</h3><p><code>development</code> Environment와 보호된 <code>development</code> 브랜치는 설정 완료. GitHub가 이 저장소의 OIDC token으로 deploy role을 맡고, SHA-tag 이미지를 ECR에 push한 뒤 <code>DEVELOPMENT_INSTANCE_ID</code>로 지정한 EC2에 SSM 명령을 보냅니다.</p><ul><li><code>AWS_REGION=ap-northeast-2</code> · 리전</li><li><code>ECR_REPOSITORY=traceback</code> · private image repository</li><li><code>AWS_DEPLOY_ROLE_ARN=arn:aws:iam::968579693658:role/traceback-development-deploy</code> · OIDC로 맡는 IAM role 주소</li><li><code>DEVELOPMENT_INSTANCE_ID=i-051f85a1ac4e64a2c</code> · 배포 명령 대상 EC2</li></ul><p><code>.env.dev.git</code>은 기록용입니다. GitHub가 자동으로 읽지 않으므로 저장소 Settings → Environments → development에 별도로 입력합니다. 정적 Access Key는 등록하지 않았습니다.</p></article>
-        <article class="step"><h3>서버 배포 뒤 Vercel 경로 연결</h3><p>client repo의 <code>vercel.ts</code>는 <code>DJANGO_ORIGIN</code>이 설정되면 필요한 외부 rewrite를 구성합니다. 현재 Vercel 값은 비어 있어 rewrite 목록이 비어 있고, <code>.env.dev</code> 파일도 Vercel에 자동 업로드되지 않습니다.</p><ul><li><code>FRONTEND_ORIGIN</code>: Django가 redirect/CSRF 검증에 사용하는 공개 프런트 origin</li><li><code>DJANGO_ORIGIN=https://api.dev-traceback.com</code>: HTTPS API가 준비된 뒤 dev 전용 Vercel 프로젝트의 <b>Production Environment</b>에 등록합니다. 이 프로젝트는 GitHub의 <code>development</code> 브랜치를 Vercel의 Production 배포로 연결했습니다.</li><li>환경변수 변경 후 새 배포를 만들어 적용</li><li><code>/_allauth</code>, <code>/accounts</code>, <code>/api</code> rewrite와 cookie/CSRF/Kakao callback을 브라우저에서 검증</li></ul></article>
-        <article class="step"><h3>외부에서 인증·DB·메일을 검증하고 끄기</h3><p>개발용 Vercel 주소에서 설정 endpoint, 이메일 가입/인증, 로그인/로그아웃, CSRF 변경 요청, Kakao callback과 계정 연결 해제를 확인합니다.</p><ul><li>Vercel에서 <code>/_allauth/browser/v1/config</code>가 200으로 오고 Django에서 DB 응답</li><li>HTTPS cookie, proxy host/protocol, Django allowed hosts와 CSRF 동작 확인</li><li>외부 HTTP/HTTPS에서 앱만 노출되는지 확인; RDS는 계속 private</li><li>RDS는 테스트 종료 후 중지. S3 업로드 IAM은 기능이 생길 때만 최소 prefix 권한으로 추가</li></ul></article>
+        <article class="step"><h3>서버 배포 뒤 Vercel 경로 연결</h3><p>client repo의 <code>vercel.ts</code>는 <code>DJANGO_ORIGIN</code>이 설정되면 필요한 외부 rewrite를 구성합니다. 2026-10-03 콘솔 기준 Vercel 프로젝트 환경변수는 <b>0개</b>입니다. 개발 API origin이 준비되지 않아 지금 비어 있는 상태가 맞지만, 연결을 위해 값 등록을 빼먹은 것은 사실입니다.</p><ul><li><code>FRONTEND_ORIGIN</code>: Django가 redirect/CSRF 검증에 사용하는 공개 프런트 origin. 이 값은 Vercel 설정값이 아니라 EC2 Django `.env`의 <code>FRONTEND_BASE_URL</code>에 해당합니다.</li><li><code>DJANGO_ORIGIN=https://api.dev-traceback.com</code>: Nginx HTTPS가 실제로 응답한 뒤 dev 전용 Vercel 프로젝트의 <b>Production Environment</b>에 등록합니다. 현재 프로젝트의 Production Branch는 <code>development</code>입니다.</li><li>등록 뒤 새 Vercel 배포를 생성해 설정을 적용</li><li><code>/_allauth</code>, <code>/accounts</code>, <code>/api</code> rewrite와 cookie/CSRF/Kakao callback을 브라우저에서 검증</li></ul></article>
+        <article class="step"><h3>외부에서 인증·DB·메일을 검증하고 끄기</h3><p>개발용 Vercel 주소에서 설정 endpoint, 이메일 가입/인증, 로그인/로그아웃, CSRF 변경 요청, Kakao callback과 계정 연결 해제를 확인합니다.</p><ul><li>Vercel에서 <code>/_allauth/browser/v1/config</code>가 200으로 오고 Django에서 DB 응답</li><li>HTTPS cookie, proxy host/protocol, Django allowed hosts와 CSRF 동작 확인</li><li>외부 HTTP/HTTPS에서 앱만 노출되는지 확인; RDS는 계속 private</li><li>메일 발송을 실사용 테스트할 계획이면 SES production access와 verified sender/domain도 확인</li><li>RDS는 테스트 종료 후 중지. S3 업로드 IAM은 기능이 생길 때만 최소 prefix 권한으로 추가</li></ul></article>
       </div>
     </section>
 
@@ -417,19 +464,19 @@ test "$status" = Success</code></pre>
       <h2>비용과 안전 기준</h2>
       <div class="grid two">
         <article class="panel"><h3>초기 고정비 줄이기</h3><ul><li>당장은 EC2 1대, Single-AZ RDS, NAT Gateway 없음, ALB 없음</li><li>RDS는 개발/테스트 때 켜고 끝난 뒤 중지. 중지 중에도 storage/backup 요금이 남음</li><li>EC2 stop은 시간 비용을 줄일 수 있지만 public IPv4가 바뀔 수 있어 DNS와 TLS origin에 영향</li><li>현재 문서의 RDS 생성 추정 USD 20.87/월은 RDS instance + 20 GiB storage만이며 나머지 요금은 별도</li><li>ECR repository 자체는 월 정액이 아니고 이미지 저장량·인터넷 전송에 따라 과금; 빈 repo에는 저장 이미지 비용 없음</li><li>AWS credit은 bill cap이 아님. 실제 Billing과 Budget alert를 확인</li></ul></article>
-        <article class="panel"><h3>인터넷에 내보내기 전에</h3><ul><li>Django <code>DEBUG=False</code>; secret/key는 EC2 파일에만 보관</li><li>RDS public access 비활성, 5432 source는 개발 EC2 security group만 허용</li><li>EC2 inbound는 HTTPS 443 및 필요한 인증서 발급용 HTTP 80만; SSH 22는 열지 않음</li><li>Vercel→API TLS와 OAuth callback이 검증되기 전 로그인 기능이 준비됐다고 간주하지 않음</li><li>DB migration 전에 RDS backup/restore 지점 확인</li></ul></article>
+        <article class="panel"><h3>인터넷에 내보내기 전에</h3><ul><li>Django <code>DEBUG=False</code>; secret/key는 EC2 파일에만 보관</li><li>RDS internet access 비활성, 5432 source는 개발 EC2 security group만 허용 — 현재 설정 확인됨</li><li>EC2 inbound 80/443은 전 세계에서 접근 가능하고 22는 닫힘 — 현재 설정 확인됨</li><li>EC2 outbound는 전체 IPv4 허용 — 동작은 하지만 최소 권한은 아님; 사용처 검증 뒤 제한 여부 결정</li><li>기본 VPC의 route table과 network ACL 규칙을 추가 확인</li><li>Vercel `DJANGO_ORIGIN` 미등록; HTTPS endpoint가 준비된 뒤 Production Environment에 등록</li><li>Nginx/TLS, EC2 ECR pull IAM 권한, 런타임 `.env`, 앱 전용 RDS 사용자 준비</li><li>DB migration 전에 RDS backup/restore 지점 확인</li></ul></article>
       </div>
     </section>
   </main>
   <footer class="foot wrap">
     <strong>근거 문서</strong>
     <ul>
-      <li>Backend: <code>docs/system.md</code>, <code>docs/deployment.md</code>, <code>docs/todo.md</code>, <code>config/server.env.example</code>, <code>config/settings/development.py</code>, <code>.github/scripts/deploy-ec2.sh</code>, `docker-compose_prod.yml`, `.github/workflows/ci.yml`, `.github/workflows/deploy-development.yml`, `.github/workflows/deploy-production.yml`</li>
+      <li>Backend: <code>docs/system.md</code>, <code>docs/deployment.md</code>, <code>docs/todo.md</code>, <code>config/server.env.example</code>, <code>config/settings/development.py</code>, <code>.github/scripts/deploy-development.sh</code>, <code>.github/scripts/deploy-prod.sh</code>, <code>.github/scripts/deploy-common.sh</code>, `docker-compose_prod.yml`, `.github/workflows/ci.yml`, `.github/workflows/deploy-development.yml`, `.github/workflows/deploy-production.yml`</li>
       <li>Client: <code>../traceback-client/docs/vercel-deployment.md</code>, <code>docs/infrastructure-decision.md</code>, <code>.env.example</code>, <code>vite.config.ts</code>, `.env.dev` (값은 문서에 복사하지 않음)</li>
       <li>AWS/Docker: <a href="https://aws.amazon.com/ecr/pricing/">Amazon ECR 가격</a> · <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc.html">IAM OIDC identity provider</a> · <a href="https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services">GitHub Actions OIDC for AWS</a> · <a href="https://docs.docker.com/compose/how-tos/multiple-compose-files/merge/">Docker Compose 파일 병합</a></li>
       <li><a href="https://vercel.com/docs/routing/rewrites">Vercel external rewrites 공식 문서</a> · <a href="https://vercel.com/docs/environment-variables/managing-environment-variables">Vercel environment variables 공식 문서</a> · <a href="https://vercel.com/docs/frameworks/frontend/react-router">Vercel React Router 공식 문서</a></li>
     </ul>
-    <p>더 공부하기: <a href="dns-resolution-map.html">DNS가 이름을 찾는 과정</a> · <a href="development-ip-domain-guide.html">우리 개발 서버의 도메인과 IP</a> · <a href="aws-ssm-ssh-learning-guide.html">SSH와 SSM 접속 구조</a></p>
+    <p>더 공부하기: <a href="4-dns-resolution-map.html">DNS가 이름을 찾는 과정</a> · <a href="3-development-ip-domain-guide.html">우리 개발 서버의 도메인과 IP</a> · <a href="1-aws-ssm-ssh-learning-guide.html">SSH와 SSM 접속 구조</a></p>
     <p>문서 상태: API HTTPS와 Nginx 연결은 아직 적용 전입니다. 추천 ①은 현재 `docs/system.md`와 workflow에 기록된 환경 분리를 유지합니다.</p>
     <p>참고: <a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html">AWS Application Load Balancer 개요</a> · <a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-listeners.html">ALB Listener와 HTTPS 처리</a> · <a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-target-groups.html">Target group과 health check</a> · <a href="https://nginx.org/en/docs/http/ngx_http_proxy_module.html">Nginx reverse proxy</a></p>
   </footer>

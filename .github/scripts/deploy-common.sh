@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Validate the image and deployment target before making an AWS request.
 : "${APP_IMAGE:?APP_IMAGE is required}"
-: "${INSTANCE_ID:?INSTANCE_ID is required}"
+: "${DEPLOY_INSTANCE_ID:?DEPLOY_INSTANCE_ID is required}"
 : "${AWS_REGION:?AWS_REGION is required}"
 
-if [[ ! "$INSTANCE_ID" =~ ^i-[0-9a-f]+$ ]]; then
-  echo "INSTANCE_ID must be an EC2 instance ID" >&2
+if [[ ! "$DEPLOY_INSTANCE_ID" =~ ^i-[0-9a-f]+$ ]]; then
+  echo "DEPLOY_INSTANCE_ID must be an EC2 instance ID" >&2
   exit 1
 fi
 
@@ -22,7 +21,6 @@ if [[ ! "$APP_IMAGE" =~ ^[0-9]{12}\.dkr\.ecr\.[a-z0-9-]+\.amazonaws\.com/[A-Za-z
 fi
 
 registry="${APP_IMAGE%%/*}"
-# SSM Run Command accepts one JSON object containing the EC2 shell commands.
 commands=(
   "set -eu"
   "cd /opt/traceback"
@@ -39,21 +37,20 @@ commands=(
 )
 commands_json="$(jq -nc --args '$ARGS.positional | {commands: .}' -- "${commands[@]}")"
 
-# Send the deployment sequence to EC2 through SSM; no SSH session is opened.
 command_id="$(aws ssm send-command \
-  --instance-ids "$INSTANCE_ID" \
+  --instance-ids "$DEPLOY_INSTANCE_ID" \
   --document-name AWS-RunShellScript \
   --parameters "$commands_json" \
   --query 'Command.CommandId' \
   --output text)"
 
-# Poll longer than the default AWS CLI waiter because image pulls and migrations
-# may take more than 100 seconds on a small development instance.
+# The default AWS CLI waiter can stop before a small instance finishes pulling
+# the image and applying migrations. Poll for up to ten minutes instead.
 status=Pending
 for ((attempt = 0; attempt < 120; attempt++)); do
   status="$(aws ssm get-command-invocation \
     --command-id "$command_id" \
-    --instance-id "$INSTANCE_ID" \
+    --instance-id "$DEPLOY_INSTANCE_ID" \
     --query Status --output text 2>/dev/null || true)"
   case "$status" in
     Success|Failed|Cancelled|TimedOut) break ;;
@@ -63,5 +60,5 @@ done
 
 aws ssm get-command-invocation \
   --command-id "$command_id" \
-  --instance-id "$INSTANCE_ID"
+  --instance-id "$DEPLOY_INSTANCE_ID"
 test "$status" = Success
