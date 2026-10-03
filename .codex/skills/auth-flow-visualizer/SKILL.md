@@ -11,7 +11,11 @@ future domains without reducing the explanation to a table or a prose-only page.
 
 ## Workflow
 
-- Create or update a self-contained HTML artifact in a durable task-owned location.
+- Create or update self-contained HTML artifacts under `docs/artifact/` in the repository.
+  Use a descriptive filename such as `auth-flow.html` or `aws-ssm-access-guide.html`.
+  Do not place generated artifacts inside `.codex/skills/`; that directory contains
+  reusable skill instructions and resources. If an artifact is added or moved, update
+  the relevant checkpoint or documentation links so readers can find it.
 - Treat it as a small documentation site: keep a shared shell, domain navigation,
   overview, and one visual section per documented subsystem. Preserve existing
   sections when adding a new domain.

@@ -6,11 +6,15 @@
 
 ## Phase 0 배포 준비
 
-1. [ ] **Vercel 프런트 배포 설정** — development 프로젝트 연결, SSR 배포 및 기본 도메인
-   확인은 완료했다(`traceback-client`, development branch, Hobby). AWS development
-   서버 배포 후 `.env.dev`의 `DJANGO_ORIGIN`을 채우고 `/_allauth`·`/accounts`·API 요청을
-   dev EC2로 전달한다. same-origin session/CSRF, email, Kakao callback까지 검증한다.
-   Production은 별도 Vercel project와 환경변수로 나중에 구성한다.
+1. [ ] **Vercel 환경별 backend 연결** — development 프로젝트 `traceback-client`의
+   SSR 배포와 기본 URL은 확인했다. 현재 이 프로젝트의 Production Branch는
+   `development`이며 Vercel 환경변수는 아직 0개다. HTTPS API가 준비되면
+   `DJANGO_ORIGIN=https://api.dev-traceback.com`을 이 프로젝트의 Production scope에
+   등록하고 재배포한다. Preview scope는 PR 미리보기에서 dev API를 쓸지 정한 뒤 설정한다.
+   Development scope는 `vercel dev`를 사용할 때만 등록하고, 일반 로컬 Vite 실행은
+   client의 로컬 proxy 설정을 사용한다. `.env.dev` 파일은 Vercel에 자동 업로드되지 않는다.
+   배포 후 `/_allauth`·`/accounts`·API, same-origin session/CSRF, email, Kakao callback을
+   검증한다. Production은 별도 Vercel project와 production API origin으로 나중에 구성한다.
 2. [ ] **공통 AWS 설계·요금 확인** — 계정의 PAID plan과 남은 USD 100 credit을
    확인했다. credit은 지출 한도가 아니다. RDS를 켜 두면 트래픽이 없어도 현재
    콘솔 추정 USD 20.87/월(instance + 20 GiB storage)이 발생한다. EC2와 합산한

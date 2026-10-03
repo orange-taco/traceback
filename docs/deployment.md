@@ -138,6 +138,17 @@ CSRF, email, and Kakao.
 The `.env.dev` frontend origin is recorded locally in the client repository;
 `.env.prod` remains unset.
 
+Vercel has separate Development, Preview, and Production variable scopes. In
+this development-only project, the Production scope applies to deployments from
+the `development` production branch. Add `DJANGO_ORIGIN=https://api.dev-traceback.com`
+there only after the API answers over HTTPS, then redeploy. The Preview scope is
+for other branches and pull request previews; leave it unset until preview URLs
+are included in Django's allowed-host, CSRF, and OAuth callback policy. The
+Development scope is used with `vercel dev`/Vercel CLI environment pulling; the
+ordinary local Vite proxy is configured separately. A local `.env.dev` file is
+not uploaded to Vercel. The current frontend `vercel.ts` consumes only
+`DJANGO_ORIGIN`; do not put Django, database, SES, or Kakao secrets in Vercel.
+
 ## Current delivery contract
 
 1. `development` push runs `quality` and `test` in `ci.yml`. Both must pass before the called development workflow builds a production-target image, tags it with the development commit SHA, pushes it to ECR, and deploys its **digest** through SSM.
