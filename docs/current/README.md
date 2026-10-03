@@ -9,7 +9,7 @@
 
 ## Validation / Next action
 
-- 다섯 HTML artifact의 링크·PDF 버튼·인라인 JS 구문과 시각화 스킬 검증 통과. PR #12의 새 CI 결과는 push 후 확인한다. `Deploy development`는 pull request 이벤트에서 조건상 skip된다.
+- 다섯 HTML artifact의 링크·PDF 버튼·인라인 JS 구문과 시각화 스킬 검증 통과. PR #12의 CI Test·Quality 통과. `Deploy development`는 pull request 이벤트에서 조건상 skip된다.
 - PR #12의 새 checks/review 상태를 확인한 뒤 `development`에 병합한다. 실제 AWS 배포는 아직 미검증이며, 선행 설정은 [2번 첫 배포 가이드](../artifact/2-dev-server-first-deployment.html)에 있다.
 
 ## Maintenance
