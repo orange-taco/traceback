@@ -86,7 +86,21 @@ reader needs the companion explanation or code; do not make readers guess which
 document owns a topic.
 
 - Start each topic with a visual path that shows what talks to what and why.
-  Explain general networking or AWS terms before showing TRACEBACK-specific IDs.
+  The first visual must teach the document's general mechanism, not serve as a
+  TRACEBACK status report. Explain general networking or AWS terms before showing
+  TRACEBACK-specific IDs. Show project values and readiness in a separate,
+  explicitly labeled application of that mechanism.
+- Give the visual a short plain-language explanation, then put longer reasoning,
+  exceptions, and code in accessible expand/collapse sections. Ensure closed
+  details are included when printing to PDF. Put the detail beside the step it
+  explains instead of collecting all explanation at the end.
+- Anticipate a beginner's next question at each conceptual jump (for example,
+  how a service connects, which identity authorizes it, and why a port is or is
+  not needed). Answer it next to the relevant diagram in plain language.
+- In a setup recipe, label shared prerequisites and standard commands separately
+  from one project's provider, profile, resource IDs, or convenience shortcuts.
+  Never imply a project-specific alias is a built-in cloud command or a required
+  industry-wide step.
 - Show setup dependencies in the order a first-time deployer must complete them.
   Place the status of each TRACEBACK step on that flow, including the first
   missing step that blocks a live request. Explain DNS, inbound routing, TLS

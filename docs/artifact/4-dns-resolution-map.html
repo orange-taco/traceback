@@ -7,6 +7,9 @@
   <title>4. DNS와 도메인 운영 이해하기</title>
   <link rel="icon" href="data:,">
   <style>
+    details.learning { margin:16px 0; padding:14px 17px; border:1px solid #cbd5e1; border-radius:12px; background:#fff; }
+    details.learning summary { cursor:pointer; font-weight:800; }
+    details.learning p { margin:10px 0 0; }
     :root {
       color-scheme: light;
       --paper: #f5f8fa; --surface: #fff; --ink: #172936; --muted: #526675;
@@ -487,6 +490,7 @@
         </div>
       </section>
 
+      <details class="learning"><summary>DNS가 웹페이지를 대신 가져오는 건가요?</summary><p>아닙니다. DNS는 이름에 대한 주소 정보 등을 답합니다. 브라우저는 받은 IP를 사용해 웹 서버에 별도 연결을 만들고 HTTPS 요청을 보냅니다. DNS 조회 성공과 사이트 응답 성공은 서로 다른 검사입니다. <a href="3-development-ip-domain-guide.html#principle">이름 조회와 웹 연결을 나란히 보기</a></p></details>
       <section aria-labelledby="q2-title">
         <div class="question-head"><span class="qnum">질문 02</span><h2 id="q2-title">IP를 매번 처음부터 찾을까요?</h2><p>이미 받은 답을 잠시 보관하는 곳이 있습니다.</p></div>
         <div class="concept-box">
@@ -502,6 +506,7 @@
         </div>
       </section>
 
+      <details class="learning"><summary>TTL을 300초로 두면 모든 사람이 정확히 5분 뒤 새 IP를 보나요?</summary><p>아닙니다. TTL은 DNS 답을 캐시에 보관할 수 있는 시간입니다. 각 Resolver가 이전 답을 받은 시점이 다르고, 브라우저·OS의 캐시나 기존 연결도 영향을 줄 수 있습니다. 레코드를 바꾼 뒤에는 여러 Resolver의 응답과 실제 HTTPS 연결을 각각 확인합니다.</p></details>
       <section aria-labelledby="q3-title">
         <div class="question-head"><span class="qnum">질문 03</span><h2 id="q3-title">캐시에 없으면 무엇을 물어볼까요?</h2></div>
         <div class="two-learning">

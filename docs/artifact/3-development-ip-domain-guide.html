@@ -15,6 +15,9 @@
   </style>
   <style>
     .config-source { margin:14px 0 0; padding:14px; background:#102a43; color:#edf6fb; border-radius:8px; overflow:auto; font: .78rem/1.55 ui-monospace,SFMono-Regular,Menlo,monospace; }
+    details.learning { margin-top:14px; padding:13px 16px; border:1px solid var(--line); background:#fff; }
+    details.learning summary { cursor:pointer; color:var(--ink); font-weight:800; }
+    details.learning p { margin-top:9px; }
     .steps { grid-template-columns:repeat(2,minmax(0,1fr)); }
     .readiness { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-top:13px; }
     .readiness article { min-width:0; padding:12px; border:1px solid var(--line); background:#fff; }
@@ -62,13 +65,28 @@
   </script>
 <main>
   <header class="header">
-    <div class="intro"><div class="eyebrow">TRACEBACK · DEVELOPMENT INFRA</div><h1>개발 서버 주소,<br>지금 무엇을 설정했나</h1><p>도메인, DNS, 고정 IP가 어떤 관계인지와 현재 AWS에서 끝낸 설정을 실제 값으로 따라가 봅니다.</p></div>
+    <div class="intro"><div class="eyebrow">TRACEBACK · DEVELOPMENT INFRA</div><h1>서버의 이름과 주소는<br>어떻게 연결될까?</h1><p>먼저 도메인·DNS·IP의 일반 경로를 보고, 이어서 TRACEBACK에서 고정 IP와 Route 53을 어떻게 사용했는지 대입합니다.</p></div>
     <div class="stamp">AWS 콘솔 확인 기준<br><strong>2026년 10월 3일 · 서울 리전</strong></div>
   </header>
-  <nav aria-label="문서 목차"><a href="#now">현재 구성</a><a href="#terms">IP·도메인·DNS</a><a href="#choice">유동 IP와 EIP</a><a href="#setup">AWS 설정 순서</a><a href="#why">서버 도메인의 이유</a><a href="#env">환경변수 원리</a><a href="#deploy-flow">설정이 쓰이는 흐름</a></nav>
+  <nav aria-label="문서 목차"><a href="#principle">주소 찾기의 원리</a><a href="#now">TRACEBACK 적용</a><a href="#terms">IP·도메인·DNS</a><a href="#choice">유동 IP와 EIP</a><a href="#setup">AWS 설정 순서</a><a href="#why">서버 도메인의 이유</a><a href="#env">환경변수 원리</a><a href="#deploy-flow">설정이 쓰이는 흐름</a></nav>
+
+  <section class="section" id="principle">
+    <div class="sect-head"><h2>일반 원리: 이름을 찾고, 서버에 연결한다</h2><p>제품명과 실제 IP를 빼고 먼저 읽는 지도</p></div>
+    <div class="canvas">
+      <div class="flow" role="img" aria-label="브라우저가 도메인 이름을 DNS에 물어 IP를 받은 뒤 서버의 HTTPS 진입점에 연결하고 앱의 응답을 받습니다">
+        <div class="node"><span class="tag">사용자</span><strong>브라우저</strong><small>도메인 이름 입력</small></div><div class="arrow" aria-hidden="true">→</div>
+        <div class="node dns"><span class="tag">주소 조회</span><strong>DNS</strong><small>이름에 대응하는 IP 응답</small></div><div class="arrow" aria-hidden="true">→</div>
+        <div class="node ip"><span class="tag">목적지</span><strong>공인 IP</strong><small>서버 또는 앞단의 네트워크 주소</small></div><div class="arrow" aria-hidden="true">→</div>
+        <div class="node server"><span class="tag">웹 서비스</span><strong>HTTPS → 앱</strong><small>인증서 확인 후 요청 처리</small></div>
+      </div>
+      <div class="route"><b>두 개의 다른 동작</b><span>DNS는 주소를 알려준다</span><span>→</span><span>브라우저는 그 주소에 별도 HTTPS 연결을 연다</span></div>
+      <details class="learning"><summary>DNS가 IP를 알려주면 웹사이트도 바로 열리나요?</summary><p>DNS는 목적지 정보만 반환합니다. 이후 공인 IP로 도달하는 네트워크 경로, 443 인바운드 규칙, TLS 인증서와 HTTPS 서버, 앱이 각각 준비돼야 합니다. TRACEBACK의 현재 상태는 바로 아래에서 단계별로 표시합니다.</p></details>
+      <details class="learning"><summary>서버의 IP가 바뀌면 무엇을 수정해야 하나요?</summary><p>도메인의 A 레코드가 예전 IP를 가리키면 새 IP로 바꿔야 합니다. TTL 동안 오래된 답이 캐시에 남을 수 있습니다. 고정 공인 IP를 쓰면 서버 재시작 때문에 A 레코드를 자주 바꿀 필요가 줄어듭니다. 주소가 바뀌어도 HTTPS 인증서는 IP가 아닌 도메인 이름을 대상으로 검증하는 것이 일반적입니다.</p></details>
+    </div>
+  </section>
 
   <section class="section" id="now">
-    <div class="sect-head"><h2>현재 연결된 주소</h2><p>초록은 AWS에서 설정 완료, 점선은 아직 연결되지 않은 단계입니다.</p></div>
+    <div class="sect-head"><h2>TRACEBACK에 대입한 현재 주소</h2><p>초록은 AWS에서 설정 완료, 점선은 아직 연결되지 않은 단계입니다.</p></div>
     <div class="canvas">
       <div class="flow" role="img" aria-label="Vercel 프론트엔드에서 API 도메인으로 요청하고 Route 53 DNS가 EIP를 찾아 개발 EC2로 연결합니다. Nginx, 앱, RDS 연결은 아직 남았습니다.">
         <div class="node"><span class="tag">FRONTEND · 완료</span><strong>Vercel 프론트</strong><small>traceback-client-nine.vercel.app</small></div><div class="arrow" aria-hidden="true">→</div>
@@ -107,6 +125,7 @@ const configuredOrigin = process.env.DJANGO_ORIGIN?.trim();</code></pre>
       <article class="concept"><h3><span>EIP</span><span class="status done"><i></i>AWS 고정 공인 IP</span></h3><p>Elastic IP는 AWS 계정에 할당해 두는 공인 IPv4 주소입니다. 이번에는 개발 EC2에 연결했으므로 EC2를 중지했다 켜도 같은 IP를 유지합니다.</p><div class="mini-flow"><span>AWS의 내 주소</span><b>→</b><span class="mono">3.34.78.140</span><b>→</b><span>개발 EC2</span></div></article>
     </div>
     <div class="callout"><strong>도메인 등록과 DNS 관리:</strong> 등록은 도메인 이름을 일정 기간 사용할 권리를 확보하는 일이고, DNS 관리는 그 이름이 어느 IP나 서비스로 연결되는지 정하는 일입니다. 이번에는 Route 53에서 도메인을 등록했고, Route 53 hosted zone에 DNS 레코드도 만들었습니다.</div>
+    <details class="learning"><summary>도메인을 산 회사와 DNS를 관리하는 회사가 같아야 하나요?</summary><p>같을 필요는 없습니다. 등록업체는 이름의 사용 권리를 관리하고, 권한 DNS 제공업체는 레코드의 답을 관리합니다. 등록업체에 어느 네임서버를 사용할지 지정해 둘을 연결합니다. TRACEBACK은 등록과 DNS 관리를 모두 Route 53에서 하므로 운영 화면이 한곳에 있습니다. <a href="4-dns-resolution-map.html">등록·네임서버·조회 전체 그림 보기</a></p></details>
   </section>
 
   <section class="section" id="choice">
