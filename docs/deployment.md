@@ -152,6 +152,18 @@ ordinary local Vite proxy is configured separately. A local `.env.dev` file is
 not uploaded to Vercel. The current frontend `vercel.ts` consumes only
 `DJANGO_ORIGIN`; do not put Django, database, SES, or Kakao secrets in Vercel.
 
+## Public learning guides
+
+GitHub Pages is enabled for `https://orange-taco.github.io/traceback/` with a
+GitHub Actions publishing source. The `github-pages` environment permits only
+the `development` branch. `.github/workflows/artifact-pages.yml` publishes only
+`docs/artifact/` after changes reach `development`; the site is not live until
+that workflow runs successfully. `docs/artifact/index.html` is the single mobile
+entry point. The packaging script converts links to source files outside the
+artifact directory into revision-specific GitHub links. The screenshots were
+reviewed before publication: they show AWS account/resource identifiers and
+GitHub settings, but no password, token, or private contact detail.
+
 ## Current delivery contract
 
 1. `development` push runs `quality` and `test` in `ci.yml`. Both must pass before the called development workflow builds a production-target image, tags it with the development commit SHA, pushes it to ECR, and deploys its **digest** through SSM.
