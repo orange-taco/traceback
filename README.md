@@ -39,8 +39,9 @@ only the downstream deployment jobs use GitHub Environments. The image is
 stored in ECR; no Docker Hub token is needed.
 
 Each EC2 uses a separate untracked `/opt/traceback/.env` for Django runtime
-values. Copy `config/server.env.example` to that path and replace the placeholders
-with values for that server. GitHub Environment variables are not copied there.
+values. For development, copy `config/server.development.env.example`; for
+production, copy `config/server.env.example`. Replace the placeholders with
+values for that server. GitHub Environment variables are not copied there.
 The Kakao Admin Key is required for account unlink.
 
 Start the local PostgreSQL service:
@@ -76,7 +77,7 @@ checks and the full test suite before pushes. A failing hook blocks the operatio
 Render and validate the production configuration:
 
 ```sh
-APP_ENV_FILE=config/ci-production.env APP_IMAGE=traceback-production:local docker compose --env-file config/ci-production.env -f docker-compose.yml -f docker-compose_prod.yml config
+APP_ENV_FILE=config/ci-container-smoke.env APP_IMAGE=traceback-production:local docker compose --env-file config/ci-container-smoke.env -f docker-compose.yml -f docker-compose_prod.yml config
 ```
 
 AWS development and production use the same Docker image and Compose overlay.

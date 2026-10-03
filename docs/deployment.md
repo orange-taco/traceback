@@ -2,6 +2,142 @@
 
 This runbook covers the confirmed GitHub-hosted runner → OIDC → ECR/SSM → separate EC2/DB path. No AWS resource is created by this repository. Infrastructure creation, production deployment, and any change with a cost require the owner's separate approval.
 
+## Frontend hosting decision
+
+The client is hosted on Vercel with React Router SSR. Django remains on the separate
+development and production EC2 instances; do not create frontend EC2 instances. S3 is
+for uploaded objects, not the SSR application. The intended browser contract remains
+same-origin: `traceback-client/vercel.ts` forwards `/_allauth`, `/accounts`, and `/api`
+to `DJANGO_ORIGIN` when that HTTPS origin is configured in the Vercel project. The
+development project's environment value still needs to be entered manually. Confirm
+cookie/CSRF forwarding and Kakao OAuth callback behavior in browser QA before treating
+a Vercel deployment as ready. Vercel projects, domains, branch mappings, and any paid
+plan are configured manually.
+
+## Development database and object storage
+
+Create a development RDS PostgreSQL instance and a private S3 bucket as part of
+the first AWS development setup. Keep the RDS instance non-public; permit inbound
+TCP 5432 only from the development EC2 security group. Enable RDS automated
+backups with a retention period appropriate for development and confirm the
+restore path before applying migrations.
+
+Keep S3 Block Public Access enabled and default encryption enabled. The bucket
+is groundwork for future product uploads; the current app has no S3 upload
+integration. Do not grant the EC2 role S3 access until upload behavior is
+implemented; then scope object permissions to the required bucket and prefix.
+Create a separate private bucket for production when production infrastructure
+is prepared. Do not use S3 to host the React Router SSR application.
+
+The development bucket has been created in Seoul as
+`traceback-development-assets-968579693658-ap-northeast-2`. It is empty, has
+S3 Block Public Access enabled, ACLs disabled, and SSE-S3 default encryption.
+No application IAM permission or upload integration is configured.
+
+On 2026-09-27, the AWS console reported the account plan as `PAID` with an
+active Free Tier credit balance. Credits reduce eligible bills but are not a
+spending cap; EC2/RDS usage can be charged after credits are exhausted.
+
+The development EC2 was created in Seoul on 2026-09-27 as
+`traceback-development-app` (`i-051f85a1ac4e64a2c`): Amazon Linux 2023 x86,
+`t3.micro`, 20 GiB gp3, public subnet/IP, and Standard CPU credits. Its
+`traceback-development-app` security group allows TCP 80/443 from the internet,
+has no SSH rule, and retains the default outbound allow rule. The
+`traceback-development-ec2` instance profile has `AmazonSSMManagedInstanceCore`;
+ECR pull access is still pending and belongs on this EC2 role, not the GitHub
+deploy role described below. The instance is running and has not yet been
+bootstrapped with Docker or the application.
+
+On 2026-10-03, Elastic IP `3.34.78.140` (`eipalloc-07ecd0df0cc7e83bd`) was
+allocated in `ap-northeast-2`, tagged `Name=traceback-development-eip`, and
+associated with this EC2 instance's primary private address. Route 53 domain
+`dev-traceback.com` is `ACTIVE`; its registered name servers match the public
+hosted zone. The zone now has `api.dev-traceback.com A 3.34.78.140` with a
+300-second TTL. The record resolves to the EC2 address, but Nginx, TLS, and the
+application are not installed yet.
+
+The RDS instance was created on 2026-09-27 and is `Available`. Its endpoint is
+`traceback-development-db.cdgccc6q6aoe.ap-northeast-2.rds.amazonaws.com`. The
+configuration is PostgreSQL 17.11,
+`db.t4g.micro`, Single-AZ, 20 GiB gp3, encrypted, non-public, one-day automated
+backup retention, and no storage autoscaling or paid enhanced monitoring. The
+RDS security group `rds-ec2-1` has one inbound PostgreSQL/TCP 5432 rule whose
+source is the EC2-only `ec2-rds-1` security group. RDS reports one connected
+compute resource, `i-051f85a1ac4e64a2c`. The connection panel shows internet
+access disabled. The creation estimate was USD 20.87/month for the RDS instance
+and allocated storage alone, before excluded backup, I/O, or transfer costs.
+This charge accrues while the instance is running even with no application
+traffic. [AWS documents](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_StopInstance.html)
+that a stopped RDS instance avoids instance-hour charges but continues to bill
+storage/backups and automatically starts after seven consecutive stopped days.
+
+## Cost-conscious development defaults
+
+First check the account's creation date, Free or Paid plan, remaining credits,
+and service eligibility in Billing. AWS's current Free account plan is limited
+to six months or until credits are exhausted; the account is then closed unless
+upgraded. On a Paid plan, credits offset eligible charges but usage beyond
+credits is billable. Older accounts may have different legacy Free Tier terms.
+Do not assume that a resource is free from its instance type alone.
+
+For a small development workload, use one x86 `t3.micro` EC2 to match
+the current `linux/amd64` image, and one Single-AZ `db.t4g.micro` PostgreSQL
+instance. Keep database storage at the minimum the selected RDS configuration
+allows, skip Multi-AZ, and increase instance size only if observed memory or
+database pressure requires it. A micro EC2 has limited memory; check container
+health and memory after deployment.
+
+Avoid a NAT Gateway and load balancer for this single development host. A NAT
+Gateway has an hourly and data-processing charge; AWS currently lists public
+IPv4 at USD 0.005 per hour (about USD 3.65 per month for one continuously used
+address, before tax). Put the EC2 in a public subnet for required outbound
+access and the Vercel HTTPS origin, restrict inbound rules to the required web
+ports, administer it through SSM rather than opening SSH, and keep RDS private
+with TCP 5432 allowed only from the EC2 security group. This saves fixed network
+costs while keeping the database off the public internet.
+
+Session Manager cost note: AWS does not add a per-session charge when Session
+Manager is used with Amazon EC2, and Run Command has no additional charge on
+EC2. This development host and the CI/CD SSM deployment target are native EC2
+instances, so basic interactive SSM access and deployment commands do not add
+an SSM session/invocation fee. Optional features and integrations can still
+cost money, such as just-in-time node access or storing session logs in
+CloudWatch Logs/S3; check their service pricing before enabling them. As of
+2026-09-30, the listed USD 0.05 per Session Manager session and USD 0.002 per
+Run Command invocation apply to hybrid/multicloud nodes, not this AWS EC2 host.
+See the [AWS Systems Manager pricing page](https://aws.amazon.com/systems-manager/pricing/).
+
+Create an AWS Budget/credit alert and review actual usage after deployment. For
+development, keep RDS running only while actively developing or testing against
+the AWS environment, and stop it when that work is finished. Do not leave the
+development RDS running between work sessions. Stopping it saves instance-hour
+charges but not storage or backup charges. Stop the EC2 as well when it is not
+needed. Development uses an Elastic IP so its API DNS record stays valid after
+restart; the EIP continues to incur the public IPv4 hourly charge while the EC2
+is stopped. An automatically assigned public IPv4 is released at stop and avoids
+that address charge until the instance starts again. RDS may automatically restart
+after seven consecutive stopped days.
+Remember that public IPv4, ECR image storage, data transfer, RDS storage/backups,
+S3 requests/storage, DNS, and logs can still incur charges depending on account
+eligibility and usage. Use the AWS Pricing Calculator with the target Region
+before creating billable resources.
+
+## Development frontend deployment status
+
+The Vercel project `traceback-client` is connected to
+`orange-taco/traceback-client` on the Hobby plan. Its Production branch is
+currently set to `development` because this project is serving development
+only; create a separate project for production later. The current Vercel URL is
+`https://traceback-client-nine.vercel.app`. Commit `850b255` from the remote
+development branch was deployed and its SSR home and login pages returned HTTP
+200. The auth config request `/_allauth/browser/v1/config` currently returns
+404 because the development Django origin has not been deployed or routed yet.
+After the API DNS name and HTTPS certificate are ready, set `DJANGO_ORIGIN` in
+the Vercel project's Production environment and `.env.dev`, then verify session,
+CSRF, email, and Kakao.
+The `.env.dev` frontend origin is recorded locally in the client repository;
+`.env.prod` remains unset.
+
 ## Current delivery contract
 
 1. `development` push runs `quality` and `test` in `ci.yml`. Both must pass before the called development workflow builds a production-target image, tags it with the development commit SHA, pushes it to ECR, and deploys its **digest** through SSM.
@@ -13,13 +149,13 @@ Use a merge commit for `development → main`; fast-forward and squash releases 
 
 ## Values to collect
 
-The target AWS account ID, Region, repository, and instance IDs must be verified in the intended account before entering them. Existing templates use Region `ap-northeast-2`, ECR repository `traceback`, and GitHub repository `orange-taco/traceback`; these are **not** evidence that the resources exist. ECR must be a private repository in one account/Region for both environments, with image-tag immutability enabled so a successful development SHA cannot later point at another digest. Retain promoted digests long enough for rollback; confirm lifecycle policy before enabling cleanup.
+Development values were verified in AWS account `968579693658` in the Seoul Region (`ap-northeast-2`). Private ECR repository `traceback` now exists in that account with immutable image tags and AES-256 encryption; it is empty until the first successful image push. Development and production must use this same account/Region/repository so production can promote the exact digest built for development. Retain promoted digests long enough for rollback; confirm lifecycle policy before enabling cleanup.
 
-Use `.env.dev.git` and `.env.prod.git` as the exact GitHub Environment variable inventories. There are no GitHub AWS access-key secrets or Docker Hub tokens. `AWS_DEPLOY_ROLE_ARN` is the relevant environment's OIDC deployment role. `AWS_REGION` and `ECR_REPOSITORY` must match across environments; instance IDs must differ. Restrict the `development` Environment to `development` branch, and `production` to `main` branch. Production requires a reviewer; disable self-review prevention only if a sole-maintainer approval is intended. CI itself uses its own temporary Postgres DB and needs none of these environment values.
+Use `.env.dev.git` and `.env.prod.git` as the GitHub Environment variable inventories. The `development` Environment now has four variables: `AWS_DEPLOY_ROLE_ARN`, `AWS_REGION`, `ECR_REPOSITORY`, and `DEVELOPMENT_INSTANCE_ID`. It is restricted to the `development` branch. There are no GitHub AWS access-key secrets or Docker Hub tokens. The `production` Environment is reserved for later; its role, values, `main` branch restriction, and required reviewer have not been configured. CI itself uses its own temporary Postgres DB and needs none of these environment values.
 
 ## GitHub OIDC provider and trust
 
-Create the account's GitHub OIDC provider with URL `https://token.actions.githubusercontent.com` and audience `sts.amazonaws.com` if it does not already exist. Use two roles: `traceback-development-deploy` and `traceback-production-deploy`. The trust policy for each is the following, replacing `ENVIRONMENT` with **exactly** `development` or `production` and `ACCOUNT_ID` with the target account ID:
+The account's GitHub OIDC provider now exists at `https://token.actions.githubusercontent.com` with audience `sts.amazonaws.com`. Development role `traceback-development-deploy` now uses the trust policy below with `ENVIRONMENT=development` and account `968579693658`. Production role creation is deferred until production is being prepared. The template remains useful for that later role; replace `ENVIRONMENT` with exactly `production` and use the verified production account ID:
 
 ```json
 {
@@ -36,11 +172,11 @@ Create the account's GitHub OIDC provider with URL `https://token.actions.github
 }
 ```
 
-The repository currently reports GitHub's default, non-immutable `sub` format (`use_default=true`, `use_immutable_subject=false`, checked 2026-09-25). Recheck it before creating roles or after repository transfer/rename: `gh api repos/orange-taco/traceback/actions/oidc/customization/sub`. Environment-based subjects do **not** encode a branch, so GitHub Environment branch restrictions and branch protection are essential. Do not broaden trust to all repositories or all environments.
+The repository reports GitHub's default, non-immutable `sub` format (`use_default=true`, `use_immutable_subject=false`, checked 2026-10-03). Recheck it after repository transfer/rename: `gh api repos/orange-taco/traceback/actions/oidc/customization/sub`. Environment-based subjects do **not** encode a branch, so GitHub Environment branch restrictions and branch protection are essential. Do not broaden trust to all repositories or all environments.
 
 ## Deploy-role permission policy
 
-Attach a distinct policy to each OIDC role. Substitute `REGION`, `ACCOUNT_ID`, `REPOSITORY`, and only the matching `INSTANCE_ID`. For development, include the ECR push statement; for production, omit it. Both need the remaining statements. The `AWS-RunShellScript` document has an empty account component because it is AWS-owned.
+Attach a distinct policy to each OIDC role. Substitute `REGION`, `ACCOUNT_ID`, `REPOSITORY`, and only the matching `INSTANCE_ID`. The development role includes the ECR push statement; a future production role must omit it. Both roles need the remaining statements. The `AWS-RunShellScript` document has an empty account component because it is AWS-owned.
 
 ```json
 {
@@ -55,7 +191,7 @@ Attach a distinct policy to each OIDC role. Substitute `REGION`, `ACCOUNT_ID`, `
 }
 ```
 
-Add this statement to the **development role only**:
+The development role's inline policy includes this ECR push statement. A future production role must omit it:
 
 ```json
 {"Sid":"EcrPush","Effect":"Allow","Action":["ecr:BatchCheckLayerAvailability","ecr:InitiateLayerUpload","ecr:UploadLayerPart","ecr:CompleteLayerUpload","ecr:PutImage","ecr:BatchGetImage"],"Resource":"arn:aws:ecr:REGION:ACCOUNT_ID:repository/REPOSITORY"}
@@ -77,13 +213,21 @@ Attach `AmazonSSMManagedInstanceCore` to each app EC2 role. Add a repository-sco
 }
 ```
 
-Check on **both** hosts: the EC2 architecture can run the GitHub-hosted runner's current `linux/amd64` image (otherwise decide on a multi-platform build separately); SSM Agent is online in the correct Region; outbound access to SSM, ECR API/registry and image storage works (internet/NAT or appropriate VPC endpoints); Docker Engine, Compose v2 and AWS CLI v2 are installed; the SSM command can invoke Docker; `/opt/traceback` exists; `/opt/traceback/.env` is root-owned, `chmod 600`, and contains server-specific values from `config/server.env.example`. Set `DJANGO_SETTINGS_MODULE=config.settings.development` on the development host and `config.settings.production` on production. Keep separate DB URLs, Django keys, hostnames, frontend URLs and SES/Kakao credentials. Neither GitHub Environment variables nor the image contain runtime secrets. Confirm DB connectivity and backups before migration. Configure a reverse proxy/TLS and a private or appropriately restricted app network path separately; Compose publishes no app host port in the production overlay.
+Check on **both** hosts: the EC2 architecture can run the GitHub-hosted runner's current `linux/amd64` image (otherwise decide on a multi-platform build separately); SSM Agent is online in the correct Region; outbound access to SSM, ECR API/registry and image storage works (internet/NAT or appropriate VPC endpoints); Docker Engine, Compose v2 and AWS CLI v2 are installed; the SSM command can invoke Docker; `/opt/traceback` exists; `/opt/traceback/.env` is root-owned, `chmod 600`, and contains server-specific values from the matching settings example (`config/server.development.env.example` or `config/server.env.example`). Set `DJANGO_SETTINGS_MODULE=config.settings.development` on the development host and `config.settings.production` on production. Keep separate DB URLs, Django keys, hostnames, frontend URLs and SES/Kakao credentials. Neither GitHub Environment variables nor the image contain runtime secrets. Confirm DB connectivity and backups before migration. Install Nginx on the EC2 host, obtain an HTTPS certificate for the API DNS name, and install `deploy/nginx/traceback.conf.example` after replacing its example hostname. The app listens only on `127.0.0.1:8000`; Nginx forwards HTTPS traffic to it. The security group should expose HTTP for ACME/redirect and HTTPS for Vercel, with no public app port.
 
 Do not place passwords in SSM command parameters or GitHub logs. The SSM command does not print `.env`, but Compose/application error output could reveal sensitive data, so restrict access to command invocation output.
 
 ## Verification and release
 
-Before the first merge, validate `gh api repos/orange-taco/traceback/environments` and the four values in **each** environment (do not print secrets); confirm OIDC trust/permissions and instance SSM online state in the intended AWS account. Verify the ECR repository has `IMMUTABLE` tags. Confirm both instance IDs point to separate app EC2s and their `.env` files target separate DBs.
+### Completed development deployment setup (2026-10-03)
+
+- GitHub `development` Environment allows only the `development` branch. Its four values match `.env.dev.git`; they are environment variables, not secrets. The `development` branch requires a pull request and the `Quality` and `Test` checks. Required approvals are set to zero to support the single-maintainer workflow; force pushes and branch deletion are disabled.
+- AWS account `968579693658` has the GitHub OIDC provider and `traceback-development-deploy` role. Its trust subject is exactly `repo:orange-taco/traceback:environment:development`; its policy is limited to ECR repository `traceback` and SSM commands for EC2 `i-051f85a1ac4e64a2c`.
+- Seoul private ECR repository `traceback` is immutable-tagged and AES-256 encrypted. It has no images yet.
+- This setup has not been exercised by a `development` push workflow. The latest inspected CI run was a pull request, so deploy jobs were correctly skipped. It is not an OIDC deployment test.
+- Still required before the first development push: grant the EC2 instance role ECR pull access, install Docker Engine/Compose v2/AWS CLI v2, prepare `/opt/traceback/.env`, create the Django DB user, and configure Nginx/TLS and Vercel's `DJANGO_ORIGIN`. The next deployment slice should start with the EC2 pull policy and host bootstrap.
+
+Before the first development push, validate the `development` Environment and its four values; confirm OIDC trust/permissions, EC2 SSM online state, instance ECR pull permission, and ECR `IMMUTABLE` tags. Before production work, separately verify the `production` Environment, reviewer and branch restriction, production role/instance, and distinct database. Confirm environment IDs and each `.env` target match the intended account before deploying.
 
 For development: push to `development` only after setup, observe the CI run's quality/test and deployment jobs, record the commit SHA and image digest, inspect SSM command success, then check the live endpoint, container image digest and DB migration state. A green CI job includes local container health but does not prove that the external reverse proxy and TLS path works.
 
