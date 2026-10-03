@@ -131,6 +131,7 @@
     .pdf-export:focus-visible { outline:3px solid #efa92b; outline-offset:3px; }
     @page { size:A4; margin:14mm; }
     @media print {
+      .hub-return { display:none!important; }
       html { scroll-behavior:auto; }
       body { background:#fff!important; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
       .pdf-export, main > nav, nav[role="tablist"], .sidebar, .hero-nav, .nav, .selector, .tabs, .step-controls, .next-tab, .flow-controls, .top { display:none!important; }
@@ -165,6 +166,7 @@
   </script>
   <div class="top">TRACEBACK · AWS DEVELOPMENT · 학습 가이드</div>
   <main>
+    <a href="index.html" class="hub-return" style="display:inline-block;margin:8px 0 14px;padding:8px 12px;background:#fff;color:#176b91;border:1px solid #cbd8df;text-decoration:none">← 전체 학습 목차</a>
     <header class="hero">
       <p class="eyebrow">접속 설정을 하면서 원리 배우기</p>
       <h1>EC2에는 어떻게 접속할까?</h1>

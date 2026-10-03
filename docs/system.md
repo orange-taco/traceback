@@ -85,6 +85,9 @@ codebase check → system/design check → user decision review → implementati
 - Secrets: 현재 각 EC2의 `/opt/traceback/.env`에 런타임 비밀값을 보관한다. Secrets Manager 전환은 별도 결정이다. Repository에는 placeholder만 둔다.
 - GitHub Environment 변수 목록은 `.env.dev.git`/`.env.prod.git`에, EC2 런타임 변수 목록은 `config/server.env.example`에 둔다. 각 서버의 비밀값은 추적하지 않는 `/opt/traceback/.env`에 넣고 Compose가 app 컨테이너에 전달한다.
 - AWS/GitHub 수동 설정과 배포 검증 절차는 [`deployment.md`](deployment.md)를 따른다.
+- 학습용 HTML은 `docs/artifact/`를 GitHub Pages에 공개한다. `development`에서
+  목차와 문서·이미지만 게시하고, 저장소 코드 링크는 GitHub 원문으로 연결한다.
+  메모·댓글 저장 기능은 별도 결정 전까지 두지 않는다.
 - Local email은 console mailer로 출력하고, AWS 환경은 SES SMTP(STARTTLS, 587)를 사용한다.
 
 ## Deferred

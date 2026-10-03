@@ -29,9 +29,10 @@
    흐름을 확인한다. image digest, 앱 health check와 외부 HTTPS
    `/_allauth/browser/v1/config`의 200 응답을 각각 검사한다.
    ECR 보존 정책은 운영 승격·rollback에 필요한 digest를 지우지 않게 정한다.
-6. [ ] **Vercel 재배포와 브라우저 인증 검증** — 개발 Vercel 프로젝트의 Production
-   범위에 `DJANGO_ORIGIN`은 저장됐다. API HTTPS가 응답한 다음 새 배포로 적용하고
-   `/_allauth`, `/accounts`, `/api`, 쿠키·CSRF, 이메일 가입/로그인/탈퇴와 Kakao
+6. [ ] **Vercel 경유 브라우저 인증 검증** — 개발 Vercel 프로젝트의 Production
+   범위 `DJANGO_ORIGIN`은 재배포로 적용됐다. 현재 API HTTPS 연결이 안 되어
+   인증 경로가 502를 반환한다. 서버 연결 후 `/_allauth`, `/accounts`, `/api`,
+   쿠키·CSRF, 이메일 가입/로그인/탈퇴와 Kakao
    callback·연결 해제를 브라우저에서 검사한다. Preview URL은 별도 CSRF·OAuth
    정책을 정할 때 연결한다.
 

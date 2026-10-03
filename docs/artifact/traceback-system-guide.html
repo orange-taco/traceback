@@ -65,6 +65,7 @@
     .pdf-export:focus-visible { outline:3px solid #efa92b; outline-offset:3px; }
     @page { size:A4; margin:14mm; }
     @media print {
+      .hub-return { display:none!important; }
       html { scroll-behavior:auto; }
       body { background:#fff!important; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
       .pdf-export, main > nav, nav[role="tablist"], .sidebar, .hero-nav, .nav, .selector, .tabs, .step-controls, .next-tab, .flow-controls, .top { display:none!important; }
@@ -97,6 +98,7 @@
     })();
   </script>
   <div class="app">
+    <a href="index.html" class="hub-return" style="display:inline-block;margin:12px;padding:8px 12px;background:#fff;color:#176b91;border:1px solid #cbd8df;text-decoration:none">← 전체 학습 목차</a>
     <header class="masthead"><div><p class="eyebrow">TRACEBACK · commerce backend</p><h1>System Guide</h1><p class="dek">먼저 보는 전체 지도입니다. 고객·인증·배포가 어떤 서비스와 코드에 걸쳐 있는지 큰 흐름을 확인합니다. CI/CD 탭에는 세 workflow 전체 원문과 구간별 해설을 둡니다.</p><p class="dek"><strong>AWS 배포 상세 읽기:</strong> <a href="1-aws-ssm-ssh-learning-guide.html">1. 접속</a> → <a href="2-dev-server-first-deployment.html">2. 배포·환경설정</a> → <a href="3-development-ip-domain-guide.html">3. IP·도메인</a> → <a href="4-dns-resolution-map.html">4. DNS</a>. 2번을 읽을 때 이 문서의 CI/CD 코드 탭을 함께 봅니다. 인증 탭은 별도 시스템 영역입니다.</p></div><div class="status">Phase 0 · Foundation 진행 중</div></header>
     <div class="shell">
       <aside class="sidebar"><span class="sidebar-label">Guide</span><nav class="nav" role="tablist" aria-label="Guide sections"><button type="button" role="tab" aria-controls="overview" aria-selected="true" data-tab="overview">Overview</button><button type="button" role="tab" aria-controls="auth" aria-selected="false" data-tab="auth">Auth flow</button><button type="button" role="tab" aria-controls="delivery" aria-selected="false" data-tab="delivery">CI/CD</button><button type="button" role="tab" aria-controls="code" aria-selected="false" data-tab="code">워크플로 코드</button></nav></aside>
@@ -191,7 +193,7 @@
             <a class="ready" href="3-development-ip-domain-guide.html#now"><b>① DNS → EIP · 확인됨</b><small>API 이름이 개발 EC2 주소를 찾음</small></a>
             <a href="2-dev-server-first-deployment.html#launch-order"><b>② EC2·DB 준비 · 일부만 완료</b><small>ECR pull·Docker·앱 DB 사용자·런타임 .env 대기</small></a>
             <a href="2-dev-server-first-deployment.html#https-sequence"><b>③ TLS → Nginx · 미설정</b><small>현재 외부 API 443 연결 거부. 인증서·프록시 필요</small></a>
-            <a href="2-dev-server-first-deployment.html#env"><b>④ Vercel → 인증 · 미검증</b><small>origin 저장됨. API HTTPS 뒤 재배포·브라우저 QA</small></a>
+            <a href="2-dev-server-first-deployment.html#env"><b>④ Vercel → 인증 · 미검증</b><small>origin 재배포 완료. API HTTPS 뒤 브라우저 QA</small></a>
           </div>
           <div class="concept-grid" aria-label="서로 다른 세 가지 식별자"><div class="concept-card"><small>도구 버전 · 외부 저장소</small><strong>Action 커밋 SHA</strong><p><code>uses: astral-sh/setup-uv@…</code>의 SHA는 CI가 실행할 외부 Action 코드입니다. 우리 앱 버전이 아닙니다. <code>version: 0.10.4</code>는 설치할 uv 프로그램 버전입니다.</p></div><div class="concept-card"><small>소스 버전 · TRACEBACK</small><strong>앱 커밋 SHA</strong><p>GitHub push의 <code>github.sha</code>입니다. development 배포에서는 이 값을 ECR 이미지 태그로 사용합니다. 운영에서는 릴리스 merge commit의 두 번째 부모가 개발 원본 SHA입니다.</p></div><div class="concept-card"><small>이미지 내용 · ECR</small><strong>image digest</strong><p><code>@sha256:…</code>은 빌드된 이미지 내용을 식별합니다. 개발 EC2와 운영 EC2가 이 동일한 digest를 실행합니다.</p></div></div>
           <div class="release-route" aria-label="브랜치 승격 경로"><span>feature</span><b aria-hidden="true">→ PR →</b><span>development</span><b aria-hidden="true">→ PR →</b><span>main</span></div>

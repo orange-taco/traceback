@@ -129,22 +129,20 @@ The Vercel project `traceback-client` is connected to
 `orange-taco/traceback-client` on the Hobby plan. Its Production branch is
 currently set to `development` because this project is serving development
 only; create a separate project for production later. The current Vercel URL is
-`https://traceback-client-nine.vercel.app`. Commit `850b255` from the remote
-development branch was deployed and its SSR home and login pages returned HTTP
-200. The auth config request `/_allauth/browser/v1/config` currently returns
-404 because the development Django origin has not been deployed or routed yet.
-`DJANGO_ORIGIN=https://api.dev-traceback.com` is now saved as a Config value in
-the project's Production environment. Vercel requires a new deployment before
-the value takes effect. The API HTTPS connection currently fails, so first
-deploy Nginx/TLS and Django, then redeploy the frontend and verify session,
-CSRF, email, and Kakao.
+`https://traceback-client-nine.vercel.app`. Production deployment `Da65k8bCs`
+rebuilt development commit `afd7664` on 2026-10-04 with
+`DJANGO_ORIGIN=https://api.dev-traceback.com` in its Production environment.
+The deployment is Ready. The auth config request
+`/_allauth/browser/v1/config` changed from a React Router 404 to a Vercel 502:
+the rewrite is active, but `api.dev-traceback.com:443` still refuses connections.
+Deploy Nginx/TLS and Django, then verify session, CSRF, email, and Kakao.
 The `.env.dev` frontend origin is recorded locally in the client repository;
 `.env.prod` remains unset.
 
 Vercel has separate Development, Preview, and Production variable scopes. In
 this development-only project, the Production scope applies to deployments from
-the `development` production branch. The Production value has been saved; redeploy
-after the API answers over HTTPS. The Preview scope is
+the `development` production branch. The Production value is active in the new
+deployment. The Preview scope is
 for other branches and pull request previews; leave it unset until preview URLs
 are included in Django's CSRF trusted-origin and OAuth redirect/callback policies.
 `DJANGO_ALLOWED_HOSTS` controls Django request hostnames and is configured
@@ -246,7 +244,7 @@ Do not place passwords in SSM command parameters or GitHub logs. The SSM command
 - AWS account `968579693658` has the GitHub OIDC provider and `traceback-development-deploy` role. Its trust subject is exactly `repo:orange-taco/traceback:environment:development`; its policy is limited to ECR repository `traceback` and SSM commands for EC2 `i-051f85a1ac4e64a2c`.
 - Seoul private ECR repository `traceback` is immutable-tagged and AES-256 encrypted. It has no images yet.
 - This setup has not been exercised by a `development` push workflow. The latest inspected CI run was a pull request, so deploy jobs were correctly skipped. It is not an OIDC deployment test.
-- Still required before the first development push: grant the EC2 instance role ECR pull access, install Docker Engine/Compose v2/AWS CLI v2, prepare `/opt/traceback/.env`, create the Django DB user, and configure Nginx/TLS. Vercel's `DJANGO_ORIGIN` is stored but needs a new frontend deployment and end-to-end verification after HTTPS is ready. The next deployment slice should start with the EC2 pull policy and host bootstrap.
+- Still required before the first development push: grant the EC2 instance role ECR pull access, install Docker Engine/Compose v2/AWS CLI v2, prepare `/opt/traceback/.env`, create the Django DB user, and configure Nginx/TLS. Vercel's `DJANGO_ORIGIN` is active in the new deployment; end-to-end verification still requires API HTTPS and Django. The next deployment slice should start with the EC2 pull policy and host bootstrap.
 
 Before the first development push, validate the `development` Environment and its four values; confirm OIDC trust/permissions, EC2 SSM online state, instance ECR pull permission, and ECR `IMMUTABLE` tags. Before production work, separately verify the `production` Environment, reviewer and branch restriction, production role/instance, and distinct database. Confirm environment IDs and each `.env` target match the intended account before deploying.
 

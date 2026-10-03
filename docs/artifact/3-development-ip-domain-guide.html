@@ -37,6 +37,7 @@
     .pdf-export:focus-visible { outline:3px solid #efa92b; outline-offset:3px; }
     @page { size:A4; margin:14mm; }
     @media print {
+      .hub-return { display:none!important; }
       html { scroll-behavior:auto; }
       body { background:#fff!important; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
       .pdf-export, main > nav, nav[role="tablist"], .sidebar, .hero-nav, .nav, .selector, .tabs, .step-controls, .next-tab, .flow-controls, .top { display:none!important; }
@@ -68,6 +69,7 @@
     })();
   </script>
 <main>
+  <a href="index.html" class="hub-return" style="display:inline-block;margin:8px 0 14px;padding:8px 12px;background:#fff;color:#176b91;border:1px solid #cbd8df;text-decoration:none">← 전체 학습 목차</a>
   <header class="header">
     <div class="intro"><div class="eyebrow">TRACEBACK · DEVELOPMENT INFRA</div><h1>서버의 이름과 주소는<br>어떻게 연결될까?</h1><p>먼저 도메인·DNS·IP의 일반 경로를 보고, 이어서 TRACEBACK에서 고정 IP와 Route 53을 어떻게 사용했는지 대입합니다.</p></div>
     <div class="stamp">AWS 콘솔 확인 기준<br><strong>2026년 10월 3일 · 서울 리전</strong></div>
@@ -118,7 +120,7 @@ Vercel Production 환경변수 (2026-10-03 저장됨, 새 배포 전)
 DJANGO_ORIGIN=https://api.dev-traceback.com</code></pre>
       <div class="source-label">정확한 코드 · <a href="https://github.com/orange-taco/traceback-client/blob/development/vercel.ts#L1">traceback-client/vercel.ts 1행</a></div>
       <pre class="config-source"><code>1 │ const configuredOrigin = process.env.DJANGO_ORIGIN?.trim();</code></pre>
-      <p style="margin-top:10px">Route 53은 A 레코드를 DNS 응답으로 사용합니다. Vercel은 배포할 때 <a href="https://github.com/orange-taco/traceback-client/blob/development/vercel.ts">client의 <code>vercel.ts</code></a>가 읽는 <code>DJANGO_ORIGIN</code>으로 API rewrite를 만듭니다. 저장소에 AWS DNS 설정용 IaC 파일은 없으므로 위 첫 두 줄은 현재 콘솔값을 읽기 쉬운 형태로 옮긴 것입니다. Vercel 변수는 저장했지만 새 배포와 API HTTPS 연결 전에는 실제 rewrite가 완성되지 않습니다.</p>
+      <p style="margin-top:10px">Route 53은 A 레코드를 DNS 응답으로 사용합니다. Vercel은 배포할 때 <a href="https://github.com/orange-taco/traceback-client/blob/development/vercel.ts">client의 <code>vercel.ts</code></a>가 읽는 <code>DJANGO_ORIGIN</code>으로 API rewrite를 만듭니다. 저장소에 AWS DNS 설정용 IaC 파일은 없으므로 위 첫 두 줄은 현재 콘솔값을 읽기 쉬운 형태로 옮긴 것입니다. Vercel은 2026-10-04 재배포로 rewrite가 적용됐지만 API HTTPS 연결이 거부되어 인증 요청은 아직 502입니다.</p>
     </div>
   </section>
 
@@ -151,10 +153,10 @@ DJANGO_ORIGIN=https://api.dev-traceback.com</code></pre>
     <p class="handoff">선택한 주소 유형을 도메인에 연결하는 실제 순서입니다. IP 할당과 DNS 등록은 서로 다른 설정입니다.</p>
     <div class="sect-head"><h2>처음부터 같은 구조를 설정한다면</h2><p>일반 순서를 먼저 보고, TRACEBACK의 실제 값은 위 설정 상자와 비교하세요.</p></div>
     <div class="steps">
-      <article class="step"><strong>도메인과 권한 DNS 준비</strong><p>Route 53 → Registered domains에서 도메인을 등록합니다. Public hosted zone을 만든 뒤 등록 도메인의 네임서버가 hosted zone의 NS와 일치하는지 확인합니다. 다른 등록업체를 써도 DNS 관리자는 따로 정할 수 있습니다.</p><em>현재 Route 53에 등록·연결 완료</em></article>
+      <article class="step"><strong>도메인과 권한 DNS 준비</strong><p>Route 53 → Registered domains에서 도메인을 등록했다면 자동 생성된 같은 이름의 public hosted zone을 사용합니다. 등록 도메인의 네임서버가 그 zone의 NS와 일치하는지 확인하세요. 이미 다른 zone을 쓰거나 외부 등록업체에서 도메인을 샀다면 사용할 zone의 NS를 등록업체에 위임해야 합니다.</p><em>현재 Route 53에 등록·연결 완료</em></article>
       <article class="step"><strong>EC2에 EIP 연결</strong><p>EC2 → Elastic IPs에서 주소를 할당하고 Associate Elastic IP address로 대상 인스턴스를 고릅니다. 주소와 EC2가 같은 리전에 있는지 확인합니다. 고정 IP 대신 기본 공인 IP를 쓴다면 재시작 뒤 DNS 갱신 절차가 필요합니다.</p><em>현재 개발 EC2에 3.34.78.140 연결</em></article>
       <article class="step"><strong>DNS A 레코드 만들기</strong><p>Route 53 → Hosted zones → 해당 public zone → Create record에서 <code>api</code>, 유형 A, 값 EIP, TTL을 입력합니다. 외부 DNS 조회 결과가 이 IP인지 확인합니다. TRACEBACK은 TTL 300초를 사용합니다.</p><em>현재 A 레코드 확인됨</em></article>
-      <article class="step"><strong>웹 연결은 별도 검증</strong><p>EC2 보안 그룹과 라우팅, Nginx/TLS, Django를 설정한 다음 <code>https://api…</code>가 응답하는지 확인합니다. Vercel의 <code>DJANGO_ORIGIN</code>을 저장했다면 새 배포 후 프런트 rewrite를 확인합니다.</p><em>현재 HTTPS·재배포 대기</em></article>
+      <article class="step"><strong>웹 연결은 별도 검증</strong><p>EC2 보안 그룹과 라우팅, Nginx/TLS, Django를 설정한 다음 <code>https://api…</code>가 응답하는지 확인합니다. Vercel의 <code>DJANGO_ORIGIN</code> rewrite는 재배포로 적용됐으므로 API가 열린 뒤 502가 정상 응답으로 바뀌는지 확인합니다.</p><em>현재 HTTPS·Django 연결 대기</em></article>
     </div>
     <div class="callout"><strong>다음 상세 절차:</strong> 네트워크 인바운드·아웃바운드와 실제 라우팅 테이블은 <a href="2-dev-server-first-deployment.html#network-audit">2번의 AWS 네트워크 점검</a>, DNS 질의 원리는 <a href="4-dns-resolution-map.html">4번 문서</a>에서 확인합니다.</div>
   </section>
@@ -200,7 +202,7 @@ DJANGO_ORIGIN=https://api.dev-traceback.com</code></pre>
         <div class="node"><span class="tag">컨테이너 배포</span><strong>ECR → SSM → EC2</strong><small>이미지 전달·실행<br>Docker 이미지에는 비밀값 없음</small></div><div class="arrow" aria-hidden="true">→</div>
         <div class="node server"><span class="tag">앱 실행</span><strong>EC2 .env → Django → RDS</strong><small>런타임 비밀값은 EC2에 따로 저장<br>DB 연결은 private 경로</small></div>
       </div>
-      <div class="route"><span class="status done"><i></i>완료</span><span>Route 53 A 레코드·EIP 연결과 GitHub OIDC·IAM deploy role·private ECR 준비를 마쳤습니다. Vercel Production 범위에 <code>DJANGO_ORIGIN</code>도 저장했습니다.</span><span class="status wait"><i></i>연결 대기</span><span>EC2 ECR pull 권한·Docker 앱·Nginx/TLS가 남았고, Vercel 변수는 API HTTPS가 동작한 뒤 재배포해야 적용됩니다.</span></div>
+      <div class="route"><span class="status done"><i></i>완료</span><span>Route 53 A 레코드·EIP 연결과 GitHub OIDC·IAM deploy role·private ECR 준비를 마쳤습니다. Vercel Production 범위에 <code>DJANGO_ORIGIN</code>도 저장했습니다.</span><span class="status wait"><i></i>연결 대기</span><span>EC2 ECR pull 권한·Docker 앱·Nginx/TLS가 남았고, Vercel 변수는 재배포로 적용됐지만 API HTTPS 연결이 없어 인증 요청은 502입니다.</span></div>
       <div class="callout"><strong>비용도 설정 경로마다 따로 발생:</strong> EIP는 EC2가 중지돼도 시간당 요금이 계속됩니다. RDS는 실행 중 instance-hour 요금이 발생하고, 중지해도 storage/backup 비용이 남을 수 있습니다. 따라서 “환경변수를 넣었다”는 것과 “서비스가 연결되어 실제 동작한다”는 것은 별도 확인 단계입니다.</div>
     </div>
   </section>

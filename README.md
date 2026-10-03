@@ -88,7 +88,8 @@ mount, host port, and PostgreSQL container and requires an external
 
 ## AWS learning guides
 
-AWS 초기 설정을 처음부터 공부할 때는 [System Guide](docs/artifact/traceback-system-guide.html)에서
+AWS 초기 설정을 처음부터 공부할 때는 [학습 목차](docs/artifact/index.html)에서 시작한다.
+[System Guide](docs/artifact/traceback-system-guide.html)에서
 전체 흐름을 본 다음 [1. SSH·SSM](docs/artifact/1-aws-ssm-ssh-learning-guide.html) →
 [2. 첫 서버 배포](docs/artifact/2-dev-server-first-deployment.html) →
 [3. IP·도메인](docs/artifact/3-development-ip-domain-guide.html) →
