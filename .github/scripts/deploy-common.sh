@@ -48,10 +48,18 @@ command_id="$(aws ssm send-command \
 # the image and applying migrations. Poll for up to ten minutes instead.
 status=Pending
 for ((attempt = 0; attempt < 120; attempt++)); do
-  status="$(aws ssm get-command-invocation \
+  if invocation="$(aws ssm get-command-invocation \
     --command-id "$command_id" \
     --instance-id "$DEPLOY_INSTANCE_ID" \
-    --query Status --output text 2>/dev/null || true)"
+    --query Status --output text 2>&1)"; then
+    status="$invocation"
+  elif [[ "$invocation" == *InvocationDoesNotExist* ]]; then
+    # SendCommand can become visible shortly after it returns its command ID.
+    status=Pending
+  else
+    printf '%s\n' "$invocation" >&2
+    exit 1
+  fi
   case "$status" in
     Success|Failed|Cancelled|TimedOut) break ;;
   esac

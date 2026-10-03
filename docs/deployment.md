@@ -143,7 +143,9 @@ this development-only project, the Production scope applies to deployments from
 the `development` production branch. Add `DJANGO_ORIGIN=https://api.dev-traceback.com`
 there only after the API answers over HTTPS, then redeploy. The Preview scope is
 for other branches and pull request previews; leave it unset until preview URLs
-are included in Django's allowed-host, CSRF, and OAuth callback policy. The
+are included in Django's CSRF trusted-origin and OAuth redirect/callback policies.
+`DJANGO_ALLOWED_HOSTS` controls Django request hostnames and is configured
+separately; it is not the prerequisite for setting the frontend origin itself. The
 Development scope is used with `vercel dev`/Vercel CLI environment pulling; the
 ordinary local Vite proxy is configured separately. A local `.env.dev` file is
 not uploaded to Vercel. The current frontend `vercel.ts` consumes only

@@ -43,6 +43,7 @@
       <p>지금 가진 EC2, RDS, S3, Vercel이 어떤 역할을 하고, 어디를 먼저 설정해야 하는지 한 흐름으로 정리합니다. 서버에 SSH로 들어가 <code>git pull</code>하는 배포 방식이 아니라 GitHub Actions가 검증한 Docker 이미지를 EC2에 전달하도록 이미 구성돼 있습니다.</p>
       <span class="hero-note">일반 원리와 선택지를 설명한 뒤 TRACEBACK의 선택과 이유를 표시합니다.</span>
       <span class="hero-note">현재 권장안: ① dev는 dev로 운영하고, 준비가 되면 prod를 별도 구축</span>
+      <p class="small">추천 학습 경로: <a href="traceback-system-guide.html">System Guide 전체 지도</a> → <a href="1-aws-ssm-ssh-learning-guide.html">1. 접속</a> → 여기서 설정·선택을 학습하며 <a href="traceback-system-guide.html#code">workflow 원문 설명</a>을 나란히 보기 → <a href="3-development-ip-domain-guide.html">3. IP·도메인</a> → <a href="4-dns-resolution-map.html">4. DNS</a>.</p>
     </div>
   </header>
   <nav class="nav" aria-label="문서 목차"><div class="wrap"><a href="#status">현재 상태</a><a href="#db-choice">DB 구성</a><a href="#flow">연결 구조</a><a href="#cicd-iam">GitHub·IAM·ECR</a><a href="#deploy-code">배포 코드 해설</a><a href="#proxy">Nginx 위치</a><a href="#glossary">용어</a><a href="#choice">운영 선택</a><a href="#steps">작업 순서</a><a href="#env">환경변수</a><a href="#cost">비용·보안</a></div></nav>
@@ -154,7 +155,7 @@
       </div>
 
       <h3>설정 화면 캡처</h3>
-      <p class="small">2026-10-03 설정 화면에서 저장된 실제 값과 상태를 캡처했습니다. 이 캡처에는 비밀번호나 AWS access key가 없으며, ARN·계정 번호·인스턴스 ID는 연결 관계를 설명하기 위해 표시했습니다.</p>
+      <p class="small">2026-10-03 설정 화면에서 저장된 실제 값과 상태를 캡처했습니다. 이미지를 하나씩 확인한 결과 로그인 이메일, 비밀번호, AWS access key, OAuth secret은 보이지 않습니다. 다만 AWS 계정 ID와 IAM ARN·EC2 ID, 공개 GitHub 저장소명이 보입니다. 이 값은 로그인 자격 증명은 아니지만 인프라 식별자이며 저장소는 공개 상태입니다. 실제 설정 캡처를 요청한 학습 목적에 따라 유지하되, 공개 식별자를 숨기려면 이미지와 문서의 실제 값도 함께 예시값으로 바꿔야 합니다.</p>
       <div class="shots">
         <figure class="shot"><img src="images/github-environments.png" alt="GitHub 저장소 Environments 목록에서 production, development, local 환경이 나열됨"><figcaption><strong>GitHub · Environments 목록</strong> — 저장소 Settings → Environments 진입 위치. 현재 <code>development</code>만 설정했고, 목록에 보이는 <code>production</code>은 나중에 준비합니다.</figcaption></figure>
         <figure class="shot"><img src="images/github-development-environment.png" alt="GitHub development Environment 설정 화면: development 브랜치 제한, secrets 없음, 네 environment variables 표시"><figcaption><strong>GitHub · development Environment</strong> — 브랜치 제한과 변수 네 개. AWS 배포 역할 ARN은 긴 값이라 화면상 일부가 줄여 보입니다.</figcaption></figure>
@@ -346,7 +347,11 @@ test "$status" = Success</code></pre>
           <span class="pattern">현재 개발 경로</span><h3>공개 EC2 · 비공개 RDS</h3>
           <div class="route-diagram" aria-label="Vercel internet traffic passes through EC2 security group and host Nginx to Django; EC2 reaches private RDS on PostgreSQL port 5432"><span>Vercel / 인터넷</span><b>→ 80·443</b><span>EC2 공개 기본 서브넷<br><code>traceback-development-app</code></span><b>→ 5432<br>EC2 SG만 허용</b><span>RDS<br>인터넷 경로 비활성</span></div>
           <p><b>VPC:</b> <code>vpc-052ff4cb02c74522e</code>, AWS 기본 VPC. 기본 VPC를 쓴다고 곧바로 취약한 것은 아니지만, 여러 서비스와 계정 사용자가 함께 쓰는 기본 네트워크이므로 나중에 운영 규모가 커지면 전용 VPC 설계를 검토합니다.</p>
-          <p><b>EC2 서브넷:</b> <code>subnet-0ddcdfb74ab0d7121</code>, <code>172.31.32.0/20</code>, 서울 <code>ap-northeast-2c</code>의 기본 서브넷입니다. 콘솔에서 기본 서브넷과 퍼블릭 IPv4 자동 할당 활성 상태를 확인했습니다. 인스턴스에는 EIP <code>3.34.78.140</code>가 연결되어 있습니다. 세부 라우트 테이블/네트워크 ACL 규칙은 이번 화면 확인에서 검증하지 못했으므로 아래 체크리스트에 남깁니다.</p>
+          <p><b>EC2 서브넷:</b> <code>subnet-0ddcdfb74ab0d7121</code>, <code>172.31.32.0/20</code>, 서울 <code>ap-northeast-2c</code>의 기본 서브넷입니다. 퍼블릭 IPv4 자동 할당이 켜져 있고 인스턴스에는 EIP <code>3.34.78.140</code>가 연결되어 있습니다. 이 서브넷은 별도 서브넷 연결 규칙이 없어 VPC의 main 라우팅 테이블을 상속합니다.</p>
+          <h3>실제 라우팅 테이블: EC2가 인터넷으로 나가는 길</h3>
+          <div class="route-diagram" aria-label="EC2 기본 서브넷이 main 라우팅 테이블을 통해 인터넷 게이트웨이로 나가는 구조"><span>EC2<br><code>172.31.35.121</code></span><b>main 연결</b><span>서브넷<br><code>172.31.32.0/20</code></span><b>0.0.0.0/0</b><span>라우팅 테이블<br><code>rtb-04258608476a79e32</code></span><b>→</b><span>Internet Gateway<br><code>igw-0fca5801c9bc64997</code></span><b>→</b><span>Internet</span></div>
+          <ul><li><code>172.31.0.0/16 → local</code> — 같은 VPC 안의 서브넷끼리 이동하는 경로.</li><li><code>0.0.0.0/0 → igw-0fca5801c9bc64997</code> — 다른 목적지의 IPv4 트래픽을 인터넷 게이트웨이로 보냅니다. 콘솔 상태는 <b>활성</b>.</li><li>라우팅 테이블은 main이며, 명시적 subnet association은 0개입니다. EC2 서브넷을 포함한 기본 VPC의 4개 서브넷이 main 테이블을 사용합니다.</li></ul>
+          <p><b>왜 이게 필요한가:</b> ECR 이미지 다운로드와 AWS public endpoint 연결은 EC2에서 밖으로 나갑니다. 실제 통신에는 라우트 외에도 보안 그룹의 outbound, subnet NACL, 인스턴스의 public IPv4/EIP가 함께 맞아야 합니다. EIP는 인터넷 게이트웨이에서 공인·사설 주소 매핑에 사용됩니다.</p>
         </article>
         <article>
           <span class="pattern">인바운드 · 외부에서 EC2로 들어오는 연결</span><h3>80/443 공개, SSH는 닫힘</h3>
@@ -364,9 +369,22 @@ test "$status" = Success</code></pre>
         </article>
       </div>
       <div class="grid two" style="margin-top:14px">
-        <article class="panel"><h3>배포 전에 확인할 네트워크 항목</h3><ul><li>EC2 서브넷에 인터넷 게이트웨이 기본 경로(<code>0.0.0.0/0</code>)가 있는지 확인. SSM/ECR 외부 연결이 이를 필요로 함.</li><li>서브넷 연결 네트워크 ACL이 응답용 임시 포트를 차단하지 않는지 확인.</li><li>RDS의 Publicly accessible이 꺼져 있고, DB subnet group의 서브넷이 모두 같은 VPC인지 확인.</li><li>RDS inbound 5432가 EC2 전용 SG만 source로 쓰는지 유지. 현재 콘솔에서 확인됨.</li><li>첫 배포 후 외부에서 80/443만 접근되고 앱 8000은 공개되지 않는지 확인. SSH 22는 열지 않음.</li></ul></article>
+        <article class="panel"><h3>배포 전에 확인할 네트워크 항목</h3><ul><li>라우트 테이블: EC2가 쓰는 main 테이블의 <code>0.0.0.0/0 → Internet Gateway</code> 경로와 상태를 확인 — 2026-10-03 콘솔에서 활성 확인.</li><li>서브넷 연결: EC2 서브넷은 명시적 연결이 없고 main 테이블을 사용 — 콘솔에서 확인.</li><li>서브넷 연결 네트워크 ACL의 인바운드·아웃바운드 규칙과 응답용 임시 포트는 아직 별도 확인 필요.</li><li>RDS의 Publicly accessible이 꺼져 있고, DB subnet group의 서브넷이 모두 같은 VPC인지 확인.</li><li>RDS inbound 5432가 EC2 전용 SG만 source로 쓰는지 유지. 현재 콘솔에서 확인됨.</li><li>첫 배포 후 외부에서 80/443만 접근되고 앱 8000은 공개되지 않는지 확인. SSH 22는 열지 않음.</li></ul></article>
         <article class="panel"><h3>일반적인 1대 개발 서버와 현재 설정 비교</h3><ul><li><b>단순하고 저렴한 시작:</b> 공개 서브넷에 EC2+Nginx, 보안 그룹 80/443, SSM 관리, 같은 VPC의 private RDS. 현재 TRACEBACK의 의도입니다.</li><li><b>현재 콘솔:</b> 기본 VPC·기본 public subnet을 사용하고, DB는 인터넷 경로를 비활성화했으며 EC2 SG source만 허용합니다.</li><li><b>추가로 필요한 앱 구성:</b> Nginx와 TLS, Docker/Compose/AWS CLI, EC2 ECR pull IAM 정책, `/opt/traceback/.env`, Django 앱 DB 계정.</li><li><b>향후 강화:</b> dedicated VPC에서 public proxy/app과 private DB subnet 분리, 목적지별 egress, VPC flow logs/CloudTrail 비용 검토. 초기 실사용 검증에 필수인 별도 VPC endpoint/ALB는 아닙니다.</li></ul></article>
       </div>
+      <details class="script-source" id="network-setup">
+        <summary>처음 만드는 사람용: 라우팅 테이블·보안 그룹 설정 순서</summary>
+        <p>라우팅 테이블은 서브넷 단위 경로표이고, 보안 그룹은 인스턴스/네트워크 인터페이스의 상태 저장 방화벽입니다. 둘은 서로 대체하지 않습니다.</p>
+        <ol>
+          <li><b>EC2 서브넷의 route table 찾기:</b> VPC Console → Subnets → EC2 서브넷 → Route table 탭에서 연결된 테이블을 엽니다. 명시적 연결이 없다면 VPC의 main route table을 씁니다. 현재 TRACEBACK은 <code>rtb-04258608476a79e32</code>입니다.</li>
+          <li><b>공개 서브넷 경로 확인:</b> Routes에 VPC CIDR의 <code>local</code> 경로와 <code>0.0.0.0/0 → igw-…</code> 경로가 있고 상태가 active인지 확인합니다. 경로만 있어도 EC2에 public IPv4/EIP가 없으면 일반 인터넷 응답이 되지 않습니다. 현재 기본 경로는 인터넷 게이트웨이로 활성 상태입니다.</li>
+          <li><b>EC2 보안 그룹 inbound:</b> EC2 → Security Groups → Inbound rules. 공개 HTTPS 서비스면 TCP 443, source <code>0.0.0.0/0</code>; HTTP→HTTPS redirect/HTTP-01 인증서 발급이 필요하면 TCP 80도 같은 source로 추가합니다. SSM을 쓸 때 SSH TCP 22는 열지 않습니다. 앱 포트 8000은 공개하지 않습니다.</li>
+          <li><b>EC2 보안 그룹 outbound:</b> 현재는 모든 프로토콜·포트, destination <code>0.0.0.0/0</code> 한 규칙입니다. 첫 개발 배포에는 이 기본값으로 동작 여부를 확인하되, 제한할 때는 SSM HTTPS, ECR API/registry HTTPS, ECR layer용 S3, OS 패키지 저장소, 필요한 외부 API/SMTP를 목록화하고 시험합니다. 공용 패키지 저장소는 목적지 주소가 바뀔 수 있어 CIDR만으로 좁히기 어려울 수 있습니다.</li>
+          <li><b>RDS 보안 그룹:</b> inbound PostgreSQL TCP 5432의 source에 CIDR이나 EC2 public IP 대신 EC2 보안 그룹을 지정합니다. RDS public accessibility는 끄고 앱 전용 DB 계정을 씁니다. 현재 source 그룹 방식은 설정됨. 실제 연결은 앱 환경변수 설정 후 검증해야 합니다.</li>
+          <li><b>Network ACL 확인:</b> VPC → Network ACLs에서 해당 서브넷의 inbound/outbound rule, 포트, ephemeral response ports를 확인합니다. NACL은 stateless이므로 양방향 규칙이 필요합니다. TRACEBACK의 현재 NACL 세부 규칙은 아직 확인하지 않았습니다.</li>
+        </ol>
+        <div class="notice"><strong>현재 상태 요약:</strong> route table의 IGW 기본 경로와 main 연결, EC2 inbound 80/443 및 outbound 전체 허용, RDS inbound 5432의 EC2 SG source는 콘솔에서 확인했습니다. NACL 세부 규칙과 좁힌 egress는 미완료 확인 항목입니다. 실제 첫 외부 HTTPS 요청과 EC2→RDS 연결은 배포 후 시험해야 합니다.</div>
+      </details>
     </section>
 
     <section class="section" id="proxy">
@@ -457,6 +475,77 @@ test "$status" = Success</code></pre>
         <article class="envbox"><h3>GitHub · `development` Environment variables</h3><dl><dt><code>AWS_REGION</code></dt><dd><code>ap-northeast-2</code> — AWS Seoul</dd><dt><code>ECR_REPOSITORY</code></dt><dd><code>traceback</code> — 실제 생성된 private repository</dd><dt><code>AWS_DEPLOY_ROLE_ARN</code></dt><dd><code>arn:aws:iam::968579693658:role/traceback-development-deploy</code> — GitHub Actions가 OIDC로 맡을 role</dd><dt><code>DEVELOPMENT_INSTANCE_ID</code></dt><dd><code>i-051f85a1ac4e64a2c</code> — SSM 배포 대상 EC2 ID</dd><dt>등록 위치</dt><dd>GitHub repo → Settings → Environments → development. `.env.dev.git`은 자동 반영되지 않음.</dd></dl></article>
         <article class="envbox"><h3>지금은 연결하지 않을 값</h3><dl><dt>S3 bucket IAM</dt><dd>업로드 API 구현 전에는 EC2 role에 S3 권한을 주지 않습니다. private bucket만 유지.</dd><dt>Production 변수</dt><dd>prod 인프라·별도 Vercel project를 준비할 때 다른 secret·DB·origin으로 설정.</dd><dt>RDS master password</dt><dd>Django `TRACEBACK_DATABASE_URL`에 재사용하지 말고, 앱 전용 DB 계정 사용.</dd></dl></article>
       </div>
+<details class="script-source" id="env-files">
+        <summary>환경변수 파일 3개의 전체 원문과 코드 연결 보기</summary>
+        <p>파일명만 보면 모두 런타임 설정처럼 보이지만 역할은 다릅니다. 첫 파일은 CI가 바로 사용하는 안전한 테스트 fixture이고, 뒤의 두 파일은 사람이 복사해 실제 서버 파일을 만드는 템플릿입니다.</p>
+<h4><code>config/ci-container-smoke.env</code> · CI용 컨테이너 smoke 환경</h4><p>CI에서 실제 AWS·RDS·메일 계정 없이 production 설정으로 앱 컨테이너를 띄워 migration과 HTTP healthcheck를 확인하는 임시 값입니다. 공개 CI 전용 secret key와 container 내부 SQLite를 쓰며 외부 서비스에 접속하지 않습니다.</p><pre><code># Public CI-only values for the production container smoke test.
+DJANGO_SETTINGS_MODULE=config.settings.production
+DJANGO_SECRET_KEY=ci-only-secret-key-with-at-least-32-bytes
+DJANGO_ALLOWED_HOSTS=localhost
+TRACEBACK_DATABASE_URL=sqlite:////tmp/traceback-ci.sqlite3
+FRONTEND_BASE_URL=http://localhost:5173</code></pre>
+<h4><code>config/server.development.env.example</code> · development EC2용 예시</h4><p>빈 서버의 /opt/traceback/.env를 만들 때 복사하는 양식입니다. 실제 RDS endpoint, Django key, SES SMTP 자격 증명, Kakao 키는 서버에만 채웁니다. 이 파일 자체는 EC2나 Django가 자동으로 읽지 않습니다.</p><pre><code># Copy to /opt/traceback/.env on the development EC2 and replace placeholders.
+# This file is an example only; never commit the populated server .env.
+DJANGO_SECRET_KEY=replace-with-unique-development-secret
+DJANGO_ALLOWED_HOSTS=api.dev-traceback.com
+DJANGO_CSRF_TRUSTED_ORIGINS=https://traceback-client-nine.vercel.app
+DJANGO_SETTINGS_MODULE=config.settings.development
+TRACEBACK_DATABASE_URL=postgresql://replace-user:replace-password@replace-rds-endpoint:5432/traceback
+FRONTEND_BASE_URL=https://traceback-client-nine.vercel.app
+
+# SES SMTP for required email verification.
+DEFAULT_FROM_EMAIL=no-reply@verified-domain.example
+EMAIL_HOST=email-smtp.ap-northeast-2.amazonaws.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=replace-with-ses-smtp-username
+EMAIL_HOST_PASSWORD=replace-with-ses-smtp-password
+EMAIL_USE_TLS=true
+
+# Kakao login and account unlink.
+KAKAO_REST_API_KEY=replace-with-kakao-rest-api-key
+KAKAO_CLIENT_SECRET=replace-with-kakao-client-secret
+KAKAO_ADMIN_KEY=replace-with-kakao-admin-key</code></pre>
+<h4><code>config/server.env.example</code> · production EC2용 예시</h4><p>production 서버용 같은 양식입니다. development 값과 공유하지 않고, 실제 production 인프라를 만들 때 별도의 endpoint·도메인·secret으로 채웁니다.</p><pre><code># Copy to /opt/traceback/.env on each EC2 and set environment-specific values.
+# This file is not imported into GitHub Environment.
+DJANGO_SECRET_KEY=replace-with-unique-secret
+DJANGO_ALLOWED_HOSTS=localhost,api.example.com
+DJANGO_CSRF_TRUSTED_ORIGINS=https://frontend.example.com
+DJANGO_SETTINGS_MODULE=config.settings.production
+TRACEBACK_DATABASE_URL=postgresql://replace-user:replace-password@replace-host:5432/traceback
+FRONTEND_BASE_URL=https://frontend.example.com
+
+# SES SMTP for required email verification.
+DEFAULT_FROM_EMAIL=no-reply@verified-domain.example
+EMAIL_HOST=email-smtp.ap-northeast-2.amazonaws.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=replace-with-ses-smtp-username
+EMAIL_HOST_PASSWORD=replace-with-ses-smtp-password
+EMAIL_USE_TLS=true
+
+# Kakao login and account unlink.
+KAKAO_REST_API_KEY=replace-with-kakao-rest-api-key
+KAKAO_CLIENT_SECRET=replace-with-kakao-client-secret
+KAKAO_ADMIN_KEY=replace-with-kakao-admin-key</code></pre>
+<h4>이 파일들을 실제로 읽는 코드</h4>
+        <pre><code># docker-compose.yml + docker-compose_prod.yml
+services:
+  app:
+    env_file:
+      - ${APP_ENV_FILE:-.env}</code></pre>
+        <p>Compose의 <code>env_file</code>은 선택된 파일의 값을 앱 컨테이너 환경변수로 전달합니다. 개발 서버에서는 <code>/opt/traceback/.env</code>가 기본 경로이고, 예시 파일을 직접 runtime에 지정하지 않습니다.</p>
+        <pre><code># .github/workflows/ci.yml
+APP_ENV_FILE: config/ci-container-smoke.env
+docker compose --env-file config/ci-container-smoke.env \
+  -f docker-compose.yml -f docker-compose_prod.yml up -d --no-build --wait</code></pre>
+        <p>GitHub Actions는 위 fixture를 택해 production Compose overlay를 검사합니다. <code>--env-file</code>은 Compose 변수 치환에 값을 제공하고, <code>APP_ENV_FILE</code>은 같은 파일을 컨테이너에 넣도록 선택합니다. smoke가 끝나면 CI 컨테이너와 임시 DB를 제거합니다.</p>
+        <pre><code># config/settings/base.py
+SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
+ALLOWED_HOSTS = [host.strip() for host in os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",") if host.strip()]
+DATABASES = {"default": dj_database_url.parse(os.environ["TRACEBACK_DATABASE_URL"], conn_max_age=60, conn_health_checks=True)}
+FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")</code></pre>
+        <p>Django가 <code>os.environ</code>에서 값을 읽습니다. <code>DJANGO_SETTINGS_MODULE</code>은 실행할 settings 모듈을 고릅니다. production settings는 시작 시 <code>TRACEBACK_DATABASE_URL</code>이 없으면 실패하게 해 잘못된 기본 DB로 뜨지 않도록 합니다. 메일과 Kakao 값도 같은 settings 파일에서 읽습니다.</p>
+        <div class="notice"><strong>왜 이렇게 골랐나:</strong> 한 EC2와 Compose 하나로 시작하는 동안 서버의 권한 <code>600</code>인 미추적 <code>.env</code>가 가장 단순하고 배포 코드에 비밀값이 들어가지 않습니다. 대안은 systemd 환경 파일이나 AWS Systems Manager Parameter Store/Secrets Manager에서 실행 시 주입하는 방식입니다. 서버 수가 늘거나 회전·감사가 중요해지면 관리형 저장소로 옮길 수 있습니다. CI는 비밀 없는 fixture를 따로 써서 AWS 값을 CI에 복사하지 않습니다. <code>DATABASE_URL</code> 대신 프로젝트가 명시적으로 요구하는 <code>TRACEBACK_DATABASE_URL</code>만 씁니다.</div>
+      </details>
       <div class="notice"><strong>GitHub Variables와 Secrets:</strong> Workflow는 <code>vars.AWS_REGION</code>, <code>vars.ECR_REPOSITORY</code>, <code>vars.AWS_DEPLOY_ROLE_ARN</code>, <code>vars.DEVELOPMENT_INSTANCE_ID</code>를 development Environment에서 읽습니다. 앞의 role ARN은 OIDC 인증 이후 맡을 역할을 지정하고, instance ID는 작업할 EC2를 고릅니다. 장기 AWS Access Key는 넣지 않고 OIDC로 짧은 권한을 받습니다. DB 암호 같은 런타임 비밀값은 GitHub에 전달하지 않고 EC2 앱 환경에 따로 둡니다.</div>
       <div class="envbox" style="margin-top:14px"><h3>런타임 비밀값 보관 방식: 일반적인 선택지와 우리 방식</h3><div class="grid two"><article class="panel"><h3>EC2의 보호된 `.env` 파일 · 현재 방식</h3><p>한두 대 서버의 시작 단계에서 구조가 단순합니다. 서버 파일 권한과 변경 이력을 직접 관리합니다. TRACEBACK은 EC2의 <code>/opt/traceback/.env</code>에 비밀값을 둡니다.</p></article><article class="panel"><h3>AWS Secrets Manager / SSM Parameter Store</h3><p>AWS에서 중앙 저장하고 IAM 권한으로 읽을 수 있습니다. 여러 서버, 감사, 자동 회전이 중요해지면 검토합니다. 저장 요금/KMS 설정과 앱 또는 배포 코드의 조회 경로가 추가되며, 현재는 선택하지 않았습니다.</p></article></div></div>
     </section>
