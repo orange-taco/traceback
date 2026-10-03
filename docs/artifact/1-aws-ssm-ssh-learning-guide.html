@@ -58,6 +58,20 @@
     .aws { background: var(--green-soft); border-color: #c8e3d5; }
     .callout { margin: 18px 0 0; padding: 14px 17px; border-left: 4px solid var(--amber); border-radius: 8px; background: var(--amber-soft); }
     .callout strong { color: #633e0b; }
+    .journey-lane { display: flex; align-items: stretch; gap: 8px; margin: 16px 0; }
+    .journey-node { flex: 1; min-width: 0; padding: 14px; border: 1px solid #b8dce7; border-radius: 11px; background: var(--blue-soft); }
+    .journey-node strong, .journey-node small { display: block; }
+    .journey-node small { margin-top: 5px; color: var(--muted); line-height: 1.4; }
+    .journey-arrow { align-self: center; color: var(--blue); font-weight: 900; font-size: 1.3rem; }
+    .journey-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 17px; }
+    .journey-options article { padding: 15px; border: 1px dashed #a9c3ce; border-radius: 11px; background: #fbfdfd; }
+    .journey-options article:last-child:nth-child(odd) { grid-column: 1 / -1; }
+    .journey-options b { display: block; margin-bottom: 7px; }
+    .journey-options p { margin: 0; font-size: .9rem; }
+    .reading-route { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 18px; }
+    .reading-route a { padding: 6px 9px; border-radius: 7px; background: #edf2f4; text-decoration: none; font-size: .84rem; font-weight: 700; }
+    .handoff { margin: 0 0 13px; padding: 9px 12px; border-left: 3px solid var(--blue); background: #f3f8fa; color: var(--muted); font-size: .87rem; }
+    .source-label { display:block; margin:12px 0 5px; color:#123c50; font-size:.82rem; font-weight:800; }
     details.learning { margin: 14px 0; padding: 13px 16px; border: 1px solid var(--line); border-radius: 12px; background: #f8fbfc; }
     details.learning summary { cursor: pointer; font-weight: 800; color: #123c50; }
     details.learning summary::marker { color: var(--blue); }
@@ -101,6 +115,9 @@
     footer { padding: 24px 8px; color: var(--muted); font-size: .88rem; }
     @media (max-width: 700px) {
       main { width: min(100% - 22px, 1120px); margin-top: 14px; }
+      .journey-lane { flex-direction: column; }
+      .journey-arrow { transform: rotate(90deg); }
+      .journey-options { grid-template-columns: 1fr; }
       .split, .grid { grid-template-columns: 1fr; }
       .trouble { grid-template-columns: 1fr; gap: 2px; }
       .matrix { font-size: .9rem; }
@@ -155,11 +172,32 @@
       <p>원격 서버 접속은 크게 두 경로로 이해할 수 있습니다. SSH는 내 컴퓨터가 서버의 22번 포트에 연결하고, SSM Session Manager는 AWS가 승인한 세션을 서버의 Agent와 연결합니다. 먼저 두 방식의 일반 원리를 보고, 뒤에서 TRACEBACK의 선택을 대입합니다.</p>
       <div class="hero-flow" role="img" aria-label="일반적인 두 서버 접속 경로: SSH는 내 컴퓨터에서 서버 22번 포트로 연결, SSM Session Manager는 사용자와 서버 Agent가 AWS 세션 채널을 통해 통신"><span>SSH: 내 컴퓨터</span><b>→</b><span>서버 TCP 22</span><b>│</b><span>SSM: 사용자 ↔ AWS 세션 ↔ 서버 Agent</span></div>
       <nav class="hero-nav" aria-label="문서 목차">
-        <a href="#network">네트워크 기초</a><a href="#aws-terms">AWS 용어</a><a href="#path">연결 그림</a><a href="#steps">설정 순서</a><a href="#troubleshooting">문제 해결</a>
+        <a href="#journey">전체 접속 지도</a><a href="#network">네트워크 기초</a><a href="#aws-terms">AWS 용어</a><a href="#path">연결 그림</a><a href="#steps">설정 순서</a><a href="#troubleshooting">문제 해결</a>
       </nav>
     </header>
 
+    <section id="journey">
+      <span class="tag">이 문서의 전체 지도</span>
+      <h2>내 터미널에서 서버 셸까지, 한 경로를 확대해 읽습니다</h2>
+      <p class="lead">아래 가운데 줄이 <b>SSM(AWS Systems Manager)의 Session Manager 셸 접속</b>입니다. 사람의 권한, AWS 세션 서비스, 서버 Agent, 네트워크 경로가 맞아야 셸이 열립니다. 이 문서의 나머지 섹션은 각각 이 줄의 일부를 확대합니다.</p>
+      <div class="journey-lane" role="img" aria-label="사용자 터미널과 AWS 신원, Session Manager, EC2 SSM Agent, Linux 셸로 이어지는 접속 흐름">
+        <div class="journey-node"><strong>① 내 터미널</strong><small>AWS CLI·사람의 임시 자격 증명</small></div><span class="journey-arrow" aria-hidden="true">→</span>
+        <div class="journey-node"><strong>② AWS 권한</strong><small>대상 EC2에 StartSession 허용?</small></div><span class="journey-arrow" aria-hidden="true">→</span>
+        <div class="journey-node"><strong>③ Session Manager</strong><small>양방향 세션 채널 생성</small></div><span class="journey-arrow" aria-hidden="true">↔</span>
+        <div class="journey-node"><strong>④ EC2 Agent</strong><small>EC2 역할·HTTPS 443 출구</small></div><span class="journey-arrow" aria-hidden="true">→</span>
+        <div class="journey-node"><strong>⑤ 서버 셸</strong><small>명령 입력과 결과 확인</small></div>
+      </div>
+      <p class="caption">③↔④ 통신은 서버 Agent가 AWS 서비스로 나가는 경로를 사용합니다. 사용자 PC가 EC2의 SSH 22번 포트에 접속하는 경로가 아닙니다. TRACEBACK은 이 SSM 경로를 사용합니다.</p>
+      <div class="journey-options">
+        <article><b>다른 접속 경로 · SSH와 Bastion</b><p>내 컴퓨터 → SSH 22 → 서버. 대상이 사설망에 있으면 <b>내 컴퓨터 → Bastion(점프 서버) → 사설 서버</b>처럼 중간 서버를 둘 수 있습니다. Bastion은 여기서 <em>접속 경로</em>의 선택지입니다. 웹 요청, DB 요청, GitHub 배포의 필수 단계가 아닙니다. <a href="#bastion">TRACEBACK 선택 보기</a></p></article>
+        <article><b>SSM 경로의 네트워크 선택</b><p>Agent가 AWS에 나갈 때 공개 인터넷 경로 또는 VPC Endpoint 같은 사설 경로를 쓸 수 있습니다. 이 선택은 ④의 <em>출구</em>를 바꾸며 사용자 인증·세션 권한을 대체하지 않습니다. <a href="#vpc-endpoints">두 출구 비교하기</a></p></article>
+        <article><b>두 방식을 결합할 수도 있음</b><p>내 컴퓨터 → SSM → Bastion → 사설 서버. 이때 SSM은 <em>중간 서버에 들어가는 첫 연결</em>이고, Bastion은 그 뒤 사설망의 다른 대상에 접근하는 점프 서버입니다. 대상 서버 자체가 SSM 관리 대상이라면 직접 세션을 열 수도 있습니다. <a href="#bastion">혼합 경로 보기</a></p></article>
+      </div>
+      <div class="reading-route" aria-label="전체 지도에서 이어지는 학습 순서"><a href="#network">① 통신 용어</a><a href="#aws-terms">② AWS 신원·서비스</a><a href="#path">③ SSH/SSM 경로</a><a href="#steps">④ 로컬 접속</a><a href="#current-state">⑤ TRACEBACK 상태</a><a href="#vpc-endpoints">⑥ 출구 선택</a><a href="#bastion">⑦ Bastion 대안</a><a href="#troubleshooting">⑧ 실패 진단</a></div>
+    </section>
+
     <section id="network">
+      <p class="handoff">전체 지도의 ①~⑤에서 쓰는 공통 언어부터 확인합니다. 이 용어를 알아야 SSH와 SSM의 네트워크 경로를 비교할 수 있습니다.</p>
       <span class="tag">일반 네트워크 지식</span>
       <h2>먼저 네트워크 자체를 구분합니다</h2>
       <p class="lead">AWS를 몰라도 이해할 수 있는 인터넷 통신의 기본 개념입니다. AWS 용어와 섞이지 않도록 이 구역에서는 네트워크 동작만 설명합니다.</p>
@@ -187,6 +225,7 @@
     </section>
 
     <section id="aws-terms">
+      <p class="handoff">이제 같은 연결을 AWS 제품과 권한으로 번역합니다. 사람의 권한(②)과 EC2 Agent의 권한(④)은 서로 다른 신원입니다.</p>
       <span class="tag">AWS 용어</span>
       <h2>SSM은 무엇이고, Session Manager는 무엇인가요?</h2>
       <p class="lead">SSM은 SSH의 다른 이름이 아닙니다. 사용자는 AWS 권한으로 세션 시작을 요청하고, 인스턴스의 SSM Agent가 AWS 서비스에 먼저 연결합니다.</p>
@@ -232,6 +271,7 @@
     </section>
 
     <section id="path">
+      <p class="handoff">앞에서 구분한 신원과 포트가 실제로 어느 경로를 통과하는지 비교합니다. 여기서 접속 방식이 갈립니다.</p>
       <span class="tag">두 경로를 비교</span>
       <h2>SSH와 SSM은 연결을 시작하는 쪽이 다릅니다</h2>
       <div class="tabs" role="tablist" aria-label="접속 방식 선택">
@@ -271,6 +311,7 @@
     </section>
 
     <section id="steps">
+      <p class="handoff">SSM 경로를 선택했다면 이제 내 컴퓨터에서 ①~⑤를 실제로 잇습니다. 아래 값은 TRACEBACK 개발 환경의 예시입니다.</p>
       <span class="tag">공통 조건 → TRACEBACK 적용</span>
       <h2>로컬 터미널에서 dev EC2 접속하기</h2>
       <p class="lead"><b>일반 조건은 세 가지:</b> 접속하는 사람에게 대상 EC2의 세션 시작 권한, EC2 Agent에 Systems Manager 통신 권한과 네트워크 경로, 로컬 CLI 접속이라면 AWS CLI와 Session Manager plugin이 필요합니다. 인증은 Identity Center 외의 임시 자격 증명도 가능하고, 콘솔에서 접속하면 로컬 CLI 설정은 필요하지 않습니다. 아래 1~6은 <b>TRACEBACK이 Identity Center와 로컬 CLI를 선택했을 때의 재현 절차</b>입니다. 7은 이 컴퓨터에만 추가한 선택적 단축 함수입니다.</p>
@@ -279,7 +320,7 @@
 
       <div class="step"><div class="num">1</div><div><h3>AWS IAM Identity Center 사용자 준비</h3><p>일반적으로 계정 관리자가 사용자를 만들고 AWS 계정과 필요한 Permission Set을 할당합니다. 사용자는 초대받은 뒤 암호와 MFA를 설정합니다. 이 사람의 로그인 권한은 EC2에 붙는 IAM Role과 별개입니다.</p><p>현재 TRACEBACK은 사용자 <code>oscar</code>, access portal <code>https://d-9b675ce989.awsapps.com/start</code>, 서울 Identity Center를 사용합니다. 사용자와 MFA 설정은 완료됐습니다. 실제 운영에서는 업무에 필요한 범위만 허용하는 Permission Set을 사용합니다.</p></div></div>
 
-      <div class="step"><div class="num">2</div><div><h3>CLI에 구분 가능한 프로필 만들기</h3><p>프로필은 내 컴퓨터에서 AWS 접속 대상을 구분하는 이름입니다. 여러 계정이나 환경을 쓸 때는 모호한 <code>default</code>보다 목적이 드러나는 이름이 실수를 줄여줍니다.</p><pre><code>aws configure sso --profile traceback-dev</code></pre><p>터미널이 물어보면 다음처럼 입력합니다.</p>
+      <div class="step"><div class="num">2</div><div><h3>CLI에 구분 가능한 프로필 만들기</h3><p>프로필은 내 컴퓨터에서 AWS 접속 대상을 구분하는 이름입니다. 여러 계정이나 환경을 쓸 때는 모호한 <code>default</code>보다 목적이 드러나는 이름이 실수를 줄여줍니다.</p><span class="source-label">AWS CLI 실행 명령 · 저장소 소스 파일이 아닙니다</span><pre><code>aws configure sso --profile traceback-dev</code></pre><p>터미널이 물어보면 다음처럼 입력합니다.</p>
         <ul class="checklist">
           <li><b>SSO session name:</b> <code>traceback</code></li>
           <li><b>SSO start URL:</b> <code>https://d-9b675ce989.awsapps.com/start</code></li>
@@ -293,22 +334,22 @@
         <p><b>세션 이름</b>은 로그인 세션 설정의 이름이고, <b>프로필 이름</b>은 명령에서 <code>--profile</code> 뒤에 적는 로컬 별칭입니다. 둘 다 같은 문자열이어도 서로 다른 항목입니다. CLI가 만든 프로필 메타데이터는 보통 <code>~/.aws/config</code>에 기록됩니다. 실제 임시 SSO 토큰은 만료 가능한 캐시에 보관되며, Access Key를 이 문서에 복사해 적는 방식이 아닙니다.</p>
       </div></div>
 
-      <div class="step"><div class="num">3</div><div><h3>브라우저 SSO 로그인</h3><pre><code>aws sso login --profile traceback-dev</code></pre><p>브라우저에서 IAM Identity Center 로그인을 완료합니다. AWS CLI는 임시 자격 증명을 로컬 SSO cache에 보관하고 만료되면 다시 로그인합니다. 장기 Access Key를 직접 복사해 넣는 방식과 다릅니다.</p></div></div>
+      <div class="step"><div class="num">3</div><div><h3>브라우저 SSO 로그인</h3><span class="source-label">AWS CLI 실행 명령 · 저장소 소스 파일이 아닙니다</span><pre><code>aws sso login --profile traceback-dev</code></pre><p>브라우저에서 IAM Identity Center 로그인을 완료합니다. AWS CLI는 임시 자격 증명을 로컬 SSO cache에 보관하고 만료되면 다시 로그인합니다. 장기 Access Key를 직접 복사해 넣는 방식과 다릅니다.</p></div></div>
 
-      <div class="step"><div class="num">4</div><div><h3>목표 AWS 계정이 맞는지 확인</h3><pre><code>aws sts get-caller-identity \
+      <div class="step"><div class="num">4</div><div><h3>목표 AWS 계정이 맞는지 확인</h3><span class="source-label">AWS CLI 실행 명령 · 저장소 소스 파일이 아닙니다</span><pre><code>aws sts get-caller-identity \
   --profile traceback-dev \
   --query Account \
   --output text</code></pre><p>출력이 현재 접속하려는 계정 ID <code>968579693658</code>인지 확인합니다. 다른 계정 번호가 나오면 대상이 아닌 계정일 수 있으므로 SSM 접속 명령을 실행하지 말고 프로필 선택을 확인합니다.</p><p>이 검사는 현재 CLI가 어떤 계정의 어떤 권한으로 AWS 명령을 실행하는지 알려줍니다.</p></div></div>
 
-      <div class="step"><div class="num">5</div><div><h3>Session Manager plugin 확인</h3><p>AWS CLI가 SSM 세션을 터미널에 연결할 때 로컬 Session Manager plugin을 사용합니다. AWS CLI와 별도 구성요소이므로 운영체제에 맞는 AWS 설치 안내로 설치한 뒤 확인합니다.</p><pre><code>command -v session-manager-plugin
+      <div class="step"><div class="num">5</div><div><h3>Session Manager plugin 확인</h3><p>AWS CLI가 SSM 세션을 터미널에 연결할 때 로컬 Session Manager plugin을 사용합니다. AWS CLI와 별도 구성요소이므로 운영체제에 맞는 AWS 설치 안내로 설치한 뒤 확인합니다.</p><span class="source-label">로컬 plugin 확인 명령 · 저장소 소스 파일이 아닙니다</span><pre><code>command -v session-manager-plugin
 session-manager-plugin</code></pre><p>현재 Mac에서는 plugin이 <code>~/.local/bin</code>에 있어 이 디렉터리를 PATH에 추가했습니다. 실행 파일을 못 찾을 때만 <code>export PATH="$HOME/.local/bin:$PATH"</code>를 <code>~/.zshrc</code>에 추가합니다. 이 경로는 현재 컴퓨터의 설치 방식이며 다른 컴퓨터에서는 달라질 수 있습니다.</p></div></div>
 
-      <div class="step"><div class="num">6</div><div><h3>개발 인스턴스에 세션 시작</h3><pre><code>aws ssm start-session \
+      <div class="step"><div class="num">6</div><div><h3>개발 인스턴스에 세션 시작</h3><span class="source-label">AWS CLI의 표준 세션 명령 · 저장소 소스 파일이 아닙니다</span><pre><code>aws ssm start-session \
   --target i-051f85a1ac4e64a2c \
   --region ap-northeast-2 \
   --profile traceback-dev</code></pre><p>성공하면 원격 Linux 셸 프롬프트가 나타납니다. 작업을 끝내면 <code>exit</code>를 입력해 세션을 닫습니다. 이 명령은 EC2나 RDS를 만들거나 시작/중지하지 않고, 실행 중인 EC2에 셸 연결만 엽니다.</p><p>현재는 셸 함수로 <code>aws ssm traceback-dev</code>를 입력하면 위 긴 명령을 실행합니다. 짧은 명령은 AWS CLI 기본 명령이 아니라 내 컴퓨터에 추가한 편의 설정입니다.</p></div></div>
 
-      <div class="step"><div class="num">7</div><div><h3>선택 사항 · TRACEBACK 로컬 단축 명령</h3><p>AWS CLI 자체에는 <code>aws ssm traceback-dev</code> 명령이 없습니다. 현재는 <code>~/.zshrc</code>의 셸 함수가 이 입력을 가로채, 자격 증명이 만료됐으면 SSO 로그인 후 긴 <code>start-session</code> 명령을 실행합니다. 나머지 <code>aws ...</code> 명령은 원래 CLI로 전달합니다.</p><pre><code>aws() {
+      <div class="step"><div class="num">7</div><div><h3>선택 사항 · TRACEBACK 로컬 단축 명령</h3><p>AWS CLI 자체에는 <code>aws ssm traceback-dev</code> 명령이 없습니다. 현재는 <code>~/.zshrc</code>의 셸 함수가 이 입력을 가로채, 자격 증명이 만료됐으면 SSO 로그인 후 긴 <code>start-session</code> 명령을 실행합니다. 나머지 <code>aws ...</code> 명령은 원래 CLI로 전달합니다.</p><span class="source-label">로컬 ~/.zshrc 셸 함수 예시 · AWS CLI 기본 명령이나 저장소 소스 파일이 아닙니다</span><pre><code>aws() {
   if [[ "$#" -eq 2 && "$1" == "ssm" && "$2" == "traceback-dev" ]]; then
     command aws sts get-caller-identity --profile traceback-dev >/dev/null 2>&1 || {
       command aws sso login --profile traceback-dev || return
@@ -326,6 +367,7 @@ session-manager-plugin</code></pre><p>현재 Mac에서는 plugin이 <code>~/.loc
     </section>
 
     <section id="current-state">
+      <p class="handoff">접속 절차를 TRACEBACK에 대입해 ①~⑤ 중 무엇이 준비됐는지 확인합니다.</p>
       <span class="tag">확인된 TRACEBACK dev 값</span>
       <h2>현재 리소스 상태를 이 절차에 대입하면</h2>
       <div class="grid">
@@ -339,6 +381,7 @@ session-manager-plugin</code></pre><p>현재 Mac에서는 plugin이 <code>~/.loc
     </section>
 
     <section id="vpc-endpoints">
+      <p class="handoff">여기부터는 기본 접속 절차의 대안 경로입니다. 먼저 EC2 Agent가 AWS에 나가는 ④의 네트워크 출구를 비교합니다.</p>
       <span class="tag">VPC Endpoint가 필요한 경우</span>
       <h2>현재 dev EC2에는 새로 만들 필요가 없습니다</h2>
       <p class="lead">VPC Endpoint는 VPC 안의 EC2가 AWS 서비스의 private IP로 연결하도록 만들어 주는 네트워크 인터페이스입니다. SSM Endpoint를 만들어도 사용자 노트북이 EC2에 직접 연결되는 것은 아닙니다. EC2 안의 SSM Agent가 AWS Systems Manager로 나가는 경로가 바뀝니다.</p>
@@ -367,8 +410,14 @@ session-manager-plugin</code></pre><p>현재 Mac에서는 plugin이 <code>~/.loc
     </section>
 
     <section id="bastion">
+      <p class="handoff">이번에는 ①→⑤ 전체 접속 방식을 바꾸는 선택지입니다. Bastion은 SSH로 사설 서버에 접근할 때 중간에 두는 점프 서버이며 위 SSM 경로의 필수 구성요소가 아닙니다.</p>
       <span class="tag">Bastion과 SSM</span>
-      <h2>Bastion은 SSM과 함께 쓸 수도 있지만, 현재는 필요하지 않습니다</h2>
+      <h2>SSH 경로에 중간 서버가 필요할 때 Bastion을 둡니다</h2>
+      <div class="journey-options" aria-label="사설 서버에 접근하는 세 가지 선택 경로">
+        <article><b>점프 서버 경로 · SSH 중심</b><p>내 컴퓨터 → Bastion → 사설 EC2. 첫 연결은 Bastion에, 두 번째 연결은 Bastion에서 사설 서버에 엽니다. 사설 EC2가 외부에서 직접 닿지 않을 때 중간 진입점 역할을 합니다.</p></article>
+        <article><b>Agent 경로 · SSM 중심</b><p>내 컴퓨터 → Session Manager ↔ 사설 EC2의 Agent. 사설 EC2 자체가 관리 대상이고 AWS 서비스로 나갈 경로가 있으면 Bastion을 거치지 않고 세션을 엽니다. TRACEBACK이 쓰는 접속 방식입니다.</p></article>
+        <article><b>혼합 경로 · SSM으로 Bastion에 진입</b><p>내 컴퓨터 → Session Manager ↔ Bastion의 Agent → 사설 대상. SSM은 Bastion 접속을 보호하고, Bastion은 그 다음 사설 대상에 접근합니다. <a href="https://docs.aws.amazon.com/prescriptive-guidance/latest/patterns/access-a-bastion-host-by-using-session-manager-and-amazon-ec2-instance-connect.html">AWS의 구성 예시</a>가 있습니다.</p></article>
+      </div>
       <div class="split">
         <article class="card network"><h3>Bastion이란?</h3><p>일반 네트워크 용어로는 외부 사용자와 내부 서버 사이에 두는 점프용 서버입니다. 사용자는 먼저 Bastion에 접속하고, 거기서 사설망의 대상 서버로 다시 연결합니다. 보통 대상 EC2는 공인 인터넷에 직접 노출하지 않습니다.</p></article>
         <article class="card aws"><h3>우리의 현재 구조</h3><p>개발 EC2가 SSM 관리 대상으로 등록되어 있으므로 각 환경 EC2에 직접 Session Manager로 접속하면 됩니다. 운영 EC2가 생겨도 권한을 dev/prod 인스턴스별로 제한해 각각 직접 접속할 수 있습니다. SSM은 Bastion을 통해서도 쓸 수 있지만, 현재 두 서버 접근만을 위해 중간 EC2를 추가하면 관리 대상과 비용이 늘어납니다.</p></article>
@@ -377,6 +426,7 @@ session-manager-plugin</code></pre><p>현재 Mac에서는 plugin이 <code>~/.loc
     </section>
 
     <section id="troubleshooting">
+      <p class="handoff">마지막으로 전체 지도 ①~⑤ 중 어디서 끊겼는지 역순으로 확인합니다. 에러가 난 위치에 따라 신원·권한·출구·Agent를 분리해 봅니다.</p>
       <span class="tag">오류가 나면 확인할 곳</span>
       <h2>접속 문제는 네트워크와 권한을 분리해 찾습니다</h2>
       <div class="trouble"><strong>다른 계정 번호 출력</strong><span><code>--profile traceback-dev</code>를 빠뜨렸거나 프로필 선택이 잘못됐습니다. 계정 ID <code>968579693658</code>를 확인하기 전에는 다음으로 진행하지 않습니다.</span></div>

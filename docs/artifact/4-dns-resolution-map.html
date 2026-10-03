@@ -10,6 +10,10 @@
     details.learning { margin:16px 0; padding:14px 17px; border:1px solid #cbd5e1; border-radius:12px; background:#fff; }
     details.learning summary { cursor:pointer; font-weight:800; }
     details.learning p { margin:10px 0 0; }
+    .topic-rail { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:18px 0 10px; padding:12px; border:1px solid #cbd5e1; border-radius:12px; background:#fff; font-size:.85rem; }
+    .topic-rail span { padding:7px 9px; border-radius:7px; background:#e8f1f8; font-weight:800; }
+    .topic-rail b { color:#176b87; }
+    .source-label { margin:12px 0 5px; color:var(--ink); font-size:.81rem; font-weight:800; }
     :root {
       color-scheme: light;
       --paper: #f5f8fa; --surface: #fff; --ink: #172936; --muted: #526675;
@@ -472,6 +476,8 @@
       </div>
       <div class="legend" aria-label="패킷 방향 범례"><span class="q">→ DNS Query · 요청</span><span class="r">← DNS Response · 응답</span></div>
     </header>
+    <div class="topic-rail" role="img" aria-label="DNS 학습 순서: 이름과 IP를 구분하고, DNS 패킷이 주소를 찾는 과정을 본 다음 도메인과 서버 IP를 운영하고 웹 연결을 따로 검증합니다"><span>① 이름이 왜 IP를 찾나</span><b>→</b><span>② DNS 패킷이 어디를 묻나</span><b>→</b><span>③ 누가 레코드·IP를 관리하나</span><b>→</b><span>④ 웹 연결을 별도 확인</span></div>
+    <p class="tab-intro">아래 세 탭은 서로 다른 주제가 아니라 같은 주소 찾기 흐름의 확대 단계입니다. 처음 탭에서 뜻을 잡고, 두 번째에서 실제 질의를 따라간 뒤, 세 번째에서 그 레코드를 운영하는 방법을 봅니다.</p>
     <nav class="tabbar" role="tablist" aria-label="DNS 학습 단계">
       <button type="button" role="tab" id="tab-concepts" aria-controls="panel-concepts" aria-selected="true">① 처음부터 이해하기</button>
       <button type="button" role="tab" id="tab-detail" aria-controls="panel-detail" aria-selected="false">② 실제 DNS 조회 보기</button>
@@ -550,6 +556,7 @@
         <aside class="start-card hint-first">
           <h3>Root Hints = 첫 목적지 주소록</h3>
           <p>Resolver 소프트웨어에는 Root DNS의 이름과 주소 목록이 미리 포함되거나 설정되어 있습니다. Root를 찾기 위해 DNS 조회를 다시 시작할 필요가 없습니다.</p>
+          <div class="source-label">개념 예시 · root hints 형식을 읽는 그림이며 저장소 코드가 아닙니다</div>
           <pre><code>A-root → 198.41.0.4
 B-root → 170.247.170.2
 C-root → 192.33.4.12
@@ -593,7 +600,7 @@ C-root → 192.33.4.12
     </div>
 
     <div id="panel-detail" role="tabpanel" tabindex="0" aria-labelledby="tab-detail" hidden>
-      <p class="tab-intro">이제 캐시가 비어 있다고 가정하고, Resolver가 Root → .com → 권한 DNS에 보내는 실제 패킷을 따라갑니다. 각 파란 Query 뒤에는 초록 Response가 돌아옵니다.</p>
+      <p class="tab-intro">첫 탭에서 본 “DNS로 IP 찾기” 상자를 확대합니다. 캐시가 비어 있다고 가정하고, Resolver가 Root → .com → 권한 DNS에 보내는 실제 패킷을 따라갑니다. 각 파란 Query 뒤에는 초록 Response가 돌아옵니다.</p>
 
     <section aria-labelledby="main-title">
       <div class="section-title"><h2 id="main-title">한 장으로 보는 실제 왕복</h2><p>같은 이름을 묻지만, 목적지 서버 IP가 단계마다 바뀝니다.</p></div>
@@ -734,7 +741,7 @@ C-root → 192.33.4.12
     <button class="next-tab" type="button" data-next-tab="concepts">← 기본 개념 다시 보기</button>
     </div>
 <div id="panel-operations" role="tabpanel" tabindex="0" aria-labelledby="tab-operations" hidden>
-      <p class="tab-intro">도메인을 어디서 등록하고 DNS를 어디서 관리할지, 그리고 개발 서버 IP 변경을 어떻게 다룰지 비교합니다.</p>
+      <p class="tab-intro">두 번째 탭에서 도착한 권한 DNS의 답을 누가 만들고 유지하는지 봅니다. 도메인을 어디서 등록하고 DNS를 어디서 관리할지, 개발 서버 IP 변경을 어떻게 다룰지 비교합니다. 마지막에는 새 주소가 실제 HTTPS 서비스로 이어지는지 별도로 검사합니다.</p>
     <section aria-labelledby="q7-title">
       <div class="question-head"><span class="qnum">운영 01</span><h2 id="q7-title">도메인 등록과 DNS 관리는 무엇이 다른가요?</h2></div>
       <div class="concept-box">
@@ -755,6 +762,7 @@ C-root → 192.33.4.12
         <div class="one-purchase"><b>도메인은 한 번만 등록합니다.</b> 등록은 도메인 이름의 사용권을 연 단위로 확보하는 일이고, DNS 관리는 그 이름 아래 레코드가 어디를 가리킬지 정하는 일입니다. Route 53에서 등록하면 Route 53이 등록업체이자 DNS 관리업체가 됩니다.</div>
         <p class="tiny-note"><b>AWS Route 53</b>는 도메인 등록과 권한 DNS를 제공하지만 웹 요청을 대신 전달하는 프록시/CDN은 아닙니다. <b>Cloudflare</b>는 DNS 관리 외에도 프록시·캐시·보안 기능을 제공합니다. Cloudflare 프록시를 쓰려면 Cloudflare가 권한 DNS가 되도록 등록업체에서 네임서버를 바꿔야 합니다. Route 53 hosted zone에는 월 요금이 따로 있습니다. 가격과 지원 TLD는 등록 전 확인하세요.</p>
         <p class="status-note"><b>TRACEBACK 사례:</b> <code>dev-traceback.com</code>은 Route 53에서 ACTIVE 상태이고 등록 네임서버와 public hosted zone이 일치합니다. API용 <code>api.dev-traceback.com</code> A 레코드는 EIP <code>3.34.78.140</code>을 가리킵니다. DNS 설정이 끝났다는 것은 이름이 IP를 찾는다는 뜻입니다. HTTPS 인증서, Nginx, API 애플리케이션까지 준비됐다는 뜻은 아닙니다. 현재 API 서버는 아직 배포 전입니다. <a href="3-development-ip-domain-guide.html">우리 EIP와 도메인 설정의 자세한 설명 →</a></p>
+        <div class="source-label">콘솔 설정 스냅샷 · 저장소 코드가 아니므로 원본 행 번호가 없습니다</div>
         <pre class="config-source"><code>Route 53 public hosted zone · 실제 콘솔 설정
 Name: api.dev-traceback.com
 Type: A    TTL: 300    Value: 3.34.78.140</code></pre>
@@ -787,10 +795,10 @@ Type: A    TTL: 300    Value: 3.34.78.140</code></pre>
         <div class="domain-branches" aria-label="한 도메인에서 프런트와 API 서브도메인으로 나뉘는 구조"><div class="base-domain">등록한 도메인: example.com</div><div class="branch-row"><span>www.example.com</span><i>→</i><span>Vercel 프런트엔드 · 사람이 방문하는 화면</span></div><div class="branch-row"><span>api.example.com</span><i>→</i><span>AWS EC2의 HTTPS API · Django가 요청 처리</span></div></div>
         <p>이 프로젝트의 브라우저 요청은 프런트 주소에서 시작합니다. Vercel은 <code>/api/*</code>, <code>/accounts/*</code>, <code>/_allauth/*</code>를 API 서버로 <b>rewrite</b>합니다. Rewrite는 브라우저 주소를 바꾸지 않고 뒤에서 요청을 다른 서버로 전달하는 방식입니다.</p>
         <div class="request-lines" aria-label="브라우저 화면 요청과 API 요청의 서로 다른 도착 경로"><div class="request-line"><b>화면 요청</b><span>브라우저: www.example.com</span><i>→</i><span>Vercel이 페이지 응답</span></div><div class="request-line"><b>API 요청</b><span>브라우저: www.example.com/api/…</span><i>→</i><span>Vercel rewrite</span><i>→</i><span>https://api.example.com</span><i>→</i><span>EC2 · Django</span></div></div>
-        <pre class="config-source"><code>// traceback-client/vercel.ts · API 경로 설정 발췌
-const configuredOrigin = process.env.DJANGO_ORIGIN?.trim();
-source: "/api/:path*",
-destination: `&#36;{djangoOrigin}/api/:path*`,</code></pre>
+        <div class="source-label">설명용 발췌 · 실제 <a href="https://github.com/orange-taco/traceback-client/blob/development/vercel.ts#L1">vercel.ts 1행</a>과 <a href="https://github.com/orange-taco/traceback-client/blob/development/vercel.ts#L31-L34">31–34행</a>을 함께 보여줍니다</div>
+        <pre class="config-source"><code>1  │ const configuredOrigin = process.env.DJANGO_ORIGIN?.trim();
+32 │           source: "/api/:path*",
+33 │           destination: `&#36;{djangoOrigin}/api/:path*`,</code></pre>
         <p class="tiny-note">Vercel은 배포 시 <code>DJANGO_ORIGIN</code>을 읽어 프런트 주소의 <code>/api/*</code>를 백엔드 HTTPS origin으로 전달합니다. <code>/_allauth/*</code>와 <code>/accounts/*</code>도 같은 방식입니다. <a href="https://github.com/orange-taco/traceback-client/blob/development/vercel.ts">전체 코드</a>에서 세 경로와 HTTPS origin 검증을 볼 수 있습니다.</p>
         <div class="one-purchase"><b>API 도메인도 중요합니다.</b> 주소창에는 주로 프런트 도메인이 보이지만, Vercel은 API 도메인을 DNS로 찾고 유효한 HTTPS 인증서를 확인한 뒤 EC2에 접속해야 합니다. 이 구성에서 API 도메인은 단순한 내부 별명이 아닙니다.</div>
         <p class="tiny-note"><b>일반적인 그림:</b> <code>example.com</code>은 구조 설명용 예시이며 실제 이름은 DNS 레코드로 정합니다. <b>TRACEBACK 사례:</b> 프런트는 <code>traceback-client-nine.vercel.app</code>, 백엔드 API 이름은 <code>api.dev-traceback.com</code>입니다. API DNS A 레코드는 EIP까지 연결했고 Vercel 변수도 저장했지만, 새 Vercel 배포와 백엔드 HTTPS·Nginx·Django 앱 준비는 남았습니다.</p>

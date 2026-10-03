@@ -15,6 +15,28 @@
     details.learning { margin:14px 0; padding:14px 17px; border:1px solid var(--line); border-radius:12px; background:#fff; }
     details.learning summary { cursor:pointer; color:var(--navy); font-weight:800; }
     details.learning p { margin:10px 0 0; color:var(--muted); }
+    .guide-route { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin-top:18px; }
+    .guide-route article { border:1px solid var(--line); border-top:4px solid var(--blue); border-radius:11px; background:#fff; padding:14px; }
+    .guide-route article:last-child { border-top-color:var(--green); }
+    .guide-route strong { display:block; color:var(--navy); }
+    .guide-route p { margin:6px 0; color:var(--muted); font-size:.85rem; }
+    .guide-route a { font-size:.82rem; font-weight:750; }
+    .handoff { margin:0 0 14px; padding:9px 12px; border-left:3px solid var(--blue); background:#edf5fa; color:var(--muted); font-size:.87rem; }
+    .code-frame { min-width:0; margin:14px 0; border:1px solid #b8c9d7; border-radius:11px; overflow:hidden; background:#102a43; }
+    .code-frame-head { display:flex; flex-wrap:wrap; justify-content:space-between; gap:7px; padding:10px 13px; background:#eaf2f8; color:var(--navy); font-size:.82rem; }
+    .code-frame-head strong { font-weight:800; }
+    .code-frame-head a { font-weight:750; }
+    .code-frame pre { margin:0; border-radius:0; overflow:auto; }
+    .code-frame pre code { display:block; width:max-content; min-width:100%; white-space:normal; }
+    .code-row { display:block; min-height:1.55em; white-space:pre; }
+    .code-row::before { content:attr(data-line); display:inline-block; position:sticky; left:0; width:4ch; margin-right:13px; border-right:1px solid #60798d; padding-right:9px; background:#102a43; color:#a9c6d9; text-align:right; user-select:none; }
+    .code-read-layout { display:grid; grid-template-columns:minmax(220px,.7fr) minmax(0,1.5fr); gap:14px; align-items:start; }
+    .code-read-note { padding:15px; border:1px solid var(--line); border-radius:10px; background:#f4f8fb; color:var(--muted); font-size:.89rem; }
+    .code-read-note strong { display:block; margin-bottom:6px; color:var(--navy); }
+    .code-read-layout .code-frame { margin:0; }
+    @media(max-width:760px){.code-read-layout{grid-template-columns:1fr}}
+    @media(max-width:760px){.guide-route{grid-template-columns:1fr 1fr}}
+    @media(max-width:490px){.guide-route{grid-template-columns:1fr}}
     .architecture article { min-width:0; padding:18px; border:1px solid var(--line); border-radius:15px; background:var(--white); }
     .architecture article.selected { border:2px solid var(--green); background:var(--green-bg); }
     .architecture h3 { margin:8px 0; }
@@ -78,6 +100,8 @@
       pre, .workflow-source { max-height:none!important; overflow:visible!important; white-space:pre-wrap!important; }
       pre code, .workflow-source code, .workflow-line { width:auto!important; min-width:0!important; white-space:pre-wrap!important; overflow-wrap:anywhere!important; }
       .workflow-block-body { grid-template-columns:1fr!important; }
+      .code-read-layout { grid-template-columns:1fr!important; }
+      .code-row { white-space:pre-wrap!important; overflow-wrap:anywhere!important; }
       svg, img, .diagram, .flow-diagram { max-width:100%!important; min-width:0!important; height:auto; }
       h1, h2, h3, h4 { break-after:avoid; }
     }
@@ -120,8 +144,16 @@
       </div>
       <details class="learning"><summary>TRACEBACK은 이 일반 경로에 무엇을 사용하나요?</summary><p>고객 요청은 Vercel 프런트 → Route 53 A 레코드·EIP → EC2의 Nginx·Django → private RDS로 구성합니다. 배포는 GitHub Actions → AWS OIDC 권한 → ECR 이미지 → SSM 명령 → EC2 Docker로 구성합니다. DNS/EIP와 GitHub 배포 설정은 준비됐지만, EC2의 ECR pull·Docker·HTTPS·앱 실행과 Vercel 새 배포는 뒤의 상태 흐름에서 미완료로 표시합니다.</p></details>
       <details class="learning"><summary>CI가 통과했는데도 브라우저에서 API가 실패할 수 있나요?</summary><p>그렇습니다. CI는 코드·이미지·임시 테스트 환경을 검사합니다. DNS 이름이 실제 서버 IP를 알려줘도, 서버의 443 수신 프로그램과 TLS 인증서, reverse proxy, 앱, DB 연결이 없으면 브라우저 요청은 끝까지 통과하지 못합니다. 그래서 아래 설정 순서에서 각 경계를 따로 확인합니다.</p></details>
+      <div class="guide-route" aria-label="이 문서의 섹션들이 이어지는 네 단계">
+        <article><strong>① 무엇이 준비됐나</strong><p>주소·권한·서버·DB의 선행 조건과 현재 막힌 곳을 확인합니다.</p><a href="#launch-order">설정 순서</a> · <a href="#status">상태</a></article>
+        <article><strong>② 요청은 어디로 가나</strong><p>고객 요청 경로와 끝에 있는 DB를 연결합니다.</p><a href="#db-choice">DB</a> · <a href="#flow">요청</a></article>
+        <article><strong>③ 코드는 어떻게 도착하나</strong><p>GitHub 권한, 이미지, SSM 명령과 실제 배포 코드를 읽습니다.</p><a href="#cicd-iam">IAM</a> · <a href="#deploy-code">코드</a></article>
+        <article><strong>④ 두 경로가 만나는 곳</strong><p>배포한 앱이 인터넷 요청을 받도록 네트워크와 HTTPS 진입점을 점검합니다.</p><a href="#network-audit">네트워크</a> · <a href="#proxy">프록시</a></article>
+        <article><strong>⑤ 실제로 무엇을 입력하나</strong><p>환경 선택, 설정값, 비용·보안을 검토합니다. 용어는 언제든 찾아봅니다.</p><a href="#choice">선택</a> · <a href="#steps">실행</a> · <a href="#env">환경값</a> · <a href="#glossary">용어</a></article>
+      </div>
     </section>
     <section class="section" id="launch-order">
+      <p class="handoff">위의 두 경로가 실제로 만나려면 무엇을 먼저 준비해야 하는지 확인합니다. 여기의 순서는 작업 선행 관계입니다.</p>
       <h2>설정 순서와 지금 막힌 위치</h2>
       <p class="lead">왼쪽에서 오른쪽으로, 윗줄 다음 아랫줄로 읽습니다. 한 칸의 설정이 끝나도 다음 칸까지 통과해야 브라우저에서 로그인이 됩니다. 이 순서는 실제 첫 개발 배포를 위한 선행 관계입니다.</p>
       <div class="launch-key"><span>🟢 설정·확인됨</span><span>🟠 일부 설정, 연결 미검증</span><span>🔴 선행 작업이 없어 현재 통과 불가</span></div>
@@ -138,6 +170,7 @@
       <p class="small">🔴는 실제 장애 원인을 확정한 진단이 아니라, 현재 구성에서 다음 연결을 막는 <b>확인된 미설정 단계</b>입니다. EC2와 앱을 올린 뒤에도 별도 네트워크·인증 오류가 있는지는 다시 검사해야 합니다.</p>
     </section>
     <section class="section" id="status">
+      <p class="handoff">방금 본 선행 조건을 현재 TRACEBACK 개발 환경에 대입합니다. 준비된 것과 아직 검증하지 못한 것을 구분합니다.</p>
       <h2>현재 준비 상태</h2>
       <p class="lead">GitHub와 AWS의 배포 신뢰 경로(OIDC·IAM·ECR)는 준비됐습니다. 첫 배포 전에 EC2가 ECR 이미지를 pull할 권한과 서버 실행 환경을 갖추고, 런타임 설정과 TLS를 완료해야 합니다.</p>
       <div class="grid three">
@@ -154,6 +187,7 @@
 
 
     <section class="section" id="db-choice">
+      <p class="handoff">이제 고객 요청 경로의 끝인 데이터베이스부터 확대합니다. 로컬 개발 DB와 AWS의 RDS는 같은 앱이 쓰더라도 저장 위치가 다릅니다.</p>
       <h2>로컬 Docker DB와 AWS RDS는 역할이 달라요</h2>
       <p class="lead">현재 프로젝트의 기본 구성은 로컬·CI·AWS 환경마다 분리된 PostgreSQL입니다. 앱 컨테이너를 쓴다고 dev/prod에서도 DB 컨테이너를 써야 하는 것은 아닙니다.</p>
       <div class="grid three">
@@ -172,6 +206,7 @@
     </section>
 
     <section class="section" id="flow">
+      <p class="handoff">DB 선택을 고객 요청 경로의 전체 그림에 다시 연결합니다. 프런트와 백엔드, DB가 어느 순서로 대화하는지 봅니다.</p>
       <h2>요청과 배포는 두 개의 흐름입니다</h2>
       <p class="lead">브라우저 요청 경로와 코드 배포 경로는 별도로 이어집니다. RDS는 앱 내부망에 있고, S3는 현재 업로드 기능이 생길 때까지 비어 있어도 됩니다.</p>
       <div class="flow" aria-label="브라우저에서 RDS까지의 요청 흐름">
@@ -199,6 +234,7 @@
     </section>
 
     <section class="section" id="cicd-iam">
+      <p class="handoff">고객 요청 경로와 별개인 코드 배포 경로로 옮깁니다. GitHub가 AWS 자원에 접근할 권한을 어디서 얻는지 확인합니다.</p>
       <h2>GitHub Actions는 어떤 값으로 AWS에 접근하나요?</h2>
       <p class="lead">결론부터 보면 <code>AWS_DEPLOY_ROLE_ARN</code>은 AWS에서 맡을 IAM 역할을 지정하고, <code>DEVELOPMENT_INSTANCE_ID</code>는 배포할 EC2를 지정합니다. 두 값은 같은 목적이 아니며, 둘 다 비밀번호나 Access Key가 아닙니다.</p>
       <details class="learning"><summary>GitHub가 AWS 비밀번호 없이 어떻게 배포할 수 있나요?</summary><p>GitHub Actions 실행은 OIDC 토큰으로 자신의 저장소·브랜치 또는 Environment 정보를 증명합니다. AWS의 역할 신뢰 정책이 이를 확인하면 STS가 잠시 쓸 자격 증명을 발급합니다. 그 역할의 정책이 ECR push와 SSM 명령 범위를 결정합니다. <code>AWS_DEPLOY_ROLE_ARN</code>은 이 역할의 주소이며, 비밀 자격 증명 자체가 아닙니다. <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc.html">AWS: OIDC 역할 신뢰</a></p></details>
@@ -272,6 +308,7 @@
     </section>
 
     <section class="section" id="deploy-code">
+      <p class="handoff">AWS에 들어갈 권한을 확인했으니, 이제 그 권한으로 어떤 이미지와 명령을 서버에 보내는지 실제 코드로 따라갑니다.</p>
       <h2>배포 코드는 어떤 순서로 읽으면 될까요?</h2>
       <p class="lead">파일 하나가 모든 일을 하는 구조가 아닙니다. Dockerfile이 실행 이미지를 만들고, CI가 검증하며, 환경별 workflow가 이미지 저장과 서버 배포를 고르고, 공통 스크립트가 SSM으로 EC2에 명령을 보냅니다.</p>
       <div class="read-order" aria-label="배포 코드 읽는 순서">
@@ -289,36 +326,7 @@
 
       <h3>수동으로 ECR에 push하려면</h3>
       <p>수동 배포는 <b>로컬 컴퓨터에서 Docker build → ECR push → digest 확인 → SSM 배포</b> 순서입니다. Docker Hub는 이 흐름에 필요 없습니다. 아래 예시는 현재 개발 리전/저장소를 사용합니다. 로컬 AWS Identity Center 프로필이 ECR push 권한을 가져야 합니다. GitHub OIDC용 deploy role은 GitHub token만 신뢰하므로, 로컬 프로필이 그 role을 자동으로 대신 쓰지는 않습니다.</p>
-      <pre class="code-sample"><code># 반드시 빌드할 커밋의 저장소 상태가 깨끗한지 확인
-git status --short
-test -z "$(git status --porcelain)" || { echo "Commit or discard local changes before publishing" &gt;&amp;2; exit 1; }
-
-# 로컬 AWS SSO 프로필로 로그인한 다음 ECR 대상을 정함
-export AWS_PROFILE=traceback-dev
-export AWS_REGION=ap-northeast-2
-aws sso login --profile "$AWS_PROFILE"
-export AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
-export ECR_REPOSITORY=traceback
-export IMAGE_TAG="$(git rev-parse HEAD)"
-export ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-export IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
-
-# ECR 로그인, 운영 이미지 빌드, 업로드
-aws ecr get-login-password --region "$AWS_REGION" \
-  | docker login --username AWS --password-stdin "$ECR_REGISTRY"
-docker build --platform linux/amd64 --target production --tag "$IMAGE_URI" .
-docker push "$IMAGE_URI"
-
-# 배포에 쓸 불변 digest 조회
-export IMAGE_DIGEST="$(aws ecr describe-images \
-  --repository-name "$ECR_REPOSITORY" \
-  --image-ids "imageTag=$IMAGE_TAG" \
-  --query 'imageDetails[0].imageDigest' --output text)"
-export APP_IMAGE="${ECR_REGISTRY}/${ECR_REPOSITORY}@${IMAGE_DIGEST}"
-
-# 준비가 끝난 development EC2에 SSM으로 배포
-export DEVELOPMENT_INSTANCE_ID=i-051f85a1ac4e64a2c
-bash .github/scripts/deploy-development.sh</code></pre>
+      <div class="code-read-layout"><div class="code-read-note"><strong>명령을 읽는 순서</strong>1–3행에서 배포할 커밋을 확인하고, 5–13행에서 로컬 AWS 신원과 ECR 주소를 정합니다. 15–19행은 이미지 빌드·push, 21–26행은 digest 확인, 28–30행은 SSM 배포 호출입니다. 이 코드는 사람이 실행하는 예시이며 저장소 스크립트의 원본 행 번호가 아닙니다.</div><div class="code-frame"><div class="code-frame-head"><strong>실행 예시 · 로컬에서 ECR에 수동 배포</strong><span>예시 행 번호 · 저장소 원본 행과 다름</span></div><pre class="code-sample" aria-label="실행 예시 · 로컬에서 ECR에 수동 배포"><code><span class="code-row" data-line="1"># 반드시 빌드할 커밋의 저장소 상태가 깨끗한지 확인</span><span class="code-row" data-line="2">git status --short</span><span class="code-row" data-line="3">test -z &quot;$(git status --porcelain)&quot; || { echo &quot;Commit or discard local changes before publishing&quot; &gt;&amp;2; exit 1; }</span><span class="code-row" data-line="4"></span><span class="code-row" data-line="5"># 로컬 AWS SSO 프로필로 로그인한 다음 ECR 대상을 정함</span><span class="code-row" data-line="6">export AWS_PROFILE=traceback-dev</span><span class="code-row" data-line="7">export AWS_REGION=ap-northeast-2</span><span class="code-row" data-line="8">aws sso login --profile &quot;$AWS_PROFILE&quot;</span><span class="code-row" data-line="9">export AWS_ACCOUNT_ID=&quot;$(aws sts get-caller-identity --query Account --output text)&quot;</span><span class="code-row" data-line="10">export ECR_REPOSITORY=traceback</span><span class="code-row" data-line="11">export IMAGE_TAG=&quot;$(git rev-parse HEAD)&quot;</span><span class="code-row" data-line="12">export ECR_REGISTRY=&quot;${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com&quot;</span><span class="code-row" data-line="13">export IMAGE_URI=&quot;${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}&quot;</span><span class="code-row" data-line="14"></span><span class="code-row" data-line="15"># ECR 로그인, 운영 이미지 빌드, 업로드</span><span class="code-row" data-line="16">aws ecr get-login-password --region &quot;$AWS_REGION&quot; \</span><span class="code-row" data-line="17">  | docker login --username AWS --password-stdin &quot;$ECR_REGISTRY&quot;</span><span class="code-row" data-line="18">docker build --platform linux/amd64 --target production --tag &quot;$IMAGE_URI&quot; .</span><span class="code-row" data-line="19">docker push &quot;$IMAGE_URI&quot;</span><span class="code-row" data-line="20"></span><span class="code-row" data-line="21"># 배포에 쓸 불변 digest 조회</span><span class="code-row" data-line="22">export IMAGE_DIGEST=&quot;$(aws ecr describe-images \</span><span class="code-row" data-line="23">  --repository-name &quot;$ECR_REPOSITORY&quot; \</span><span class="code-row" data-line="24">  --image-ids &quot;imageTag=$IMAGE_TAG&quot; \</span><span class="code-row" data-line="25">  --query &#x27;imageDetails[0].imageDigest&#x27; --output text)&quot;</span><span class="code-row" data-line="26">export APP_IMAGE=&quot;${ECR_REGISTRY}/${ECR_REPOSITORY}@${IMAGE_DIGEST}&quot;</span><span class="code-row" data-line="27"></span><span class="code-row" data-line="28"># 준비가 끝난 development EC2에 SSM으로 배포</span><span class="code-row" data-line="29">export DEVELOPMENT_INSTANCE_ID=i-051f85a1ac4e64a2c</span><span class="code-row" data-line="30">bash .github/scripts/deploy-development.sh</span></code></pre></div></div>
       <div class="notice warn"><strong>수동 실행 전 조건:</strong> Docker 플랫폼이 EC2 CPU와 맞아야 해서 현재 t3 계열용으로 <code>linux/amd64</code>를 명시합니다. ECR tag는 immutable이므로 같은 SHA tag를 다시 덮어쓸 수 없습니다. 로컬 IAM 자격에는 ECR push와 SSM 대상/명령 조회 권한이 필요하고, EC2 instance role에는 ECR pull 권한이 필요합니다. 아직 서버 `.env`와 ECR pull 권한이 준비되지 않아 위 명령을 지금 실행해도 첫 배포가 완료되지는 않습니다.</div>
 
       <h3>파일별 맡은 일</h3>
@@ -336,101 +344,25 @@ bash .github/scripts/deploy-development.sh</code></pre>
       <h3><code>deploy-development.sh</code>, <code>deploy-prod.sh</code>와 공통 배포 로직</h3>
       <p>환경별 진입점은 각자의 인스턴스 ID 변수만 확인해 공통 실행기에 넘깁니다. 두 환경이 같은 순서로 배포되므로 SSM 명령 구현은 <code>deploy-common.sh</code> 한 곳에서 관리합니다. 개발·운영 스크립트를 완전히 복제하면 보안 수정이나 배포 순서 변경을 두 파일에 반복 적용해야 하므로, 일반적인 저장소의 재사용 방식에 맞춰 <b>환경별 이름은 분리하고 중복 로직은 공유</b>합니다.</p>
       <details class="script-source">
-        <summary>환경별 스크립트와 공통 스크립트 원문 보기 (공통 64줄)</summary>
+        <summary>환경별 스크립트와 공통 스크립트 원문 보기 (공통 72줄)</summary>
         <h4><code>deploy-development.sh</code> · 8줄</h4>
-        <pre><code>#!/usr/bin/env bash
-set -euo pipefail
-
-: "${DEVELOPMENT_INSTANCE_ID:?DEVELOPMENT_INSTANCE_ID is required}"
-export DEPLOY_INSTANCE_ID="$DEVELOPMENT_INSTANCE_ID"
-
-script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &amp;&amp; pwd)"
-exec bash "$script_dir/deploy-common.sh"</code></pre>
+        <div class="code-read-layout"><div class="code-read-note"><strong>원본 · 개발 배포 진입점</strong>GitHub development workflow가 DEVELOPMENT_INSTANCE_ID를 넘깁니다. 4–5행이 대상 ID를 공통 이름으로 바꾸고, 8행이 공통 배포 실행기로 이어집니다.</div><div class="code-frame"><div class="code-frame-head"><strong>원본 · 개발 배포 진입점</strong><span>1–8행 · 저장소 원본과 일치 · <a href="../../.github/scripts/deploy-development.sh">원본 파일 열기</a> · <a href="https://github.com/orange-taco/traceback/blob/c292d9dbe7a43ed10da3f2d26796516ad2b18c25/.github/scripts/deploy-development.sh#L1-L8">GitHub 해당 행</a></span></div><pre class="code-sample" aria-label="원본 · 개발 배포 진입점"><code><span class="code-row" data-line="1">#!/usr/bin/env bash</span><span class="code-row" data-line="2">set -euo pipefail</span><span class="code-row" data-line="3"></span><span class="code-row" data-line="4">: &quot;${DEVELOPMENT_INSTANCE_ID:?DEVELOPMENT_INSTANCE_ID is required}&quot;</span><span class="code-row" data-line="5">export DEPLOY_INSTANCE_ID=&quot;$DEVELOPMENT_INSTANCE_ID&quot;</span><span class="code-row" data-line="6"></span><span class="code-row" data-line="7">script_dir=&quot;$(cd -- &quot;$(dirname -- &quot;${BASH_SOURCE[0]}&quot;)&quot; &amp;&amp; pwd)&quot;</span><span class="code-row" data-line="8">exec bash &quot;$script_dir/deploy-common.sh&quot;</span></code></pre></div></div>
         <h4><code>deploy-prod.sh</code> · 8줄</h4>
-        <pre><code>#!/usr/bin/env bash
-set -euo pipefail
-
-: "${PRODUCTION_INSTANCE_ID:?PRODUCTION_INSTANCE_ID is required}"
-export DEPLOY_INSTANCE_ID="$PRODUCTION_INSTANCE_ID"
-
-script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &amp;&amp; pwd)"
-exec bash "$script_dir/deploy-common.sh"</code></pre>
-        <h4><code>deploy-common.sh</code> · 64줄</h4>
-        <pre><code>#!/usr/bin/env bash
-set -euo pipefail
-
-: "${APP_IMAGE:?APP_IMAGE is required}"
-: "${DEPLOY_INSTANCE_ID:?DEPLOY_INSTANCE_ID is required}"
-: "${AWS_REGION:?AWS_REGION is required}"
-
-if [[ ! "$DEPLOY_INSTANCE_ID" =~ ^i-[0-9a-f]+$ ]]; then
-  echo "DEPLOY_INSTANCE_ID must be an EC2 instance ID" &gt;&amp;2
-  exit 1
-fi
-
-if [[ ! "$AWS_REGION" =~ ^[a-z0-9-]+$ ]]; then
-  echo "AWS_REGION contains unsupported characters" &gt;&amp;2
-  exit 1
-fi
-
-if [[ ! "$APP_IMAGE" =~ ^[0-9]{12}\.dkr\.ecr\.[a-z0-9-]+\.amazonaws\.com/[A-Za-z0-9._/-]+@sha256:[0-9a-f]{64}$ ]]; then
-  echo "APP_IMAGE must be an ECR image digest" &gt;&amp;2
-  exit 1
-fi
-
-registry="${APP_IMAGE%%/*}"
-commands=(
-  "set -eu"
-  "cd /opt/traceback"
-  "docker compose version --short"
-  "aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $registry"
-  "docker pull $APP_IMAGE"
-  "docker run --rm --entrypoint cat $APP_IMAGE /app/docker-compose.yml &gt; docker-compose.yml.next"
-  "docker run --rm --entrypoint cat $APP_IMAGE /app/docker-compose_prod.yml &gt; docker-compose_prod.yml.next"
-  "mv docker-compose.yml.next docker-compose.yml"
-  "mv docker-compose_prod.yml.next docker-compose_prod.yml"
-  "APP_IMAGE=$APP_IMAGE docker compose --env-file .env -f docker-compose.yml -f docker-compose_prod.yml config --quiet"
-  "APP_IMAGE=$APP_IMAGE docker compose --env-file .env -f docker-compose.yml -f docker-compose_prod.yml run --rm app python manage.py migrate --noinput"
-  "APP_IMAGE=$APP_IMAGE docker compose --env-file .env -f docker-compose.yml -f docker-compose_prod.yml up -d --no-build --wait app"
-)
-commands_json="$(jq -nc --args '$ARGS.positional | {commands: .}' -- "${commands[@]}")"
-
-command_id="$(aws ssm send-command \
-  --instance-ids "$DEPLOY_INSTANCE_ID" \
-  --document-name AWS-RunShellScript \
-  --parameters "$commands_json" \
-  --query 'Command.CommandId' \
-  --output text)"
-
-# The default AWS CLI waiter can stop before a small instance finishes pulling
-# the image and applying migrations. Poll for up to ten minutes instead.
-status=Pending
-for ((attempt = 0; attempt &lt; 120; attempt++)); do
-  status="$(aws ssm get-command-invocation \
-    --command-id "$command_id" \
-    --instance-id "$DEPLOY_INSTANCE_ID" \
-    --query Status --output text 2&gt;/dev/null || true)"
-  case "$status" in
-    Success|Failed|Cancelled|TimedOut) break ;;
-  esac
-  sleep 5
-done
-
-aws ssm get-command-invocation \
-  --command-id "$command_id" \
-  --instance-id "$DEPLOY_INSTANCE_ID"
-test "$status" = Success</code></pre>
+        <div class="code-read-layout"><div class="code-read-note"><strong>원본 · 운영 배포 진입점</strong>운영 workflow가 PRODUCTION_INSTANCE_ID를 넘깁니다. 개발 진입점과 같은 8행 구조지만 대상 변수만 다릅니다. 두 환경의 실제 명령은 아래 공통 스크립트에서 처리합니다.</div><div class="code-frame"><div class="code-frame-head"><strong>원본 · 운영 배포 진입점</strong><span>1–8행 · 저장소 원본과 일치 · <a href="../../.github/scripts/deploy-prod.sh">원본 파일 열기</a> · <a href="https://github.com/orange-taco/traceback/blob/c292d9dbe7a43ed10da3f2d26796516ad2b18c25/.github/scripts/deploy-prod.sh#L1-L8">GitHub 해당 행</a></span></div><pre class="code-sample" aria-label="원본 · 운영 배포 진입점"><code><span class="code-row" data-line="1">#!/usr/bin/env bash</span><span class="code-row" data-line="2">set -euo pipefail</span><span class="code-row" data-line="3"></span><span class="code-row" data-line="4">: &quot;${PRODUCTION_INSTANCE_ID:?PRODUCTION_INSTANCE_ID is required}&quot;</span><span class="code-row" data-line="5">export DEPLOY_INSTANCE_ID=&quot;$PRODUCTION_INSTANCE_ID&quot;</span><span class="code-row" data-line="6"></span><span class="code-row" data-line="7">script_dir=&quot;$(cd -- &quot;$(dirname -- &quot;${BASH_SOURCE[0]}&quot;)&quot; &amp;&amp; pwd)&quot;</span><span class="code-row" data-line="8">exec bash &quot;$script_dir/deploy-common.sh&quot;</span></code></pre></div></div>
+        <h4><code>deploy-common.sh</code> · 72줄</h4>
+        <div class="code-read-layout"><div class="code-read-note"><strong>원본 · 공통 SSM 배포 스크립트</strong>1–21행은 입력을 검증하고, 23–38행은 EC2에서 실행할 ECR·Compose·migration·healthcheck 명령을 준비합니다. 40–45행은 SSM에 전송하고, 47–72행은 결과를 기다립니다. 다른 조회 오류를 조용히 넘기지 않습니다.</div><div class="code-frame"><div class="code-frame-head"><strong>원본 · 공통 SSM 배포 스크립트</strong><span>1–72행 · 저장소 원본과 일치 · <a href="../../.github/scripts/deploy-common.sh">원본 파일 열기</a> · <a href="https://github.com/orange-taco/traceback/blob/c292d9dbe7a43ed10da3f2d26796516ad2b18c25/.github/scripts/deploy-common.sh#L1-L72">GitHub 해당 행</a></span></div><pre class="code-sample" aria-label="원본 · 공통 SSM 배포 스크립트"><code><span class="code-row" data-line="1">#!/usr/bin/env bash</span><span class="code-row" data-line="2">set -euo pipefail</span><span class="code-row" data-line="3"></span><span class="code-row" data-line="4">: &quot;${APP_IMAGE:?APP_IMAGE is required}&quot;</span><span class="code-row" data-line="5">: &quot;${DEPLOY_INSTANCE_ID:?DEPLOY_INSTANCE_ID is required}&quot;</span><span class="code-row" data-line="6">: &quot;${AWS_REGION:?AWS_REGION is required}&quot;</span><span class="code-row" data-line="7"></span><span class="code-row" data-line="8">if [[ ! &quot;$DEPLOY_INSTANCE_ID&quot; =~ ^i-[0-9a-f]+$ ]]; then</span><span class="code-row" data-line="9">  echo &quot;DEPLOY_INSTANCE_ID must be an EC2 instance ID&quot; &gt;&amp;2</span><span class="code-row" data-line="10">  exit 1</span><span class="code-row" data-line="11">fi</span><span class="code-row" data-line="12"></span><span class="code-row" data-line="13">if [[ ! &quot;$AWS_REGION&quot; =~ ^[a-z0-9-]+$ ]]; then</span><span class="code-row" data-line="14">  echo &quot;AWS_REGION contains unsupported characters&quot; &gt;&amp;2</span><span class="code-row" data-line="15">  exit 1</span><span class="code-row" data-line="16">fi</span><span class="code-row" data-line="17"></span><span class="code-row" data-line="18">if [[ ! &quot;$APP_IMAGE&quot; =~ ^[0-9]{12}\.dkr\.ecr\.[a-z0-9-]+\.amazonaws\.com/[A-Za-z0-9._/-]+@sha256:[0-9a-f]{64}$ ]]; then</span><span class="code-row" data-line="19">  echo &quot;APP_IMAGE must be an ECR image digest&quot; &gt;&amp;2</span><span class="code-row" data-line="20">  exit 1</span><span class="code-row" data-line="21">fi</span><span class="code-row" data-line="22"></span><span class="code-row" data-line="23">registry=&quot;${APP_IMAGE%%/*}&quot;</span><span class="code-row" data-line="24">commands=(</span><span class="code-row" data-line="25">  &quot;set -eu&quot;</span><span class="code-row" data-line="26">  &quot;cd /opt/traceback&quot;</span><span class="code-row" data-line="27">  &quot;docker compose version --short&quot;</span><span class="code-row" data-line="28">  &quot;aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $registry&quot;</span><span class="code-row" data-line="29">  &quot;docker pull $APP_IMAGE&quot;</span><span class="code-row" data-line="30">  &quot;docker run --rm --entrypoint cat $APP_IMAGE /app/docker-compose.yml &gt; docker-compose.yml.next&quot;</span><span class="code-row" data-line="31">  &quot;docker run --rm --entrypoint cat $APP_IMAGE /app/docker-compose_prod.yml &gt; docker-compose_prod.yml.next&quot;</span><span class="code-row" data-line="32">  &quot;mv docker-compose.yml.next docker-compose.yml&quot;</span><span class="code-row" data-line="33">  &quot;mv docker-compose_prod.yml.next docker-compose_prod.yml&quot;</span><span class="code-row" data-line="34">  &quot;APP_IMAGE=$APP_IMAGE docker compose --env-file .env -f docker-compose.yml -f docker-compose_prod.yml config --quiet&quot;</span><span class="code-row" data-line="35">  &quot;APP_IMAGE=$APP_IMAGE docker compose --env-file .env -f docker-compose.yml -f docker-compose_prod.yml run --rm app python manage.py migrate --noinput&quot;</span><span class="code-row" data-line="36">  &quot;APP_IMAGE=$APP_IMAGE docker compose --env-file .env -f docker-compose.yml -f docker-compose_prod.yml up -d --no-build --wait app&quot;</span><span class="code-row" data-line="37">)</span><span class="code-row" data-line="38">commands_json=&quot;$(jq -nc --args &#x27;$ARGS.positional | {commands: .}&#x27; -- &quot;${commands[@]}&quot;)&quot;</span><span class="code-row" data-line="39"></span><span class="code-row" data-line="40">command_id=&quot;$(aws ssm send-command \</span><span class="code-row" data-line="41">  --instance-ids &quot;$DEPLOY_INSTANCE_ID&quot; \</span><span class="code-row" data-line="42">  --document-name AWS-RunShellScript \</span><span class="code-row" data-line="43">  --parameters &quot;$commands_json&quot; \</span><span class="code-row" data-line="44">  --query &#x27;Command.CommandId&#x27; \</span><span class="code-row" data-line="45">  --output text)&quot;</span><span class="code-row" data-line="46"></span><span class="code-row" data-line="47"># The default AWS CLI waiter can stop before a small instance finishes pulling</span><span class="code-row" data-line="48"># the image and applying migrations. Poll for up to ten minutes instead.</span><span class="code-row" data-line="49">status=Pending</span><span class="code-row" data-line="50">for ((attempt = 0; attempt &lt; 120; attempt++)); do</span><span class="code-row" data-line="51">  if invocation=&quot;$(aws ssm get-command-invocation \</span><span class="code-row" data-line="52">    --command-id &quot;$command_id&quot; \</span><span class="code-row" data-line="53">    --instance-id &quot;$DEPLOY_INSTANCE_ID&quot; \</span><span class="code-row" data-line="54">    --query Status --output text 2&gt;&amp;1)&quot;; then</span><span class="code-row" data-line="55">    status=&quot;$invocation&quot;</span><span class="code-row" data-line="56">  elif [[ &quot;$invocation&quot; == *InvocationDoesNotExist* ]]; then</span><span class="code-row" data-line="57">    # SendCommand can become visible shortly after it returns its command ID.</span><span class="code-row" data-line="58">    status=Pending</span><span class="code-row" data-line="59">  else</span><span class="code-row" data-line="60">    printf &#x27;%s\n&#x27; &quot;$invocation&quot; &gt;&amp;2</span><span class="code-row" data-line="61">    exit 1</span><span class="code-row" data-line="62">  fi</span><span class="code-row" data-line="63">  case &quot;$status&quot; in</span><span class="code-row" data-line="64">    Success|Failed|Cancelled|TimedOut) break ;;</span><span class="code-row" data-line="65">  esac</span><span class="code-row" data-line="66">  sleep 5</span><span class="code-row" data-line="67">done</span><span class="code-row" data-line="68"></span><span class="code-row" data-line="69">aws ssm get-command-invocation \</span><span class="code-row" data-line="70">  --command-id &quot;$command_id&quot; \</span><span class="code-row" data-line="71">  --instance-id &quot;$DEPLOY_INSTANCE_ID&quot;</span><span class="code-row" data-line="72">test &quot;$status&quot; = Success</span></code></pre></div></div>
       </details>
       <div class="script-notes">
         <article><h3>1 · 환경별 진입점 (각 8행)</h3><p><code>deploy-development.sh</code>는 <code>DEVELOPMENT_INSTANCE_ID</code>, <code>deploy-prod.sh</code>는 <code>PRODUCTION_INSTANCE_ID</code>만 받습니다. 공통 변수 이름으로 바꿔 <code>deploy-common.sh</code>를 호출하므로 workflow의 변수 이름과 어느 서버에 배포할지가 파일 이름만 봐도 드러납니다.</p></article>
         <article><h3>2 · 공통 입력 검증과 원격 명령 생성 (1–38행)</h3><p>공통 스크립트는 이미지, 인스턴스 ID, 리전을 검증합니다. Bash 배열의 각 항목을 <code>jq --args</code>로 SSM 명령 JSON에 안전하게 넣습니다. EC2에서 ECR login과 정확한 digest pull, 이미지에 담긴 Compose 파일 설치, 설정 검증, migration, 앱 healthcheck까지 수행합니다.</p></article>
-        <article><h3>3 · SSM 전송과 완료 대기 (40–64행)</h3><p><code>aws ssm send-command</code>로 원격 Run Command를 보내고 Command ID를 받습니다. 5초 간격으로 최대 120회(10분) 상태를 확인한 뒤 결과를 표시하고 최종 상태가 <code>Success</code>인지 검사합니다.</p></article>
+        <article><h3>3 · SSM 전송과 완료 대기 (40–72행)</h3><p><code>aws ssm send-command</code>로 원격 Run Command를 보내고 Command ID를 받습니다. 5초 간격으로 최대 120회(10분) 상태를 확인합니다. 아직 명령이 조회되지 않는 <code>InvocationDoesNotExist</code>만 재시도하고, 다른 조회 오류는 즉시 실패합니다. 마지막에 결과를 표시하고 <code>Success</code>인지 검사합니다.</p></article>
         <article><h3>볼륨은 환경마다 다르게 다룹니다</h3><p>로컬에서 <code>docker compose down</code>을 하면 컨테이너는 내려가지만 <code>postgres_data</code>는 남아 다음 실행에도 DB 데이터가 유지됩니다. <code>docker compose down -v</code>는 이 로컬 DB 볼륨까지 삭제하므로 초기화할 때만 사용합니다. 운영 overlay는 소스 bind mount와 Postgres 서비스를 제거하고 명시적 Docker volume도 비웁니다. 운영 데이터는 RDS/S3에 남고 EC2에는 실행 중인 컨테이너와 내려받은 이미지 layer가 저장됩니다. EC2 디스크 정리는 DB 볼륨 삭제와 별개이며, 과거 이미지가 rollback에 필요한지 확인한 뒤 보관/정리 정책을 둡니다. <code>docker system prune --volumes</code>처럼 volume까지 한꺼번에 지우는 명령은 운영 서버에서 피합니다.</p></article>
         <article><h3>현재 코드에서 남은 운영상 한계</h3><p>이 스크립트는 배포 실패 시 이전 버전으로 자동 rollback하지 않습니다. Compose 파일을 새 버전으로 바꾼 뒤 config, migration 또는 healthcheck에서 실패할 수 있으므로 실제 첫 배포 후에는 이전 digest 재배포 절차와 migration 복구 기준을 별도로 연습해야 합니다. 우리 구조는 dev/prod workflow와 스크립트 진입점을 분리하고, 실제 배포 절차는 공통 코드로 관리합니다.</p></article>
       </div>
     </section>
 
     <section class="section" id="network-audit">
+      <p class="handoff">이미지가 서버에 도착해도 고객 요청이 들어오는 네트워크 경로가 열려야 합니다. 앞의 요청 경로로 돌아가 VPC·보안 그룹·라우팅을 점검합니다.</p>
       <h2>AWS 네트워크와 보안 그룹 실제 점검</h2>
       <p class="lead">아래는 2026-10-03에 AWS 콘솔에서 읽기 전용으로 확인한 개발 환경입니다. 보안 그룹은 서버의 가상 방화벽이고, 서브넷·라우팅은 서버가 인터넷이나 다른 VPC 리소스에 도달하는 경로를 정합니다.</p>
       <div class="architecture">
@@ -479,6 +411,7 @@ test "$status" = Success</code></pre>
     </section>
 
     <section class="section" id="proxy">
+      <p class="handoff">네트워크가 EC2까지 도착한 다음에는 누가 HTTPS를 받아 Django에 넘기는지 결정해야 합니다. 여기서 Nginx와 로드 밸런서의 위치를 비교합니다.</p>
       <h2>Nginx는 어디에 두는 게 일반적인가요?</h2>
       <p class="lead architecture-intro">Nginx는 HTTP 요청을 받아 다른 서버나 프로세스로 전달하는 웹 서버·reverse proxy입니다. “EC2 안”은 EC2 호스트에서 실행한다는 뜻이고, “앞단 별도”는 Nginx 전용 머신이나 AWS 관리형 Load Balancer가 앱 인스턴스보다 먼저 요청을 받는 구조입니다. 규모와 가용성 요구에 따라 선택합니다.</p>
       <details class="learning"><summary>왜 Django 컨테이너를 443에 바로 노출하지 않고 앞단을 두나요?</summary><p>앞단은 브라우저의 HTTPS 연결을 받고 인증서를 제시한 다음 내부 앱으로 요청을 전달합니다. 이 지점에서 TLS 갱신, HTTP→HTTPS 이동, 요청 로그와 제한을 관리할 수 있습니다. 단일 EC2에서는 Nginx를 호스트나 컨테이너로 둘 수 있고, 규모가 커지면 관리형 Load Balancer를 앞단에 둘 수도 있습니다. TRACEBACK은 초기 비용과 운영 범위를 고려해 같은 EC2의 호스트 Nginx를 선택했으며 아직 실제 설치·TLS 연결은 남아 있습니다.</p></details>
@@ -523,28 +456,8 @@ test "$status" = Success</code></pre>
         <article><b>④ 443 프록시와 외부 검사</b><small>인증서 경로를 확인한 뒤 Nginx 설정을 활성화하고 설정 검사·재시작을 합니다. HTTPS 응답, 갱신 시험, Django proxy header를 확인합니다. 아직 미검증입니다.</small></article>
       </div>
       <div class="grid two">
-        <article class="panel"><h3>인증서 요청 예시 · EC2 호스트에서</h3><p>현재 EC2의 Amazon Linux 2023에서 제공되는 Nginx·Certbot 패키지를 쓰는 HTTP-01 예시입니다. SSM 셸에서 실행할 때의 순서이며, 아직 실행한 기록은 없습니다.</p><pre class="code-sample"><code>sudo dnf install -y nginx certbot
-sudo mkdir -p /var/www/certbot/.well-known/acme-challenge
-# 먼저 아래의 HTTP 전용 임시 설정을 만들고:
-sudo nginx -t
-sudo systemctl enable --now nginx
-sudo certbot certonly --webroot -w /var/www/certbot -d api.dev-traceback.com
-# 인증서 발급 후 임시 .conf를 비활성화하고 최종 예시를 설치:
-sudo nginx -t
-sudo systemctl reload nginx
-sudo certbot renew --dry-run</code></pre><p>임시 <code>/etc/nginx/conf.d/traceback-acme.conf</code>에는 아래처럼 인증서가 필요 없는 80 설정만 둡니다. 발급 뒤 이 임시 파일을 <code>.conf</code>가 아닌 이름으로 바꾸고 최종 <a href="../../deploy/nginx/traceback.conf.example">저장소 예시</a>를 <code>/etc/nginx/conf.d/traceback.conf</code>로 옮깁니다. 저장소 파일은 배포 스크립트가 EC2 호스트로 자동 복사하지 않으므로 별도로 전달해야 합니다.</p><pre class="code-sample"><code>server {
-    listen 80;
-    server_name api.dev-traceback.com;
-    location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
-    }
-}</code></pre><p>HTTP-01은 80 포트로 파일을 확인합니다. DNS-01은 DNS 레코드로 확인하는 대안입니다. 인증서 자동 갱신 timer와 갱신 뒤 Nginx reload hook까지 확인해야 운영이 끝납니다. <a href="https://docs.aws.amazon.com/linux/al2023/ug/SSL-on-amazon-linux-2023.html">Amazon Linux 2023 TLS 안내</a> · <a href="https://eff-certbot.readthedocs.io/en/stable/using.html#webroot">Certbot webroot 방식</a>.</p></article>
-        <article class="panel"><h3>이 저장소의 Nginx 설정이 소비하는 값</h3><pre class="code-sample"><code>server_name api.dev-traceback.com;
-ssl_certificate /etc/letsencrypt/live/api.dev-traceback.com/fullchain.pem;
-ssl_certificate_key /etc/letsencrypt/live/api.dev-traceback.com/privkey.pem;
-proxy_pass http://127.0.0.1:8000;
-proxy_set_header Host $host;
-proxy_set_header X-Forwarded-Proto $scheme;</code></pre><p>80에서는 ACME 검증 경로를 제공하고 나머지는 HTTPS로 돌립니다. 443에서는 인증서를 제시한 뒤 원래 URL 경로를 Django에 전달합니다. 앱 포트는 EC2 내부 loopback에만 열고, Django의 secure cookie·CSRF가 원래 HTTPS 요청을 알도록 Host와 scheme을 넘깁니다. <a href="../../deploy/nginx/traceback.conf.example">전체 파일 보기</a>.</p></article>
+        <article class="panel"><h3>인증서 요청 예시 · EC2 호스트에서</h3><p>현재 EC2의 Amazon Linux 2023에서 제공되는 Nginx·Certbot 패키지를 쓰는 HTTP-01 예시입니다. SSM 셸에서 실행할 때의 순서이며, 아직 실행한 기록은 없습니다.</p><div class="code-frame"><div class="code-frame-head"><strong>실행 예시 · Nginx와 인증서 준비</strong><span>예시 행 번호 · 저장소 원본 행과 다름</span></div><pre class="code-sample" aria-label="실행 예시 · Nginx와 인증서 준비"><code><span class="code-row" data-line="1">sudo dnf install -y nginx certbot</span><span class="code-row" data-line="2">sudo mkdir -p /var/www/certbot/.well-known/acme-challenge</span><span class="code-row" data-line="3"># 먼저 아래의 HTTP 전용 임시 설정을 만들고:</span><span class="code-row" data-line="4">sudo nginx -t</span><span class="code-row" data-line="5">sudo systemctl enable --now nginx</span><span class="code-row" data-line="6">sudo certbot certonly --webroot -w /var/www/certbot -d api.dev-traceback.com</span><span class="code-row" data-line="7"># 인증서 발급 후 임시 .conf를 비활성화하고 최종 예시를 설치:</span><span class="code-row" data-line="8">sudo nginx -t</span><span class="code-row" data-line="9">sudo systemctl reload nginx</span><span class="code-row" data-line="10">sudo certbot renew --dry-run</span></code></pre></div><p>임시 <code>/etc/nginx/conf.d/traceback-acme.conf</code>에는 아래처럼 인증서가 필요 없는 80 설정만 둡니다. 발급 뒤 이 임시 파일을 <code>.conf</code>가 아닌 이름으로 바꾸고 최종 <a href="../../deploy/nginx/traceback.conf.example">저장소 예시</a>를 <code>/etc/nginx/conf.d/traceback.conf</code>로 옮깁니다. 저장소 파일은 배포 스크립트가 EC2 호스트로 자동 복사하지 않으므로 별도로 전달해야 합니다.</p><div class="code-frame"><div class="code-frame-head"><strong>설정 예시 · HTTP 검증 경로</strong><span>관련 템플릿 deploy/nginx/traceback.conf.example 1–32행 · 설명용 발췌 · 원본 행과 일대일로 대응하지 않음 · <a href="../../deploy/nginx/traceback.conf.example">원본 파일 열기</a></span></div><pre class="code-sample" aria-label="설정 예시 · HTTP 검증 경로"><code><span class="code-row" data-line="1">server {</span><span class="code-row" data-line="2">    listen 80;</span><span class="code-row" data-line="3">    server_name api.dev-traceback.com;</span><span class="code-row" data-line="4">    location /.well-known/acme-challenge/ {</span><span class="code-row" data-line="5">        root /var/www/certbot;</span><span class="code-row" data-line="6">    }</span><span class="code-row" data-line="7">}</span></code></pre></div><p>HTTP-01은 80 포트로 파일을 확인합니다. DNS-01은 DNS 레코드로 확인하는 대안입니다. 인증서 자동 갱신 timer와 갱신 뒤 Nginx reload hook까지 확인해야 운영이 끝납니다. <a href="https://docs.aws.amazon.com/linux/al2023/ug/SSL-on-amazon-linux-2023.html">Amazon Linux 2023 TLS 안내</a> · <a href="https://eff-certbot.readthedocs.io/en/stable/using.html#webroot">Certbot webroot 방식</a>.</p></article>
+        <article class="panel"><h3>이 저장소의 Nginx 설정이 소비하는 값</h3><div class="code-frame"><div class="code-frame-head"><strong>설정 예시 · 인증서 경로</strong><span>관련 템플릿 deploy/nginx/traceback.conf.example 1–32행 · 설명용 발췌 · 원본 행과 일대일로 대응하지 않음 · <a href="../../deploy/nginx/traceback.conf.example">원본 파일 열기</a></span></div><pre class="code-sample" aria-label="설정 예시 · 인증서 경로"><code><span class="code-row" data-line="1">server_name api.dev-traceback.com;</span><span class="code-row" data-line="2">ssl_certificate /etc/letsencrypt/live/api.dev-traceback.com/fullchain.pem;</span><span class="code-row" data-line="3">ssl_certificate_key /etc/letsencrypt/live/api.dev-traceback.com/privkey.pem;</span><span class="code-row" data-line="4">proxy_pass http://127.0.0.1:8000;</span><span class="code-row" data-line="5">proxy_set_header Host $host;</span><span class="code-row" data-line="6">proxy_set_header X-Forwarded-Proto $scheme;</span></code></pre></div><p>80에서는 ACME 검증 경로를 제공하고 나머지는 HTTPS로 돌립니다. 443에서는 인증서를 제시한 뒤 원래 URL 경로를 Django에 전달합니다. 앱 포트는 EC2 내부 loopback에만 열고, Django의 secure cookie·CSRF가 원래 HTTPS 요청을 알도록 Host와 scheme을 넘깁니다. <a href="../../deploy/nginx/traceback.conf.example">전체 파일 보기</a>.</p></article>
       </div>
       <div class="notice danger"><strong>현재 연결이 여기서 멈춥니다:</strong> 2026-10-03 외부에서 <code>https://api.dev-traceback.com/_allauth/browser/v1/config</code>의 443 연결이 거부됐습니다. DNS가 EIP를 찾더라도 Nginx·인증서·앱이 아직 없으면 HTTPS 요청은 완료되지 않습니다. 위 단계 완료 후 <code>curl -i https://api.dev-traceback.com/_allauth/browser/v1/config</code>로 공개 경로를 검사합니다. 200 응답을 확인하기 전에는 Vercel 재배포가 전체 인증 흐름을 완성하지 않습니다.</div>
       <div class="notice"><strong>Compose 파일을 왜 두 개 읽나요?</strong> 기본 파일은 로컬/공통 앱의 포트와 네트워크를 정의하고, <code>docker-compose_prod.yml</code>은 이미지·운영 보안·health check·DB 제거 설정을 덧씌웁니다. 배포 스크립트가 두 파일을 <code>docker compose -f … -f …</code>로 함께 적용합니다. 따라서 한 파일만 보고 최종 포트가 없다고 판단하면 안 됩니다. 병합된 결과는 <code>docker compose … config</code>로 확인합니다.</div>
@@ -552,6 +465,7 @@ proxy_set_header X-Forwarded-Proto $scheme;</code></pre><p>80에서는 ACME 검�
     </section>
 
     <section class="section" id="choice">
+      <p class="handoff">앞의 경로를 dev와 prod에 어떻게 적용할지 결정합니다. 서버를 한 대로 시작하는 선택과 환경 분리는 배포 대상과 위험 범위를 바꿉니다.</p>
       <h2>dev/prod 서버를 어떻게 운영할까요?</h2>
       <p class="lead">저장소의 현재 설계와 GitHub Actions는 dev·prod 각각의 서버와 DB를 기준으로 만들어져 있습니다. 아래 선택지를 눌러 비용과 운영 영향을 비교하세요.</p>
       <div class="selector" role="group" aria-label="운영 방식 선택">
@@ -569,6 +483,7 @@ proxy_set_header X-Forwarded-Proto $scheme;</code></pre><p>80에서는 ACME 검�
     </section>
 
     <section class="section" id="steps">
+      <p class="handoff">선택한 dev 구성을 실제로 만드는 순서입니다. 위 개념과 상태 지도를 콘솔·터미널 작업에 대응시킵니다.</p>
       <h2>첫 개발 배포 순서</h2>
       <p class="lead">아래는 추천안 ① 기준입니다. 비용이 생기는 AWS 변경이나 공개 엔드포인트 설정은 각 단계에서 실제 계정과 요금을 확인합니다.</p>
       <div class="numbers">
@@ -583,6 +498,7 @@ proxy_set_header X-Forwarded-Proto $scheme;</code></pre><p>80에서는 ACME 검�
     </section>
 
     <section class="section" id="glossary">
+      <p class="handoff">설정 중 낯선 단어가 나오면 이 용어집으로 돌아오세요. 앞의 흐름을 다시 읽을 때 필요한 네트워크·AWS 말을 정리합니다.</p>
       <h2>처음 나오는 네트워크 용어</h2>
       <p class="lead">먼저 단어를 익히면 위의 요청 그림을 따라가기 쉬워집니다. 일반 네트워크 용어와 AWS에서 붙인 이름을 함께 적었습니다.</p>
       <div class="grid two">
@@ -592,6 +508,7 @@ proxy_set_header X-Forwarded-Proto $scheme;</code></pre><p>80에서는 ACME 검�
     </section>
 
     <section class="section" id="env">
+      <p class="handoff">서버와 배포 흐름을 구분했으니 각 실행 장소가 읽는 환경변수를 나눕니다. 한곳에 저장한 값이 다른 곳으로 자동 전파되지는 않습니다.</p>
       <h2>환경변수는 저장 위치마다 목적이 달라요</h2>
       <p class="lead">같은 값 이름이 있더라도 어디에 넣는지와 누가 읽는지 구분합니다. 절대 secret 값을 이 문서나 Git에 적지 않습니다.</p>
       <details class="learning"><summary>GitHub Environment에 값을 넣으면 EC2의 .env도 자동으로 채워지나요?</summary><p>아니요. GitHub 변수는 workflow가 배포 중 읽는 값이고, EC2의 <code>/opt/traceback/.env</code>는 실행 중인 Django 컨테이너가 읽는 값입니다. 서로 다른 컴퓨터와 시점에 존재합니다. 이 저장소의 배포 스크립트는 EC2 환경 파일의 존재를 검사하며 비밀값을 GitHub에서 복사해 만들지 않습니다. Vercel의 <code>DJANGO_ORIGIN</code>도 별도의 Vercel 설정이며 새 배포 후 확인해야 합니다.</p></details>
@@ -604,71 +521,15 @@ proxy_set_header X-Forwarded-Proto $scheme;</code></pre><p>80에서는 ACME 검�
 <details class="script-source" id="env-files">
         <summary>환경변수 파일 3개의 전체 원문과 코드 연결 보기</summary>
         <p>파일명만 보면 모두 런타임 설정처럼 보이지만 역할은 다릅니다. 첫 파일은 CI가 바로 사용하는 안전한 테스트 fixture이고, 뒤의 두 파일은 사람이 복사해 실제 서버 파일을 만드는 템플릿입니다.</p>
-<h4><code>config/ci-container-smoke.env</code> · CI용 컨테이너 smoke 환경</h4><p>CI에서 실제 AWS·RDS·메일 계정 없이 production 설정으로 앱 컨테이너를 띄워 migration과 HTTP healthcheck를 확인하는 임시 값입니다. 공개 CI 전용 secret key와 container 내부 SQLite를 쓰며 외부 서비스에 접속하지 않습니다.</p><pre><code># Public CI-only values for the production container smoke test.
-DJANGO_SETTINGS_MODULE=config.settings.production
-DJANGO_SECRET_KEY=ci-only-secret-key-with-at-least-32-bytes
-DJANGO_ALLOWED_HOSTS=localhost
-TRACEBACK_DATABASE_URL=sqlite:////tmp/traceback-ci.sqlite3
-FRONTEND_BASE_URL=http://localhost:5173</code></pre>
-<h4><code>config/server.development.env.example</code> · development EC2용 예시</h4><p>빈 서버의 /opt/traceback/.env를 만들 때 복사하는 양식입니다. 실제 RDS endpoint, Django key, SES SMTP 자격 증명, Kakao 키는 서버에만 채웁니다. 이 파일 자체는 EC2나 Django가 자동으로 읽지 않습니다.</p><pre><code># Copy to /opt/traceback/.env on the development EC2 and replace placeholders.
-# This file is an example only; never commit the populated server .env.
-DJANGO_SECRET_KEY=replace-with-unique-development-secret
-DJANGO_ALLOWED_HOSTS=api.dev-traceback.com
-DJANGO_CSRF_TRUSTED_ORIGINS=https://traceback-client-nine.vercel.app
-DJANGO_SETTINGS_MODULE=config.settings.development
-TRACEBACK_DATABASE_URL=postgresql://replace-user:replace-password@replace-rds-endpoint:5432/traceback
-FRONTEND_BASE_URL=https://traceback-client-nine.vercel.app
-
-# SES SMTP for required email verification.
-DEFAULT_FROM_EMAIL=no-reply@verified-domain.example
-EMAIL_HOST=email-smtp.ap-northeast-2.amazonaws.com
-EMAIL_PORT=587
-EMAIL_HOST_USER=replace-with-ses-smtp-username
-EMAIL_HOST_PASSWORD=replace-with-ses-smtp-password
-EMAIL_USE_TLS=true
-
-# Kakao login and account unlink.
-KAKAO_REST_API_KEY=replace-with-kakao-rest-api-key
-KAKAO_CLIENT_SECRET=replace-with-kakao-client-secret
-KAKAO_ADMIN_KEY=replace-with-kakao-admin-key</code></pre>
-<h4><code>config/server.env.example</code> · production EC2용 예시</h4><p>production 서버용 같은 양식입니다. development 값과 공유하지 않고, 실제 production 인프라를 만들 때 별도의 endpoint·도메인·secret으로 채웁니다.</p><pre><code># Copy to /opt/traceback/.env on each EC2 and set environment-specific values.
-# This file is not imported into GitHub Environment.
-DJANGO_SECRET_KEY=replace-with-unique-secret
-DJANGO_ALLOWED_HOSTS=localhost,api.example.com
-DJANGO_CSRF_TRUSTED_ORIGINS=https://frontend.example.com
-DJANGO_SETTINGS_MODULE=config.settings.production
-TRACEBACK_DATABASE_URL=postgresql://replace-user:replace-password@replace-host:5432/traceback
-FRONTEND_BASE_URL=https://frontend.example.com
-
-# SES SMTP for required email verification.
-DEFAULT_FROM_EMAIL=no-reply@verified-domain.example
-EMAIL_HOST=email-smtp.ap-northeast-2.amazonaws.com
-EMAIL_PORT=587
-EMAIL_HOST_USER=replace-with-ses-smtp-username
-EMAIL_HOST_PASSWORD=replace-with-ses-smtp-password
-EMAIL_USE_TLS=true
-
-# Kakao login and account unlink.
-KAKAO_REST_API_KEY=replace-with-kakao-rest-api-key
-KAKAO_CLIENT_SECRET=replace-with-kakao-client-secret
-KAKAO_ADMIN_KEY=replace-with-kakao-admin-key</code></pre>
+<h4><code>config/ci-container-smoke.env</code> · CI용 컨테이너 smoke 환경</h4><div class="code-read-layout"><div class="code-read-note"><p>CI에서 실제 AWS·RDS·메일 계정 없이 production 설정으로 앱 컨테이너를 띄워 migration과 HTTP healthcheck를 확인하는 임시 값입니다. 공개 CI 전용 secret key와 container 내부 SQLite를 쓰며 외부 서비스에 접속하지 않습니다.</p></div><div class="code-frame"><div class="code-frame-head"><strong>원본 · CI smoke 테스트 환경</strong><span>1–6행 · 저장소 원본과 일치 · <a href="../../config/ci-container-smoke.env">원본 파일 열기</a> · <a href="https://github.com/orange-taco/traceback/blob/c292d9dbe7a43ed10da3f2d26796516ad2b18c25/config/ci-container-smoke.env#L1-L6">GitHub 해당 행</a></span></div><pre class="code-sample" aria-label="원본 · CI smoke 테스트 환경"><code><span class="code-row" data-line="1"># Public CI-only values for the production container smoke test.</span><span class="code-row" data-line="2">DJANGO_SETTINGS_MODULE=config.settings.production</span><span class="code-row" data-line="3">DJANGO_SECRET_KEY=ci-only-secret-key-with-at-least-32-bytes</span><span class="code-row" data-line="4">DJANGO_ALLOWED_HOSTS=localhost</span><span class="code-row" data-line="5">TRACEBACK_DATABASE_URL=sqlite:////tmp/traceback-ci.sqlite3</span><span class="code-row" data-line="6">FRONTEND_BASE_URL=http://localhost:5173</span></code></pre></div></div>
+<h4><code>config/server.development.env.example</code> · development EC2용 예시</h4><div class="code-read-layout"><div class="code-read-note"><p>빈 서버의 /opt/traceback/.env를 만들 때 복사하는 양식입니다. 실제 RDS endpoint, Django key, SES SMTP 자격 증명, Kakao 키는 서버에만 채웁니다. 이 파일 자체는 EC2나 Django가 자동으로 읽지 않습니다.</p></div><div class="code-frame"><div class="code-frame-head"><strong>원본 · 개발 EC2 환경 템플릿</strong><span>1–21행 · 저장소 원본과 일치 · <a href="../../config/server.development.env.example">원본 파일 열기</a> · <a href="https://github.com/orange-taco/traceback/blob/c292d9dbe7a43ed10da3f2d26796516ad2b18c25/config/server.development.env.example#L1-L21">GitHub 해당 행</a></span></div><pre class="code-sample" aria-label="원본 · 개발 EC2 환경 템플릿"><code><span class="code-row" data-line="1"># Copy to /opt/traceback/.env on the development EC2 and replace placeholders.</span><span class="code-row" data-line="2"># This file is an example only; never commit the populated server .env.</span><span class="code-row" data-line="3">DJANGO_SECRET_KEY=replace-with-unique-development-secret</span><span class="code-row" data-line="4">DJANGO_ALLOWED_HOSTS=api.dev-traceback.com</span><span class="code-row" data-line="5">DJANGO_CSRF_TRUSTED_ORIGINS=https://traceback-client-nine.vercel.app</span><span class="code-row" data-line="6">DJANGO_SETTINGS_MODULE=config.settings.development</span><span class="code-row" data-line="7">TRACEBACK_DATABASE_URL=postgresql://replace-user:replace-password@replace-rds-endpoint:5432/traceback</span><span class="code-row" data-line="8">FRONTEND_BASE_URL=https://traceback-client-nine.vercel.app</span><span class="code-row" data-line="9"></span><span class="code-row" data-line="10"># SES SMTP for required email verification.</span><span class="code-row" data-line="11">DEFAULT_FROM_EMAIL=no-reply@verified-domain.example</span><span class="code-row" data-line="12">EMAIL_HOST=email-smtp.ap-northeast-2.amazonaws.com</span><span class="code-row" data-line="13">EMAIL_PORT=587</span><span class="code-row" data-line="14">EMAIL_HOST_USER=replace-with-ses-smtp-username</span><span class="code-row" data-line="15">EMAIL_HOST_PASSWORD=replace-with-ses-smtp-password</span><span class="code-row" data-line="16">EMAIL_USE_TLS=true</span><span class="code-row" data-line="17"></span><span class="code-row" data-line="18"># Kakao login and account unlink.</span><span class="code-row" data-line="19">KAKAO_REST_API_KEY=replace-with-kakao-rest-api-key</span><span class="code-row" data-line="20">KAKAO_CLIENT_SECRET=replace-with-kakao-client-secret</span><span class="code-row" data-line="21">KAKAO_ADMIN_KEY=replace-with-kakao-admin-key</span></code></pre></div></div>
+<h4><code>config/server.env.example</code> · production EC2용 예시</h4><div class="code-read-layout"><div class="code-read-note"><p>production 서버용 같은 양식입니다. development 값과 공유하지 않고, 실제 production 인프라를 만들 때 별도의 endpoint·도메인·secret으로 채웁니다.</p></div><div class="code-frame"><div class="code-frame-head"><strong>원본 · 서버 환경 템플릿</strong><span>1–21행 · 저장소 원본과 일치 · <a href="../../config/server.env.example">원본 파일 열기</a> · <a href="https://github.com/orange-taco/traceback/blob/c292d9dbe7a43ed10da3f2d26796516ad2b18c25/config/server.env.example#L1-L21">GitHub 해당 행</a></span></div><pre class="code-sample" aria-label="원본 · 서버 환경 템플릿"><code><span class="code-row" data-line="1"># Copy to /opt/traceback/.env on each EC2 and set environment-specific values.</span><span class="code-row" data-line="2"># This file is not imported into GitHub Environment.</span><span class="code-row" data-line="3">DJANGO_SECRET_KEY=replace-with-unique-secret</span><span class="code-row" data-line="4">DJANGO_ALLOWED_HOSTS=localhost,api.example.com</span><span class="code-row" data-line="5">DJANGO_CSRF_TRUSTED_ORIGINS=https://frontend.example.com</span><span class="code-row" data-line="6">DJANGO_SETTINGS_MODULE=config.settings.production</span><span class="code-row" data-line="7">TRACEBACK_DATABASE_URL=postgresql://replace-user:replace-password@replace-host:5432/traceback</span><span class="code-row" data-line="8">FRONTEND_BASE_URL=https://frontend.example.com</span><span class="code-row" data-line="9"></span><span class="code-row" data-line="10"># SES SMTP for required email verification.</span><span class="code-row" data-line="11">DEFAULT_FROM_EMAIL=no-reply@verified-domain.example</span><span class="code-row" data-line="12">EMAIL_HOST=email-smtp.ap-northeast-2.amazonaws.com</span><span class="code-row" data-line="13">EMAIL_PORT=587</span><span class="code-row" data-line="14">EMAIL_HOST_USER=replace-with-ses-smtp-username</span><span class="code-row" data-line="15">EMAIL_HOST_PASSWORD=replace-with-ses-smtp-password</span><span class="code-row" data-line="16">EMAIL_USE_TLS=true</span><span class="code-row" data-line="17"></span><span class="code-row" data-line="18"># Kakao login and account unlink.</span><span class="code-row" data-line="19">KAKAO_REST_API_KEY=replace-with-kakao-rest-api-key</span><span class="code-row" data-line="20">KAKAO_CLIENT_SECRET=replace-with-kakao-client-secret</span><span class="code-row" data-line="21">KAKAO_ADMIN_KEY=replace-with-kakao-admin-key</span></code></pre></div></div>
 <h4>이 파일들을 실제로 읽는 코드</h4>
-        <pre><code># docker-compose.yml + docker-compose_prod.yml
-services:
-  app:
-    env_file:
-      - ${APP_ENV_FILE:-.env}</code></pre>
+        <div class="code-frame"><div class="code-frame-head"><strong>개념 발췌 · Compose 환경 파일 전달</strong><span>관련 원본 docker-compose.yml 10–12행 · docker-compose_prod.yml 6–8행 · 설명용 발췌 · 원본 행과 일대일로 대응하지 않음 · <a href="../../docker-compose.yml">원본 파일 열기</a></span></div><pre class="code-sample" aria-label="개념 발췌 · Compose 환경 파일 전달"><code><span class="code-row" data-line="1"># docker-compose.yml + docker-compose_prod.yml</span><span class="code-row" data-line="2">services:</span><span class="code-row" data-line="3">  app:</span><span class="code-row" data-line="4">    env_file:</span><span class="code-row" data-line="5">      - ${APP_ENV_FILE:-.env}</span></code></pre></div>
         <p>Compose의 <code>env_file</code>은 선택된 파일의 값을 앱 컨테이너 환경변수로 전달합니다. 개발 서버에서는 <code>/opt/traceback/.env</code>가 기본 경로이고, 예시 파일을 직접 runtime에 지정하지 않습니다.</p>
-        <pre><code># .github/workflows/ci.yml
-APP_ENV_FILE: config/ci-container-smoke.env
-docker compose --env-file config/ci-container-smoke.env \
-  -f docker-compose.yml -f docker-compose_prod.yml up -d --no-build --wait</code></pre>
+        <div class="code-frame"><div class="code-frame-head"><strong>개념 발췌 · CI의 환경 파일 선택</strong><span>관련 원본 .github/workflows/ci.yml 49–66행 · 설명용 발췌 · 원본 행과 일대일로 대응하지 않음 · <a href="../../.github/workflows/ci.yml">원본 파일 열기</a></span></div><pre class="code-sample" aria-label="개념 발췌 · CI의 환경 파일 선택"><code><span class="code-row" data-line="1"># .github/workflows/ci.yml</span><span class="code-row" data-line="2">APP_ENV_FILE: config/ci-container-smoke.env</span><span class="code-row" data-line="3">docker compose --env-file config/ci-container-smoke.env \</span><span class="code-row" data-line="4">  -f docker-compose.yml -f docker-compose_prod.yml up -d --no-build --wait</span></code></pre></div>
         <p>GitHub Actions는 위 fixture를 택해 production Compose overlay를 검사합니다. <code>--env-file</code>은 Compose 변수 치환에 값을 제공하고, <code>APP_ENV_FILE</code>은 같은 파일을 컨테이너에 넣도록 선택합니다. smoke가 끝나면 CI 컨테이너와 임시 DB를 제거합니다.</p>
-        <pre><code># config/settings/base.py
-SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
-ALLOWED_HOSTS = [host.strip() for host in os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",") if host.strip()]
-DATABASES = {"default": dj_database_url.parse(os.environ["TRACEBACK_DATABASE_URL"], conn_max_age=60, conn_health_checks=True)}
-FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")</code></pre>
+        <div class="code-frame"><div class="code-frame-head"><strong>개념 발췌 · Django 설정 읽기</strong><span>관련 원본 config/settings/base.py 9–14행, 70–74행, 135행 · 설명용 발췌 · 원본 행과 일대일로 대응하지 않음 · <a href="../../config/settings/base.py">원본 파일 열기</a></span></div><pre class="code-sample" aria-label="개념 발췌 · Django 설정 읽기"><code><span class="code-row" data-line="1"># config/settings/base.py</span><span class="code-row" data-line="2">SECRET_KEY = os.environ[&quot;DJANGO_SECRET_KEY&quot;]</span><span class="code-row" data-line="3">ALLOWED_HOSTS = [host.strip() for host in os.getenv(&quot;DJANGO_ALLOWED_HOSTS&quot;, &quot;&quot;).split(&quot;,&quot;) if host.strip()]</span><span class="code-row" data-line="4">DATABASES = {&quot;default&quot;: dj_database_url.parse(os.environ[&quot;TRACEBACK_DATABASE_URL&quot;], conn_max_age=60, conn_health_checks=True)}</span><span class="code-row" data-line="5">FRONTEND_BASE_URL = os.getenv(&quot;FRONTEND_BASE_URL&quot;, &quot;http://localhost:5173&quot;).rstrip(&quot;/&quot;)</span></code></pre></div>
         <p>Django가 <code>os.environ</code>에서 값을 읽습니다. <code>DJANGO_SETTINGS_MODULE</code>은 실행할 settings 모듈을 고릅니다. production settings는 시작 시 <code>TRACEBACK_DATABASE_URL</code>이 없으면 실패하게 해 잘못된 기본 DB로 뜨지 않도록 합니다. 메일과 Kakao 값도 같은 settings 파일에서 읽습니다.</p>
         <div class="notice"><strong>왜 이렇게 골랐나:</strong> 한 EC2와 Compose 하나로 시작하는 동안 서버의 권한 <code>600</code>인 미추적 <code>.env</code>가 가장 단순하고 배포 코드에 비밀값이 들어가지 않습니다. 대안은 systemd 환경 파일이나 AWS Systems Manager Parameter Store/Secrets Manager에서 실행 시 주입하는 방식입니다. 서버 수가 늘거나 회전·감사가 중요해지면 관리형 저장소로 옮길 수 있습니다. CI는 비밀 없는 fixture를 따로 써서 AWS 값을 CI에 복사하지 않습니다. <code>DATABASE_URL</code> 대신 프로젝트가 명시적으로 요구하는 <code>TRACEBACK_DATABASE_URL</code>만 씁니다.</div>
       </details>
@@ -677,6 +538,7 @@ FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:5173").rstr
     </section>
 
     <section class="section" id="cost">
+      <p class="handoff">마지막으로 선택한 경로가 비용과 보안에 어떤 영향을 주는지 확인합니다. 새 구성요소를 더할 때 이 경계로 돌아옵니다.</p>
       <h2>비용과 안전 기준</h2>
       <div class="grid two">
         <article class="panel"><h3>초기 고정비 줄이기</h3><ul><li>당장은 EC2 1대, Single-AZ RDS, NAT Gateway 없음, ALB 없음</li><li>RDS는 개발/테스트 때 켜고 끝난 뒤 중지. 중지 중에도 storage/backup 요금이 남음</li><li>EC2 stop은 시간 비용을 줄일 수 있지만 public IPv4가 바뀔 수 있어 DNS와 TLS origin에 영향</li><li>현재 문서의 RDS 생성 추정 USD 20.87/월은 RDS instance + 20 GiB storage만이며 나머지 요금은 별도</li><li>ECR repository 자체는 월 정액이 아니고 이미지 저장량·인터넷 전송에 따라 과금; 빈 repo에는 저장 이미지 비용 없음</li><li>AWS credit은 bill cap이 아님. 실제 Billing과 Budget alert를 확인</li></ul></article>

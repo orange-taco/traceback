@@ -90,6 +90,19 @@ document owns a topic.
   TRACEBACK status report. Explain general networking or AWS terms before showing
   TRACEBACK-specific IDs. Show project values and readiness in a separate,
   explicitly labeled application of that mechanism.
+- Before splitting a long guide into sections or tabs, draw one end-to-end map
+  that includes its main path, meaningful alternate paths, and where those paths
+  rejoin. Label which part each later section enlarges. At section boundaries,
+  say why the next section follows and how it changes the same flow. Put a new
+  term such as bastion at its actual branch in the map before analyzing it;
+  otherwise the reader has no reason to care about that branch.
+- Choose the learning depth from the task and the intended reader. For a
+  beginner or study guide, let a reader understand the whole flow from the
+  picture and short captions first, then reveal terminology, mechanisms,
+  tradeoffs, and source code. An experienced-reader summary may be compact, but
+  keep the diagram and deeper explanation accessible. Ask the user about level
+  only when it cannot be inferred; TRACEBACK's study and startup guides default
+  to beginner-friendly maps with optional depth.
 - Give the visual a short plain-language explanation, then put longer reasoning,
   exceptions, and code in accessible expand/collapse sections. Ensure closed
   details are included when printing to PDF. Put the detail beside the step it
@@ -101,6 +114,17 @@ document owns a topic.
   from one project's provider, profile, resource IDs, or convenience shortcuts.
   Never imply a project-specific alias is a built-in cloud command or a required
   industry-wide step.
+- For every code block, label it as an exact repository excerpt, executable
+  example, schematic pseudocode, or observed console value. Exact excerpts must
+  identify the source file and real line numbers, offer a source link, and put
+  the relevant explanation beside the code when space permits. Verify every
+  copied line and line range against the current source; refresh stale copies
+  instead of leaving plausible but outdated examples. Never assign repository
+  line numbers to a generated command or console-only setting.
+- For a guide that may be read on mobile or outside the checkout, make exact
+  source links land on the relevant lines in the repository viewer. Keep the
+  displayed source revision identifiable so later edits do not silently change
+  what the linked line numbers mean.
 - Show setup dependencies in the order a first-time deployer must complete them.
   Place the status of each TRACEBACK step on that flow, including the first
   missing step that blocks a live request. Explain DNS, inbound routing, TLS

@@ -18,6 +18,10 @@
     details.learning { margin-top:14px; padding:13px 16px; border:1px solid var(--line); background:#fff; }
     details.learning summary { cursor:pointer; color:var(--ink); font-weight:800; }
     details.learning p { margin-top:9px; }
+    .learning-route { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+    .learning-route a { padding:8px 10px; border:1px solid var(--line); background:var(--soft); color:var(--ink); font-size:.79rem; font-weight:800; text-decoration:none; }
+    .handoff { margin:0 0 13px; padding:9px 12px; border-left:3px solid var(--blue); background:var(--bluebg); color:var(--muted); font-size:.85rem; }
+    .source-label { margin:15px 0 5px; color:var(--ink); font-size:.81rem; font-weight:800; }
     .steps { grid-template-columns:repeat(2,minmax(0,1fr)); }
     .readiness { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-top:13px; }
     .readiness article { min-width:0; padding:12px; border:1px solid var(--line); background:#fff; }
@@ -80,12 +84,14 @@
         <div class="node server"><span class="tag">웹 서비스</span><strong>HTTPS → 앱</strong><small>인증서 확인 후 요청 처리</small></div>
       </div>
       <div class="route"><b>두 개의 다른 동작</b><span>DNS는 주소를 알려준다</span><span>→</span><span>브라우저는 그 주소에 별도 HTTPS 연결을 연다</span></div>
+      <div class="learning-route" aria-label="이 문서가 같은 주소 흐름을 확대하는 순서"><a href="#now">① 현재 주소에 대입</a><a href="#terms">② 이름·IP 구분</a><a href="#choice">③ IP 선택</a><a href="#setup">④ 설정</a><a href="#why">⑤ 웹에서 사용</a><a href="#env">⑥ 실행 위치별 값</a><a href="#deploy-flow">⑦ 전체로 복귀</a></div>
       <details class="learning"><summary>DNS가 IP를 알려주면 웹사이트도 바로 열리나요?</summary><p>DNS는 목적지 정보만 반환합니다. 이후 공인 IP로 도달하는 네트워크 경로, 443 인바운드 규칙, TLS 인증서와 HTTPS 서버, 앱이 각각 준비돼야 합니다. TRACEBACK의 현재 상태는 바로 아래에서 단계별로 표시합니다.</p></details>
       <details class="learning"><summary>서버의 IP가 바뀌면 무엇을 수정해야 하나요?</summary><p>도메인의 A 레코드가 예전 IP를 가리키면 새 IP로 바꿔야 합니다. TTL 동안 오래된 답이 캐시에 남을 수 있습니다. 고정 공인 IP를 쓰면 서버 재시작 때문에 A 레코드를 자주 바꿀 필요가 줄어듭니다. 주소가 바뀌어도 HTTPS 인증서는 IP가 아닌 도메인 이름을 대상으로 검증하는 것이 일반적입니다.</p></details>
     </div>
   </section>
 
   <section class="section" id="now">
+    <p class="handoff">위의 일반 경로에 TRACEBACK의 실제 도메인·DNS 레코드·EIP를 넣습니다. 이름 조회 이후의 HTTPS 구간은 아직 별도 작업입니다.</p>
     <div class="sect-head"><h2>TRACEBACK에 대입한 현재 주소</h2><p>초록은 AWS에서 설정 완료, 점선은 아직 연결되지 않은 단계입니다.</p></div>
     <div class="canvas">
       <div class="flow" role="img" aria-label="Vercel 프론트엔드에서 API 도메인으로 요청하고 Route 53 DNS가 EIP를 찾아 개발 EC2로 연결합니다. Nginx, 앱, RDS 연결은 아직 남았습니다.">
@@ -104,19 +110,20 @@
       <div class="callout"><strong>중요:</strong> 도메인과 EIP를 연결한 것까지 완료했습니다. 이 설정만으로 API가 동작하거나 HTTPS가 생기지는 않습니다. EC2에 앱과 Nginx를 올리고 TLS 인증서를 설정해야 합니다.</div>
       <div class="callout"><strong>다음 설정의 실제 순서:</strong> <a href="2-dev-server-first-deployment.html#launch-order">2번의 전체 배포 단계</a>에서 EC2 권한·DB 환경변수를 먼저 확인하고, <a href="2-dev-server-first-deployment.html#https-sequence">HTTPS·인증서·Nginx 절차</a>를 진행합니다. 이 페이지의 A 레코드가 정상이어도 ②~④가 자동으로 만들어지지 않습니다.</div>
       <div class="facts" aria-label="현재 실제 설정"><div class="fact"><small>AWS 계정 / 리전</small><strong>traceback · ap-northeast-2</strong></div><div class="fact"><small>개발 EC2</small><strong>traceback-development-app</strong></div><div class="fact"><small>인스턴스 ID</small><strong class="mono">i-051f85a1ac4e64a2c</strong></div><div class="fact"><small>Elastic IP</small><strong class="mono">3.34.78.140</strong></div><div class="fact"><small>도메인 등록</small><strong>dev-traceback.com · ACTIVE</strong></div><div class="fact"><small>Route 53 레코드</small><strong class="mono">api.dev-traceback.com → 3.34.78.140</strong></div></div>
-      <pre class="config-source"><code>Route 53 public hosted zone (AWS 콘솔 설정, 저장소 코드 아님)
+      <div class="source-label">콘솔 설정 스냅샷 · 저장소 코드가 아니므로 원본 행 번호가 없습니다</div>
+      <pre class="config-source"><code>Route 53 public hosted zone
 Name: api.dev-traceback.com  Type: A  TTL: 300  Value: 3.34.78.140
 
 Vercel Production 환경변수 (2026-10-03 저장됨, 새 배포 전)
-DJANGO_ORIGIN=https://api.dev-traceback.com
-
-// traceback-client/vercel.ts: 값을 읽는 실제 코드
-const configuredOrigin = process.env.DJANGO_ORIGIN?.trim();</code></pre>
+DJANGO_ORIGIN=https://api.dev-traceback.com</code></pre>
+      <div class="source-label">정확한 코드 · <a href="https://github.com/orange-taco/traceback-client/blob/development/vercel.ts#L1">traceback-client/vercel.ts 1행</a></div>
+      <pre class="config-source"><code>1 │ const configuredOrigin = process.env.DJANGO_ORIGIN?.trim();</code></pre>
       <p style="margin-top:10px">Route 53은 A 레코드를 DNS 응답으로 사용합니다. Vercel은 배포할 때 <a href="https://github.com/orange-taco/traceback-client/blob/development/vercel.ts">client의 <code>vercel.ts</code></a>가 읽는 <code>DJANGO_ORIGIN</code>으로 API rewrite를 만듭니다. 저장소에 AWS DNS 설정용 IaC 파일은 없으므로 위 첫 두 줄은 현재 콘솔값을 읽기 쉬운 형태로 옮긴 것입니다. Vercel 변수는 저장했지만 새 배포와 API HTTPS 연결 전에는 실제 rewrite가 완성되지 않습니다.</p>
     </div>
   </section>
 
   <section class="section" id="terms">
+    <p class="handoff">실제 값을 보았으니 각 숫자와 이름의 역할을 분리합니다. 이 구분이 있어야 IP를 바꿀 때 DNS에서 무엇을 수정할지 알 수 있습니다.</p>
     <div class="sect-head"><h2>IP, 도메인, DNS는 서로 다른 것</h2><p>주소록과 실제 위치를 나눠 생각하면 이해하기 쉽습니다.</p></div>
     <div class="two">
       <article class="concept"><h3><span>IP 주소</span><span class="status done"><i></i>숫자 위치</span></h3><p>네트워크에서 서버를 찾아가는 숫자 주소입니다. 현재 EC2의 외부 주소는 <code>3.34.78.140</code>입니다.</p><div class="mini-flow"><span>서버의 네트워크 위치</span><b>→</b><span class="mono">3.34.78.140</span></div></article>
@@ -129,6 +136,7 @@ const configuredOrigin = process.env.DJANGO_ORIGIN?.trim();</code></pre>
   </section>
 
   <section class="section" id="choice">
+    <p class="handoff">이름과 IP의 관계를 알았다면, EC2가 재시작할 때 IP가 유지되는지 선택할 수 있습니다.</p>
     <div class="sect-head"><h2>유동 공인 IP와 EIP 비교</h2><p>아래 버튼을 눌러 EC2 중지 후 동작을 확인해 보세요.</p></div>
     <div class="canvas">
       <div class="selector" role="group" aria-label="IP 유형 선택"><button type="button" data-ip="dynamic" aria-pressed="false">EC2 기본 공인 IP</button><button type="button" data-ip="eip" aria-pressed="true">Elastic IP (현재 선택)</button></div>
@@ -140,6 +148,7 @@ const configuredOrigin = process.env.DJANGO_ORIGIN?.trim();</code></pre>
   </section>
 
   <section class="section" id="setup">
+    <p class="handoff">선택한 주소 유형을 도메인에 연결하는 실제 순서입니다. IP 할당과 DNS 등록은 서로 다른 설정입니다.</p>
     <div class="sect-head"><h2>처음부터 같은 구조를 설정한다면</h2><p>일반 순서를 먼저 보고, TRACEBACK의 실제 값은 위 설정 상자와 비교하세요.</p></div>
     <div class="steps">
       <article class="step"><strong>도메인과 권한 DNS 준비</strong><p>Route 53 → Registered domains에서 도메인을 등록합니다. Public hosted zone을 만든 뒤 등록 도메인의 네임서버가 hosted zone의 NS와 일치하는지 확인합니다. 다른 등록업체를 써도 DNS 관리자는 따로 정할 수 있습니다.</p><em>현재 Route 53에 등록·연결 완료</em></article>
@@ -151,6 +160,7 @@ const configuredOrigin = process.env.DJANGO_ORIGIN?.trim();</code></pre>
   </section>
 
   <section class="section" id="why">
+    <p class="handoff">주소를 만들었으니 그 이름을 실제 HTTPS 요청에 왜 쓰는지 봅니다. DNS 성공과 API 성공은 별도 단계입니다.</p>
     <div class="sect-head"><h2>서버 도메인은 왜 필요한가</h2><p>사용자 화면의 주소와 API 서버 주소가 맡는 역할이 다릅니다.</p></div>
     <div class="canvas">
       <div class="flow" role="img" aria-label="브라우저가 Vercel 프론트엔드에서 시작해 API 서버 도메인을 사용하고 Route 53을 통해 EIP, EC2, Nginx, Django API로 연결됩니다.">
@@ -166,6 +176,7 @@ const configuredOrigin = process.env.DJANGO_ORIGIN?.trim();</code></pre>
   </section>
 
   <section class="section" id="env">
+    <p class="handoff">프런트와 서버는 같은 주소를 보더라도 각자 다른 장소에서 설정을 읽습니다. 어느 값이 어디에 저장되는지 연결합니다.</p>
     <div class="sect-head"><h2>환경변수도 실행 위치별로 나눈다</h2><p>여기서는 원리만 짚고, 실제 변수 이름과 입력 위치는 전체 환경 가이드에서 설명합니다.</p></div>
     <div class="canvas">
       <div class="flow" role="img" aria-label="로컬 개발, GitHub Actions, EC2 앱, Vercel SSR은 각자 자기 환경변수를 따로 읽습니다.">
@@ -180,6 +191,7 @@ const configuredOrigin = process.env.DJANGO_ORIGIN?.trim();</code></pre>
   </section>
 
   <section class="section" id="deploy-flow">
+    <p class="handoff">마지막으로 이름 조회·웹 요청·배포 설정을 처음의 한 흐름으로 다시 합칩니다.</p>
     <div class="sect-head"><h2>설정값은 서비스에서 이렇게 쓰인다</h2><p>이건 할 일 목록이 아니라, 각 설정이 실제 요청과 배포 중 어디서 쓰이는지 보여주는 흐름입니다.</p></div>
     <div class="canvas">
       <div class="flow" role="img" aria-label="GitHub Actions reads deployment configuration, authenticates to AWS using OIDC, builds and deploys the image. The EC2 app reads runtime secrets and connects privately to RDS. Separately Vercel reads Django origin and forwards frontend requests to the API domain.">
