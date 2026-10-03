@@ -44,18 +44,20 @@ The development EC2 was created in Seoul on 2026-09-27 as
 `t3.micro`, 20 GiB gp3, public subnet/IP, and Standard CPU credits. Its
 `traceback-development-app` security group allows TCP 80/443 from the internet,
 has no SSH rule, and retains the default outbound allow rule. The
-`traceback-development-ec2` instance profile has `AmazonSSMManagedInstanceCore`;
-ECR pull access is still pending and belongs on this EC2 role, not the GitHub
-deploy role described below. The instance is running and has not yet been
-bootstrapped with Docker or the application.
+`traceback-development-ec2` instance profile has `AmazonSSMManagedInstanceCore`
+and a repository-scoped `traceback-ecr-pull` inline policy. The instance is
+running. Docker Engine, Compose v5.6.0, AWS CLI v2, Nginx, and Certbot are
+installed; `/opt/traceback` exists. The application and its `.env` are not yet
+installed.
 
 On 2026-10-03, Elastic IP `3.34.78.140` (`eipalloc-07ecd0df0cc7e83bd`) was
 allocated in `ap-northeast-2`, tagged `Name=traceback-development-eip`, and
 associated with this EC2 instance's primary private address. Route 53 domain
 `dev-traceback.com` is `ACTIVE`; its registered name servers match the public
 hosted zone. The zone now has `api.dev-traceback.com A 3.34.78.140` with a
-300-second TTL. The record resolves to the EC2 address, but Nginx, TLS, and the
-application are not installed yet.
+300-second TTL. The record resolves to the EC2 address. Nginx answers HTTP on
+port 80, but TLS and the application are not installed yet, so port 443 refuses
+connections.
 
 The RDS instance was created on 2026-09-27 and is `Available`. Its endpoint is
 `traceback-development-db.cdgccc6q6aoe.ap-northeast-2.rds.amazonaws.com`. The
@@ -135,7 +137,9 @@ rebuilt development commit `afd7664` on 2026-10-04 with
 The deployment is Ready. The auth config request
 `/_allauth/browser/v1/config` changed from a React Router 404 to a Vercel 502:
 the rewrite is active, but `api.dev-traceback.com:443` still refuses connections.
-Deploy Nginx/TLS and Django, then verify session, CSRF, email, and Kakao.
+HTTP on port 80 now answers through Nginx. Issue the TLS certificate, install
+the reverse-proxy configuration, and deploy Django; then verify session, CSRF,
+email, and Kakao.
 The `.env.dev` frontend origin is recorded locally in the client repository;
 `.env.prod` remains unset.
 
@@ -256,7 +260,8 @@ Do not place passwords in SSM command parameters or GitHub logs. The SSM command
 - AWS account `968579693658` has the GitHub OIDC provider and `traceback-development-deploy` role. Its trust subject is exactly `repo:orange-taco/traceback:environment:development`; its policy is limited to ECR repository `traceback` and SSM commands for EC2 `i-051f85a1ac4e64a2c`.
 - Seoul private ECR repository `traceback` is immutable-tagged and AES-256 encrypted. It has no images yet.
 - This setup has not been exercised by a `development` push workflow. The latest inspected CI run was a pull request, so deploy jobs were correctly skipped. It is not an OIDC deployment test.
-- Still required before the first development push: grant the EC2 instance role ECR pull access, install Docker Engine/Compose v2/AWS CLI v2, prepare `/opt/traceback/.env`, create the Django DB user, and configure Nginx/TLS. Vercel's `DJANGO_ORIGIN` is active in the new deployment; end-to-end verification still requires API HTTPS and Django. The next deployment slice should start with the EC2 pull policy and host bootstrap.
+- The EC2 instance role now has repository-scoped ECR pull access. Docker Engine, Compose v5.6.0, AWS CLI v2, Nginx, and Certbot are installed. EC2 ECR authentication succeeds, and external HTTP returns 200. `/opt/traceback` exists with root-only access.
+- Still required before the first development push: prepare `/opt/traceback/.env`, create the Django DB user, issue the TLS certificate, and install the Nginx reverse-proxy configuration. Vercel's `DJANGO_ORIGIN` is active; end-to-end verification still requires API HTTPS and Django.
 
 Before the first development push, validate the `development` Environment and its four values; confirm OIDC trust/permissions, EC2 SSM online state, instance ECR pull permission, and ECR `IMMUTABLE` tags. Before production work, separately verify the `production` Environment, reviewer and branch restriction, production role/instance, and distinct database. Confirm environment IDs and each `.env` target match the intended account before deploying.
 
