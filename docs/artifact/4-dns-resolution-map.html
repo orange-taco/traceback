@@ -581,6 +581,7 @@ C-root → 192.33.4.12
         <p>DNS는 <b>어디로 연결할지</b> 알려줍니다. 그다음 브라우저가 그 IP의 웹 서버와 별도 연결을 만들어 페이지를 요청합니다.</p>
         <div class="concept-steps" aria-label="DNS 이후의 웹 접속 순서"><span class="answer">IP 확보</span><i>→</i><span>TCP 연결</span><i>→</i><span>TLS</span><i>→</i><span>HTTP 요청</span><i>→</i><span>서버 응답</span></div>
         <p class="tiny-note"><b>TCP</b>는 서버와 통신 경로를 만들고, <b>TLS</b>는 HTTPS 통신을 암호화합니다. <b>HTTP 요청</b>은 원하는 웹페이지나 데이터를 서버에 요청하는 메시지입니다. DNS 서버가 이 요청을 대신 전달하지 않습니다.</p>
+        <div class="one-purchase"><b>TRACEBACK의 현재 위치:</b> <code>api.dev-traceback.com → 3.34.78.140</code> 조회는 확인했습니다. 2026-10-03 HTTPS 443 연결은 거부됐고, 인증서·Nginx·Django 연결은 아직 설정 전입니다. 따라서 DNS 성공을 API 성공으로 표시하지 않습니다. <a href="2-dev-server-first-deployment.html#https-sequence">인증서 발급부터 Nginx 프록시까지의 순서</a>와 <a href="3-development-ip-domain-guide.html#now">현재 연결 단계 그림</a>을 이어서 보세요.</div>
         <button class="next-tab" type="button" data-next-tab="detail">이제 실제 DNS 패킷 따라가기 →</button>
       </div>
     </section>

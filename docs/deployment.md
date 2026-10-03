@@ -9,7 +9,8 @@ development and production EC2 instances; do not create frontend EC2 instances. 
 for uploaded objects, not the SSR application. The intended browser contract remains
 same-origin: `traceback-client/vercel.ts` forwards `/_allauth`, `/accounts`, and `/api`
 to `DJANGO_ORIGIN` when that HTTPS origin is configured in the Vercel project. The
-development project's environment value still needs to be entered manually. Confirm
+development project's `DJANGO_ORIGIN` is saved in its Production scope but needs a
+fresh deployment after API HTTPS is ready. Confirm
 cookie/CSRF forwarding and Kakao OAuth callback behavior in browser QA before treating
 a Vercel deployment as ready. Vercel projects, domains, branch mappings, and any paid
 plan are configured manually.
@@ -229,6 +230,11 @@ Attach `AmazonSSMManagedInstanceCore` to each app EC2 role. Add a repository-sco
 ```
 
 Check on **both** hosts: the EC2 architecture can run the GitHub-hosted runner's current `linux/amd64` image (otherwise decide on a multi-platform build separately); SSM Agent is online in the correct Region; outbound access to SSM, ECR API/registry and image storage works (internet/NAT or appropriate VPC endpoints); Docker Engine, Compose v2 and AWS CLI v2 are installed; the SSM command can invoke Docker; `/opt/traceback` exists; `/opt/traceback/.env` is root-owned, `chmod 600`, and contains server-specific values from the matching settings example (`config/server.development.env.example` or `config/server.env.example`). Set `DJANGO_SETTINGS_MODULE=config.settings.development` on the development host and `config.settings.production` on production. Keep separate DB URLs, Django keys, hostnames, frontend URLs and SES/Kakao credentials. Neither GitHub Environment variables nor the image contain runtime secrets. Confirm DB connectivity and backups before migration. Install Nginx on the EC2 host, obtain an HTTPS certificate for the API DNS name, and install `deploy/nginx/traceback.conf.example` after replacing its example hostname. The app listens only on `127.0.0.1:8000`; Nginx forwards HTTPS traffic to it. The security group should expose HTTP for ACME/redirect and HTTPS for Vercel, with no public app port.
+
+The example Nginx file is not copied onto the host by `deploy-common.sh`; provision it
+separately. It references certificate files, so serve the HTTP ACME challenge and
+obtain the certificate before enabling that file. See the
+[ordered HTTPS setup guide](artifact/2-dev-server-first-deployment.html#https-sequence).
 
 Do not place passwords in SSM command parameters or GitHub logs. The SSM command does not print `.env`, but Compose/application error output could reveal sensitive data, so restrict access to command invocation output.
 

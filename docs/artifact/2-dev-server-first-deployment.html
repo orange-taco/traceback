@@ -33,6 +33,32 @@
     @media(max-width:900px){.architecture{grid-template-columns:1fr}}
     @media(max-width:820px){.iam-grid,.shots,.timeline{grid-template-columns:1fr}.var-flow{grid-template-columns:1fr;gap:10px}.var-flow article:not(:last-child)::after{content:"↓";right:auto;left:50%;top:auto;bottom:-17px;z-index:1}.keyline{display:block}.keyline strong{display:block;margin-bottom:4px}.read-order{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:640px){.panel dl{grid-template-columns:1fr;gap:2px}.panel dd{margin-bottom:10px}}
+    .launch-map { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; counter-reset:launch; }
+    .launch-map article { position:relative; min-width:0; padding:16px; background:#fff; border:2px solid var(--line); border-radius:14px; }
+    .launch-map article::before { counter-increment:launch; content:counter(launch,decimal-leading-zero); display:block; margin-bottom:7px; font:800 .79rem ui-monospace,monospace; color:var(--blue); }
+    .launch-map article.done { border-color:#a7d3bf; background:#f1faf5; }
+    .launch-map article.blocked { border-color:#dfaaa5; background:#fff7f5; }
+    .launch-map article.pending { border-color:#e6cf96; background:#fffaf0; }
+    .launch-map strong { display:block; font-size:.96rem; line-height:1.35; }
+    .launch-map p { margin:7px 0 8px; font-size:.84rem; color:var(--muted); }
+    .launch-map a { font-size:.81rem; font-weight:750; }
+    .launch-key { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 13px; }
+    .launch-key span { padding:5px 9px; background:#fff; border:1px solid var(--line); border-radius:20px; font-size:.8rem; }
+    .launch-map article:not(:nth-child(4n))::after { content:"→"; position:absolute; right:-13px; top:42%; z-index:1; color:#31536b; font-weight:900; }
+    .certificate-path { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:15px 0; }
+    .certificate-path article { padding:13px; background:#fff; border:1px solid var(--line); border-radius:10px; }
+    .certificate-path b { display:block; margin-bottom:5px; color:#173d59; }
+    .certificate-path small { color:var(--muted); line-height:1.45; }
+    .shots { grid-template-columns:minmax(0,1fr); }
+    .shot { padding:16px; }
+    .shot img { background:#fff; }
+    .shot a { display:block; position:relative; }
+    .shot a::after { content:"원본 크기로 열기 ↗"; position:absolute; right:12px; top:12px; padding:6px 9px; border-radius:7px; background:#102a43; color:#fff; font-size:.78rem; font-weight:800; }
+    .shot a:focus-visible img { outline:3px solid #f1b946; outline-offset:3px; }
+    .shot figcaption { font-size:1rem; line-height:1.55; }
+    @media(max-width:900px){.launch-map{grid-template-columns:repeat(2,minmax(0,1fr))}.launch-map article:nth-child(2n)::after{content:none}.certificate-path{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:600px){.launch-map,.certificate-path{grid-template-columns:1fr}.launch-map article::after{content:"↓"!important;right:auto!important;left:50%;top:auto!important;bottom:-16px}.launch-map article:last-child::after{content:none!important}}
+    @media print {.launch-map{grid-template-columns:repeat(2,minmax(0,1fr))}.launch-map article::after,.shot a::after{content:none!important}.shot{break-inside:avoid}.shot img{max-height:225mm;object-fit:contain}}
   </style>
   <style>
     .pdf-export { position:fixed; right:18px; bottom:18px; z-index:1000; border:1px solid #164d68; border-radius:999px; padding:10px 16px; background:#fff; color:#123c50; box-shadow:0 8px 24px #102a4333; font:700 14px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; cursor:pointer; }
@@ -79,7 +105,7 @@
       <p class="small">추천 학습 경로: <a href="traceback-system-guide.html">System Guide 전체 지도</a> → <a href="1-aws-ssm-ssh-learning-guide.html">1. 접속</a> → 여기서 설정·선택을 학습하며 <a href="traceback-system-guide.html#code">workflow 원문 설명</a>을 나란히 보기 → <a href="3-development-ip-domain-guide.html">3. IP·도메인</a> → <a href="4-dns-resolution-map.html">4. DNS</a>.</p>
     </div>
   </header>
-  <nav class="nav" aria-label="문서 목차"><div class="wrap"><a href="#big-picture">큰 흐름</a><a href="#status">현재 상태</a><a href="#db-choice">DB 구성</a><a href="#flow">연결 구조</a><a href="#cicd-iam">GitHub·IAM·ECR</a><a href="#deploy-code">배포 코드 해설</a><a href="#proxy">Nginx 위치</a><a href="#glossary">용어</a><a href="#choice">운영 선택</a><a href="#steps">작업 순서</a><a href="#env">환경변수</a><a href="#cost">비용·보안</a></div></nav>
+  <nav class="nav" aria-label="문서 목차"><div class="wrap"><a href="#big-picture">큰 흐름</a><a href="#launch-order">설정 순서·막힌 곳</a><a href="#status">현재 상태</a><a href="#db-choice">DB 구성</a><a href="#flow">연결 구조</a><a href="#cicd-iam">GitHub·IAM·ECR</a><a href="#deploy-code">배포 코드 해설</a><a href="#proxy">Nginx·HTTPS</a><a href="#glossary">용어</a><a href="#choice">운영 선택</a><a href="#steps">작업 순서</a><a href="#env">환경변수</a><a href="#cost">비용·보안</a></div></nav>
 
   <main class="wrap">
     <section class="section" id="big-picture">
@@ -89,6 +115,22 @@
         <article class="panel"><h3>고객 요청 · 아직 끝까지 연결되지 않음</h3><div class="route-diagram" role="img" aria-label="브라우저에서 Vercel, Route 53과 EIP, EC2 Nginx와 Django를 지나 private RDS로 요청이 흐릅니다"><span>브라우저·Vercel</span><b>→</b><span>Route 53·EIP</span><b>→</b><span>EC2 Nginx·Django</span><b>→</b><span>private RDS</span></div><p>DNS/EIP와 Vercel 변수는 저장됐습니다. EC2의 HTTPS·앱·DB 연결과 Vercel 재배포는 남았습니다.</p></article>
         <article class="panel"><h3>코드 배포 · 자동화 경로 준비됨</h3><div class="route-diagram" role="img" aria-label="GitHub Actions가 OIDC로 AWS 역할을 맡아 ECR에 이미지를 저장하고 SSM으로 EC2 배포 명령을 전합니다"><span>GitHub Actions</span><b>→</b><span>OIDC·ECR 이미지</span><b>→</b><span>SSM 명령</span><b>→</b><span>EC2 Docker</span></div><p>Workflow와 AWS 배포 역할은 준비됐습니다. EC2 ECR pull 권한과 Docker 실행 기반이 남았습니다.</p></article>
       </div>
+    </section>
+    <section class="section" id="launch-order">
+      <h2>설정 순서와 지금 막힌 위치</h2>
+      <p class="lead">왼쪽에서 오른쪽으로, 윗줄 다음 아랫줄로 읽습니다. 한 칸의 설정이 끝나도 다음 칸까지 통과해야 브라우저에서 로그인이 됩니다. 이 순서는 실제 첫 개발 배포를 위한 선행 관계입니다.</p>
+      <div class="launch-key"><span>🟢 설정·확인됨</span><span>🟠 일부 설정, 연결 미검증</span><span>🔴 선행 작업이 없어 현재 통과 불가</span></div>
+      <div class="launch-map" aria-label="개발 배포의 선행 작업과 현재 상태">
+        <article class="done"><strong>주소와 네트워크</strong><p>Route 53 A → EIP → EC2, 80/443 인바운드, SSM 접속 확인. NACL 세부 점검은 남음.</p><a href="3-development-ip-domain-guide.html#setup">IP·DNS 설정 읽기 →</a></article>
+        <article class="pending"><strong>EC2의 실행 권한·도구</strong><p>SSM 권한은 있음. ECR pull IAM, Docker·Compose·AWS CLI 설치는 남음.</p><a href="#cicd-iam">IAM·ECR 읽기 →</a></article>
+        <article class="pending"><strong>RDS와 서버 환경변수</strong><p>private RDS와 5432 규칙은 있음. 앱 DB 사용자·백업 확인·<code>.env</code> 작성·실제 연결은 남음.</p><a href="#env">환경변수 읽기 →</a></article>
+        <article class="blocked"><strong>인증서와 Nginx</strong><p>DNS만 연결됨. HTTP 검증 경로, TLS 인증서, 443 reverse proxy가 아직 없음. 현재 API 443 연결 실패 지점.</p><a href="#https-sequence">HTTPS 순서 읽기 →</a></article>
+        <article class="pending"><strong>GitHub → ECR → EC2</strong><p>OIDC·Environment·빈 ECR은 준비됨. development push 배포와 앱 health check는 미검증.</p><a href="#deploy-code">배포 코드 읽기 →</a></article>
+        <article class="pending"><strong>Vercel 새 배포</strong><p><code>DJANGO_ORIGIN</code>은 저장됨. API HTTPS가 열린 뒤 새 배포를 해야 rewrite에 적용됨.</p><a href="#env">Vercel 변수 읽기 →</a></article>
+        <article class="blocked"><strong>브라우저 인증 검증</strong><p><code>/_allauth</code> 200, 쿠키·CSRF, 이메일·Kakao는 앞 단계가 끝나야 확인 가능.</p><a href="#steps">최종 검사 읽기 →</a></article>
+        <article class="pending"><strong>운영 환경은 나중에</strong><p>별도 prod EC2·RDS·Vercel 프로젝트는 아직 준비 전. dev 검증 후 같은 digest 승격.</p><a href="#choice">환경 분리 이유 →</a></article>
+      </div>
+      <p class="small">🔴는 실제 장애 원인을 확정한 진단이 아니라, 현재 구성에서 다음 연결을 막는 <b>확인된 미설정 단계</b>입니다. EC2와 앱을 올린 뒤에도 별도 네트워크·인증 오류가 있는지는 다시 검사해야 합니다.</p>
     </section>
     <section class="section" id="status">
       <h2>현재 준비 상태</h2>
@@ -197,20 +239,21 @@
 
       <h3>설정 화면 캡처</h3>
       <p class="small">2026-10-03 설정 화면에서 저장된 실제 값과 상태를 캡처했습니다. 이미지를 하나씩 확인한 결과 로그인 이메일, 비밀번호, AWS access key, OAuth secret은 보이지 않습니다. 다만 AWS 계정 ID와 IAM ARN·EC2 ID, 공개 GitHub 저장소명이 보입니다. 이 값은 로그인 자격 증명은 아니지만 인프라 식별자이며 저장소는 공개 상태입니다. 실제 설정 캡처를 요청한 학습 목적에 따라 유지하되, 공개 식별자를 숨기려면 이미지와 문서의 실제 값도 함께 예시값으로 바꿔야 합니다.</p>
+      <p class="lead">화면은 한 줄에 한 장씩 표시합니다. 작은 글자는 이미지를 누르면 원본 1900px 크기 파일이 새 탭에서 열립니다. 캡처는 설정 위치와 당시 상태를 보여주며, 지금의 콘솔 상태는 다시 확인해야 합니다.</p>
       <div class="shots">
-        <figure class="shot"><img src="images/github-environments.png" alt="GitHub 저장소 Environments 목록에서 production, development, local 환경이 나열됨"><figcaption><strong>GitHub · Environments 목록</strong> — 저장소 Settings → Environments 진입 위치. 현재 <code>development</code>만 설정했고, 목록에 보이는 <code>production</code>은 나중에 준비합니다.</figcaption></figure>
-        <figure class="shot"><img src="images/github-development-environment.png" alt="GitHub development Environment 설정 화면: development 브랜치 제한, secrets 없음, 네 environment variables 표시"><figcaption><strong>GitHub · development Environment</strong> — 브랜치 제한과 변수 네 개. AWS 배포 역할 ARN은 긴 값이라 화면상 일부가 줄여 보입니다.</figcaption></figure>
-        <figure class="shot"><img src="images/aws-ecr-traceback.png" alt="AWS 서울 ECR private repositories 화면: traceback 저장소, tag immutable, AES-256 암호화"><figcaption><strong>AWS · ECR private repository</strong> — 서울 리전의 <code>traceback</code>, immutable tag, AES-256. 첫 이미지 push 전이라 저장 이미지 용량은 없습니다.</figcaption></figure>
-        <figure class="shot"><img src="images/aws-github-oidc-provider.png" alt="AWS IAM identity providers 목록에 token.actions.githubusercontent.com OpenID Connect provider가 표시됨"><figcaption><strong>AWS · OIDC identity provider</strong> — <code>token.actions.githubusercontent.com</code> provider가 계정에 등록된 것을 확인합니다.</figcaption></figure>
-        <figure class="shot"><img src="images/aws-iam-development-role.png" alt="AWS IAM traceback-development-deploy 역할 요약과 ARN"><figcaption><strong>AWS · GitHub deploy role</strong> — 역할 이름과 ARN. GitHub Actions가 이 역할을 OIDC로 맡습니다.</figcaption></figure>
-        <figure class="shot"><img src="images/aws-iam-development-trust.png" alt="AWS IAM traceback-development-deploy 역할의 OIDC trust policy 화면"><figcaption><strong>AWS · IAM 역할 Trust relationship</strong> — GitHub OIDC provider, audience, 특정 저장소의 <code>development</code> Environment subject가 보입니다.</figcaption></figure>
-        <figure class="shot"><img src="images/aws-iam-development-permissions.png" alt="AWS IAM traceback-development-deploy 역할에 traceback-development-deploy-policy inline permission policy가 연결됨"><figcaption><strong>AWS · IAM 권한 연결</strong> — 전용 inline policy가 배포 역할에 연결된 화면입니다. 화면에서는 정책 이름과 연결 상태를 확인합니다.</figcaption></figure>
-        <figure class="shot"><img src="images/aws-iam-development-instance-role.png" alt="AWS traceback-development-ec2 IAM 역할에 AmazonSSMManagedInstanceCore 정책만 연결된 권한 화면"><figcaption><strong>AWS · EC2 instance role</strong> — 현재 <code>AmazonSSMManagedInstanceCore</code>만 연결됐습니다. 아직 ECR pull 정책이 없어 그다음 작업으로 남아 있습니다.</figcaption></figure>
-        <figure class="shot"><img src="images/github-development-protection.png" alt="GitHub Branch protection rules 목록에 development 규칙 하나가 표시됨"><figcaption><strong>GitHub · 브랜치 보호 규칙 목록</strong> — <code>development</code>에 규칙 하나가 연결된 모습입니다.</figcaption></figure>
-        <figure class="shot"><img src="images/github-development-branch-rule.png" alt="GitHub development branch protection 설정: PR 및 status checks required, force push와 deletion 비허용"><figcaption><strong>GitHub · development branch protection</strong> — PR, 상태 검사 두 개, force push와 삭제 규칙을 확인할 수 있습니다.</figcaption></figure>
+        <figure class="shot"><a href="images/github-environments.png" target="_blank" rel="noopener" aria-label="원본 크기로 이미지 열기"><img src="images/github-environments.png" alt="GitHub 저장소 Environments 목록에서 production, development, local 환경이 나열됨"></a><figcaption><strong>GitHub · Environments 목록</strong> — 저장소 Settings → Environments 진입 위치. 현재 <code>development</code>만 설정했고, 목록에 보이는 <code>production</code>은 나중에 준비합니다.</figcaption></figure>
+        <figure class="shot"><a href="images/github-development-environment.png" target="_blank" rel="noopener" aria-label="원본 크기로 이미지 열기"><img src="images/github-development-environment.png" alt="GitHub development Environment 설정 화면: development 브랜치 제한, secrets 없음, 네 environment variables 표시"></a><figcaption><strong>GitHub · development Environment</strong> — 브랜치 제한과 변수 네 개. AWS 배포 역할 ARN은 긴 값이라 화면상 일부가 줄여 보입니다.</figcaption></figure>
+        <figure class="shot"><a href="images/aws-ecr-traceback.png" target="_blank" rel="noopener" aria-label="원본 크기로 이미지 열기"><img src="images/aws-ecr-traceback.png" alt="AWS 서울 ECR private repositories 화면: traceback 저장소, tag immutable, AES-256 암호화"></a><figcaption><strong>AWS · ECR private repository</strong> — 서울 리전의 <code>traceback</code>, immutable tag, AES-256. 첫 이미지 push 전이라 저장 이미지 용량은 없습니다.</figcaption></figure>
+        <figure class="shot"><a href="images/aws-github-oidc-provider.png" target="_blank" rel="noopener" aria-label="원본 크기로 이미지 열기"><img src="images/aws-github-oidc-provider.png" alt="AWS IAM identity providers 목록에 token.actions.githubusercontent.com OpenID Connect provider가 표시됨"></a><figcaption><strong>AWS · OIDC identity provider</strong> — <code>token.actions.githubusercontent.com</code> provider가 계정에 등록된 것을 확인합니다.</figcaption></figure>
+        <figure class="shot"><a href="images/aws-iam-development-role.png" target="_blank" rel="noopener" aria-label="원본 크기로 이미지 열기"><img src="images/aws-iam-development-role.png" alt="AWS IAM traceback-development-deploy 역할 요약과 ARN"></a><figcaption><strong>AWS · GitHub deploy role</strong> — 역할 이름과 ARN. GitHub Actions가 이 역할을 OIDC로 맡습니다.</figcaption></figure>
+        <figure class="shot"><a href="images/aws-iam-development-trust.png" target="_blank" rel="noopener" aria-label="원본 크기로 이미지 열기"><img src="images/aws-iam-development-trust.png" alt="AWS IAM traceback-development-deploy 역할의 OIDC trust policy 화면"></a><figcaption><strong>AWS · IAM 역할 Trust relationship</strong> — GitHub OIDC provider, audience, 특정 저장소의 <code>development</code> Environment subject가 보입니다.</figcaption></figure>
+        <figure class="shot"><a href="images/aws-iam-development-permissions.png" target="_blank" rel="noopener" aria-label="원본 크기로 이미지 열기"><img src="images/aws-iam-development-permissions.png" alt="AWS IAM traceback-development-deploy 역할에 traceback-development-deploy-policy inline permission policy가 연결됨"></a><figcaption><strong>AWS · IAM 권한 연결</strong> — 전용 inline policy가 배포 역할에 연결된 화면입니다. 화면에서는 정책 이름과 연결 상태를 확인합니다.</figcaption></figure>
+        <figure class="shot"><a href="images/aws-iam-development-instance-role.png" target="_blank" rel="noopener" aria-label="원본 크기로 이미지 열기"><img src="images/aws-iam-development-instance-role.png" alt="AWS traceback-development-ec2 IAM 역할에 AmazonSSMManagedInstanceCore 정책만 연결된 권한 화면"></a><figcaption><strong>AWS · EC2 instance role</strong> — 현재 <code>AmazonSSMManagedInstanceCore</code>만 연결됐습니다. 아직 ECR pull 정책이 없어 그다음 작업으로 남아 있습니다.</figcaption></figure>
+        <figure class="shot"><a href="images/github-development-protection.png" target="_blank" rel="noopener" aria-label="원본 크기로 이미지 열기"><img src="images/github-development-protection.png" alt="GitHub Branch protection rules 목록에 development 규칙 하나가 표시됨"></a><figcaption><strong>GitHub · 브랜치 보호 규칙 목록</strong> — <code>development</code>에 규칙 하나가 연결된 모습입니다.</figcaption></figure>
+        <figure class="shot"><a href="images/github-development-branch-rule.png" target="_blank" rel="noopener" aria-label="원본 크기로 이미지 열기"><img src="images/github-development-branch-rule.png" alt="GitHub development branch protection 설정: PR 및 status checks required, force push와 deletion 비허용"></a><figcaption><strong>GitHub · development branch protection</strong> — PR, 상태 검사 두 개, force push와 삭제 규칙을 확인할 수 있습니다.</figcaption></figure>
       </div>
       <h3>휴대폰에서도 읽기 쉬운지 확인</h3>
-      <figure class="shot" style="max-width:390px"><img src="images/dev-server-first-deployment-mobile-preview.png" alt="390픽셀 폭 모바일에서 열린 첫 배포 학습 문서의 현재 준비 상태"><figcaption><strong>문서 모바일 미리보기 · 390px</strong> — 좁은 화면에서는 목차만 가로로 스크롤되고, 본문 카드는 한 열로 쌓입니다. 본문 전체 가로 넘침은 없습니다. 이 이미지는 AWS 설정 캡처가 아니라 문서 레이아웃 확인 화면입니다.</figcaption></figure>
+      <figure class="shot" style="max-width:390px"><a href="images/dev-server-first-deployment-mobile-preview.png" target="_blank" rel="noopener" aria-label="원본 크기로 이미지 열기"><img src="images/dev-server-first-deployment-mobile-preview.png" alt="390픽셀 폭 모바일에서 열린 첫 배포 학습 문서의 현재 준비 상태"></a><figcaption><strong>문서 모바일 미리보기 · 390px</strong> — 좁은 화면에서는 목차만 가로로 스크롤되고, 본문 카드는 한 열로 쌓입니다. 본문 전체 가로 넘침은 없습니다. 이 이미지는 AWS 설정 캡처가 아니라 문서 레이아웃 확인 화면입니다.</figcaption></figure>
 
       <h3>ECR을 쓰면 추가 요금이 드나요?</h3>
       <div class="iam-grid">
@@ -463,6 +506,39 @@ test "$status" = Success</code></pre>
         </article>
       </div>
       <div class="notice"><strong>TLS 종료란?</strong> 브라우저/Vercel과 HTTPS로 암호화된 연결을 Nginx나 ALB가 받아 인증서를 제시하고 복호화하는 위치를 말합니다. 현재 계획에서는 EC2 호스트 Nginx가 인증서를 사용합니다. ALB 패턴에서는 보통 HTTPS listener에 인증서를 연결합니다. 한 연결의 어느 지점에서 TLS가 끝나는지 알아야 Django에 올바른 scheme/host 정보를 전달하고 secure cookie·CSRF를 검증할 수 있습니다.</div>
+      <h3 id="https-sequence">도메인이 생긴 다음 HTTPS를 여는 순서</h3>
+      <p>HTTPS는 <b>도메인 이름 + 그 이름의 소유를 확인해 발급받은 TLS 인증서 + 인증서를 제시할 웹 서버</b>가 함께 있어야 합니다. 이 프로젝트의 <a href="../../deploy/nginx/traceback.conf.example">Nginx 설정 예시</a>는 인증서 파일이 이미 있다고 가정하므로, 파일을 바로 활성화하면 인증서 경로가 없어 Nginx 시작에 실패할 수 있습니다.</p>
+      <div class="certificate-path" aria-label="인증서 발급부터 프록시 검증까지의 순서">
+        <article><b>① DNS·포트 80 확인</b><small>A 레코드가 EC2 EIP를 가리키고 보안 그룹이 80을 받는지 확인합니다. TRACEBACK은 두 설정을 확인했습니다.</small></article>
+        <article><b>② HTTP 검증 경로 열기</b><small>Nginx를 설치하고 인증서가 없어도 시작 가능한 임시 HTTP 설정에서 <code>/.well-known/acme-challenge/</code>를 제공합니다. 아직 미설정입니다.</small></article>
+        <article><b>③ ACME 인증서 발급</b><small>예: Let's Encrypt의 ACME client가 위 경로로 도메인 소유를 검증한 뒤 인증서·개인 키를 저장합니다. 발급과 갱신은 아직 미설정입니다.</small></article>
+        <article><b>④ 443 프록시와 외부 검사</b><small>인증서 경로를 확인한 뒤 Nginx 설정을 활성화하고 설정 검사·재시작을 합니다. HTTPS 응답, 갱신 시험, Django proxy header를 확인합니다. 아직 미검증입니다.</small></article>
+      </div>
+      <div class="grid two">
+        <article class="panel"><h3>인증서 요청 예시 · EC2 호스트에서</h3><p>현재 EC2의 Amazon Linux 2023에서 제공되는 Nginx·Certbot 패키지를 쓰는 HTTP-01 예시입니다. SSM 셸에서 실행할 때의 순서이며, 아직 실행한 기록은 없습니다.</p><pre class="code-sample"><code>sudo dnf install -y nginx certbot
+sudo mkdir -p /var/www/certbot/.well-known/acme-challenge
+# 먼저 아래의 HTTP 전용 임시 설정을 만들고:
+sudo nginx -t
+sudo systemctl enable --now nginx
+sudo certbot certonly --webroot -w /var/www/certbot -d api.dev-traceback.com
+# 인증서 발급 후 임시 .conf를 비활성화하고 최종 예시를 설치:
+sudo nginx -t
+sudo systemctl reload nginx
+sudo certbot renew --dry-run</code></pre><p>임시 <code>/etc/nginx/conf.d/traceback-acme.conf</code>에는 아래처럼 인증서가 필요 없는 80 설정만 둡니다. 발급 뒤 이 임시 파일을 <code>.conf</code>가 아닌 이름으로 바꾸고 최종 <a href="../../deploy/nginx/traceback.conf.example">저장소 예시</a>를 <code>/etc/nginx/conf.d/traceback.conf</code>로 옮깁니다. 저장소 파일은 배포 스크립트가 EC2 호스트로 자동 복사하지 않으므로 별도로 전달해야 합니다.</p><pre class="code-sample"><code>server {
+    listen 80;
+    server_name api.dev-traceback.com;
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+}</code></pre><p>HTTP-01은 80 포트로 파일을 확인합니다. DNS-01은 DNS 레코드로 확인하는 대안입니다. 인증서 자동 갱신 timer와 갱신 뒤 Nginx reload hook까지 확인해야 운영이 끝납니다. <a href="https://docs.aws.amazon.com/linux/al2023/ug/SSL-on-amazon-linux-2023.html">Amazon Linux 2023 TLS 안내</a> · <a href="https://eff-certbot.readthedocs.io/en/stable/using.html#webroot">Certbot webroot 방식</a>.</p></article>
+        <article class="panel"><h3>이 저장소의 Nginx 설정이 소비하는 값</h3><pre class="code-sample"><code>server_name api.dev-traceback.com;
+ssl_certificate /etc/letsencrypt/live/api.dev-traceback.com/fullchain.pem;
+ssl_certificate_key /etc/letsencrypt/live/api.dev-traceback.com/privkey.pem;
+proxy_pass http://127.0.0.1:8000;
+proxy_set_header Host $host;
+proxy_set_header X-Forwarded-Proto $scheme;</code></pre><p>80에서는 ACME 검증 경로를 제공하고 나머지는 HTTPS로 돌립니다. 443에서는 인증서를 제시한 뒤 원래 URL 경로를 Django에 전달합니다. 앱 포트는 EC2 내부 loopback에만 열고, Django의 secure cookie·CSRF가 원래 HTTPS 요청을 알도록 Host와 scheme을 넘깁니다. <a href="../../deploy/nginx/traceback.conf.example">전체 파일 보기</a>.</p></article>
+      </div>
+      <div class="notice danger"><strong>현재 연결이 여기서 멈춥니다:</strong> 2026-10-03 외부에서 <code>https://api.dev-traceback.com/_allauth/browser/v1/config</code>의 443 연결이 거부됐습니다. DNS가 EIP를 찾더라도 Nginx·인증서·앱이 아직 없으면 HTTPS 요청은 완료되지 않습니다. 위 단계 완료 후 <code>curl -i https://api.dev-traceback.com/_allauth/browser/v1/config</code>로 공개 경로를 검사합니다. 200 응답을 확인하기 전에는 Vercel 재배포가 전체 인증 흐름을 완성하지 않습니다.</div>
       <div class="notice"><strong>Compose 파일을 왜 두 개 읽나요?</strong> 기본 파일은 로컬/공통 앱의 포트와 네트워크를 정의하고, <code>docker-compose_prod.yml</code>은 이미지·운영 보안·health check·DB 제거 설정을 덧씌웁니다. 배포 스크립트가 두 파일을 <code>docker compose -f … -f …</code>로 함께 적용합니다. 따라서 한 파일만 보고 최종 포트가 없다고 판단하면 안 됩니다. 병합된 결과는 <code>docker compose … config</code>로 확인합니다.</div>
       <div class="notice warn"><strong>아직 필요한 실제 작업:</strong> 네트워크 포트 통로는 코드에 있습니다. 하지만 EC2에 Nginx 설치·설정, 80/443 인바운드와 localhost 8000 경계 확인, TLS 인증서 발급·갱신, 실제 HTTPS 요청 검증은 아직 남았습니다.</div>
     </section>
@@ -490,8 +566,8 @@ test "$status" = Success</code></pre>
       <div class="numbers">
         <article class="step"><h3>운영 모드를 먼저 정하고 배포 코드를 확인</h3><p>Dev 서버를 dev 전용으로 유지합니다. 로컬 backend/client 변경을 `development`에 반영할 계획이라면 해당 브랜치 상태와 CI를 확인합니다. 서버에서 저장소를 pull하는 작업은 하지 않습니다.</p><ul><li>CI quality/test 녹색인지 확인</li><li>개발 deployment GitHub Environment 및 AWS OIDC 값 준비</li><li>main에 직접 배포하거나 dev/prod 인스턴스 ID를 섞지 않기</li></ul></article>
         <article class="step"><h3>EC2 실행 기반과 최소 권한 설정</h3><p>인스턴스 역할에 기존 SSM 권한과 ECR pull 권한이 모두 필요합니다. EC2에 Docker Engine, Compose v2, AWS CLI v2를 준비하고 `/opt/traceback`을 만듭니다.</p><ul><li>현재 보안 그룹: 웹 80/443 허용, SSH 22 미개방</li><li>ECR private repository는 immutable image tag로 준비</li><li>GitHub OIDC provider와 개발 전용 deploy role 생성; 장기 AWS 키를 GitHub에 넣지 않음</li><li>RDS는 앱 마이그레이션/테스트 동안만 켜고 종료 후 중지</li></ul></article>
-        <article class="step"><h3>API 도메인과 reverse proxy 연결</h3><p>이미 준비한 <code>api.dev-traceback.com</code>의 요청을 EC2 안의 Django 앱까지 전달해야 합니다. 현재 선택은 호스트 Nginx가 TLS/HTTPS를 처리하고 같은 EC2의 Docker 앱으로 proxy하는 방식입니다.</p><ul><li>Compose 기본 파일의 localhost publish와 운영 오버레이를 함께 배포합니다. 병합된 포트는 <code>127.0.0.1:8000</code>이라 Nginx는 연결할 수 있고 외부 사용자는 직접 접근하지 못합니다.</li><li>Nginx가 <code>/_allauth</code>, <code>/accounts</code>, <code>/api</code> 요청의 경로를 보존해 upstream으로 전달</li><li><code>X-Forwarded-Proto: https</code>와 원래 Host를 Django에 전달해 HTTPS cookie/CSRF 동작을 검증</li><li>대안은 Nginx 컨테이너 또는 ALB입니다. 같은 EC2의 Nginx 컨테이너는 배포 방식이 달라지고, ALB는 별도 AWS 서비스와 비용이 추가됩니다.</li></ul></article>
         <article class="step"><h3>앱용 DB 사용자와 EC2 비밀값 준비</h3><p>RDS master password를 앱 런타임에 재사용하지 말고, Django용 DB 사용자·DB를 분리합니다. 비밀값은 로컬 Git 파일이나 Vercel frontend에 두지 않습니다.</p><ul><li>각 EC2의 미추적 파일: <code>/opt/traceback/.env</code>, 권한 600</li><li>dev 설정은 <code>DJANGO_SETTINGS_MODULE=config.settings.development</code>; 현재 코드에서 <code>DEBUG=False</code></li><li><code>TRACEBACK_DATABASE_URL</code>은 private RDS endpoint와 앱 DB 계정 사용</li><li><code>FRONTEND_BASE_URL</code>은 Vercel 개발 origin; Django secret, SES, Kakao 값은 환경별 별도 보관</li><li>환경변수 이름과 목적은 이 문서의 환경변수 절에서 확인</li></ul></article>
+        <article class="step"><h3>API 도메인과 reverse proxy 연결</h3><p>이미 준비한 <code>api.dev-traceback.com</code>의 요청을 EC2 안의 Django 앱까지 전달해야 합니다. 현재 선택은 호스트 Nginx가 TLS/HTTPS를 처리하고 같은 EC2의 Docker 앱으로 proxy하는 방식입니다.</p><ul><li>Compose 기본 파일의 localhost publish와 운영 오버레이를 함께 배포합니다. 병합된 포트는 <code>127.0.0.1:8000</code>이라 Nginx는 연결할 수 있고 외부 사용자는 직접 접근하지 못합니다.</li><li>Nginx가 <code>/_allauth</code>, <code>/accounts</code>, <code>/api</code> 요청의 경로를 보존해 upstream으로 전달</li><li><code>X-Forwarded-Proto: https</code>와 원래 Host를 Django에 전달해 HTTPS cookie/CSRF 동작을 검증</li><li>대안은 Nginx 컨테이너 또는 ALB입니다. 같은 EC2의 Nginx 컨테이너는 배포 방식이 달라지고, ALB는 별도 AWS 서비스와 비용이 추가됩니다.</li></ul></article>
         <article class="step"><h3>GitHub Environment와 첫 배포 설정</h3><p><code>development</code> Environment와 보호된 <code>development</code> 브랜치는 설정 완료. GitHub가 이 저장소의 OIDC token으로 deploy role을 맡고, SHA-tag 이미지를 ECR에 push한 뒤 <code>DEVELOPMENT_INSTANCE_ID</code>로 지정한 EC2에 SSM 명령을 보냅니다.</p><ul><li><code>AWS_REGION=ap-northeast-2</code> · 리전</li><li><code>ECR_REPOSITORY=traceback</code> · private image repository</li><li><code>AWS_DEPLOY_ROLE_ARN=arn:aws:iam::968579693658:role/traceback-development-deploy</code> · OIDC로 맡는 IAM role 주소</li><li><code>DEVELOPMENT_INSTANCE_ID=i-051f85a1ac4e64a2c</code> · 배포 명령 대상 EC2</li></ul><p><code>.env.dev.git</code>은 기록용입니다. GitHub가 자동으로 읽지 않으므로 저장소 Settings → Environments → development에 별도로 입력합니다. 정적 Access Key는 등록하지 않았습니다.</p></article>
         <article class="step"><h3>서버 배포 뒤 Vercel 환경별 연결</h3><p>client repo의 <code>vercel.ts</code>는 <code>DJANGO_ORIGIN</code> 하나를 읽어 rewrite를 구성합니다. 2026-10-03 콘솔에서 Production 범위에 변수를 저장했습니다. Production Branch가 <code>development</code>인 이 개발 전용 프로젝트에서는 이 범위가 개발 프런트 배포에 적용됩니다.</p><ul><li><b>Production scope:</b> <code>DJANGO_ORIGIN=https://api.dev-traceback.com</code> 등록 완료. API HTTPS가 응답한 뒤 Vercel을 재배포해야 새 값이 실제 요청에 적용됩니다.</li><li><b>Preview scope:</b> 다른 브랜치와 PR 미리보기 배포에 적용됩니다. Preview URL의 CSRF trusted origins와 Kakao callback 정책을 정하기 전에는 비워 둡니다.</li><li><b>Development scope:</b> <code>vercel dev</code> 및 Vercel CLI가 값을 가져오는 로컬 개발용입니다. 일반 로컬 Vite 개발 서버는 client의 로컬 proxy를 쓰므로 여기에 자동 적용되지 않습니다.</li><li><code>.env.dev</code>는 로컬 파일이며 Vercel에 자동 업로드되지 않습니다. Vercel Dashboard에 등록한 값과 별개로 관리합니다.</li><li>DB 비밀번호, Django secret, SES, Kakao secret은 Vercel에 넣지 않습니다. 현재 <code>vercel.ts</code>가 소비하는 값은 공개 HTTPS origin인 <code>DJANGO_ORIGIN</code>뿐입니다.</li><li>재배포 뒤 <code>/_allauth</code>, <code>/accounts</code>, <code>/api</code> rewrite와 cookie/CSRF/Kakao callback을 브라우저에서 검증</li></ul></article>
         <article class="step"><h3>외부에서 인증·DB·메일을 검증하고 끄기</h3><p>개발용 Vercel 주소에서 설정 endpoint, 이메일 가입/인증, 로그인/로그아웃, CSRF 변경 요청, Kakao callback과 계정 연결 해제를 확인합니다.</p><ul><li>Vercel에서 <code>/_allauth/browser/v1/config</code>가 200으로 오고 Django에서 DB 응답</li><li>HTTPS cookie, proxy host/protocol, Django allowed hosts와 CSRF 동작 확인</li><li>외부 HTTP/HTTPS에서 앱만 노출되는지 확인; RDS는 계속 private</li><li>메일 발송을 실사용 테스트할 계획이면 SES production access와 verified sender/domain도 확인</li><li>RDS는 테스트 종료 후 중지. S3 업로드 IAM은 기능이 생길 때만 최소 prefix 권한으로 추가</li></ul></article>
@@ -502,7 +578,7 @@ test "$status" = Success</code></pre>
       <h2>처음 나오는 네트워크 용어</h2>
       <p class="lead">먼저 단어를 익히면 위의 요청 그림을 따라가기 쉬워집니다. 일반 네트워크 용어와 AWS에서 붙인 이름을 함께 적었습니다.</p>
       <div class="grid two">
-        <article class="panel"><h3>일반 네트워크 용어</h3><dl><dt>Reverse proxy · 역방향 프록시</dt><dd>사용자 요청을 먼저 받은 뒤 내부 앱 서버로 대신 전달하는 서버입니다. 이 구성에서는 Nginx가 해당 역할을 합니다.</dd><dt>Upstream · 전달 대상</dt><dd>프록시가 요청을 넘기는 다음 서버입니다. 여기서는 Django 앱의 <code>127.0.0.1:8000</code>입니다.</dd><dt>Loopback · 자기 자신 주소</dt><dd><code>127.0.0.1</code>은 해당 컴퓨터 자신을 가리킵니다. EC2 안의 Nginx와 앱 사이에서만 포트를 열 때 씁니다.</dd><dt>TLS 종료</dt><dd>HTTPS 암호화를 풀고 인증서를 제시하는 지점입니다. 현재 계획에서는 EC2의 Nginx가 처리합니다.</dd><dt>인바운드 / 아웃바운드</dt><dd>보안 경계로 들어오는 연결 / 그 경계에서 밖으로 나가는 연결입니다. 인터넷의 443 요청은 인바운드이고, EC2가 RDS 5432로 접속하는 것은 아웃바운드입니다.</dd></dl></article>
+        <article class="panel"><h3>일반 네트워크 용어</h3><dl><dt>HTTP · HTTPS</dt><dd>HTTP는 웹 요청·응답 형식이고 HTTPS는 그 통신을 TLS로 암호화한 방식입니다. 보통 80/443 포트를 사용합니다.</dd><dt>TLS 인증서 · 개인 키</dt><dd>인증서는 접속한 도메인의 서버 신원을 증명하고 암호화 연결을 돕습니다. 대응하는 개인 키는 서버에서 보호하며 공개 저장소에 넣지 않습니다.</dd><dt>CA · ACME</dt><dd>CA는 인증서를 발급하는 기관, ACME는 도메인 확인과 발급·갱신을 자동화하는 규약입니다. Let's Encrypt와 Certbot은 각각 CA와 ACME client의 예입니다.</dd><dt>Reverse proxy · 역방향 프록시</dt><dd>사용자 요청을 먼저 받은 뒤 내부 앱 서버로 대신 전달하는 서버입니다. 이 구성에서는 Nginx가 해당 역할을 합니다.</dd><dt>Upstream · 전달 대상</dt><dd>프록시가 요청을 넘기는 다음 서버입니다. 여기서는 Django 앱의 <code>127.0.0.1:8000</code>입니다.</dd><dt>Loopback · 자기 자신 주소</dt><dd><code>127.0.0.1</code>은 해당 컴퓨터 자신을 가리킵니다. EC2 안의 Nginx와 앱 사이에서만 포트를 열 때 씁니다.</dd><dt>TLS 종료</dt><dd>HTTPS 암호화를 풀고 인증서를 제시하는 지점입니다. 현재 계획에서는 EC2의 Nginx가 처리합니다.</dd><dt>인바운드 / 아웃바운드</dt><dd>보안 경계로 들어오는 연결 / 그 경계에서 밖으로 나가는 연결입니다. 인터넷의 443 요청은 인바운드이고, EC2가 RDS 5432로 접속하는 것은 아웃바운드입니다.</dd></dl></article>
         <article class="panel"><h3>AWS 및 Docker 용어</h3><dl><dt>Security Group · 보안 그룹</dt><dd>EC2나 RDS의 가상 방화벽 규칙입니다. 포트와 허용할 출발지/대상을 지정합니다.</dd><dt>ALB Listener · 수신기</dt><dd>ALB가 어떤 포트/프로토콜(예: HTTPS 443)을 받을지 정의합니다.</dd><dt>Target group · 대상 그룹</dt><dd>ALB가 요청을 전달할 앱 서버 묶음과 상태 확인 규칙입니다.</dd><dt>Health check · 상태 확인</dt><dd>앱이 요청을 처리할 수 있는지 주기적으로 검사해 정상 대상을 고르는 절차입니다.</dd><dt>Compose overlay · 설정 덧씌우기</dt><dd>여러 Compose 파일을 순서대로 합쳐 환경별 최종 구성을 만듭니다. 뒤 파일은 앞 설정을 추가하거나 바꿀 수 있습니다.</dd></dl></article>
       </div>
     </section>

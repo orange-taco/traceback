@@ -87,6 +87,14 @@ document owns a topic.
 
 - Start each topic with a visual path that shows what talks to what and why.
   Explain general networking or AWS terms before showing TRACEBACK-specific IDs.
+- Show setup dependencies in the order a first-time deployer must complete them.
+  Place the status of each TRACEBACK step on that flow, including the first
+  missing step that blocks a live request. Explain DNS, inbound routing, TLS
+  certificate issuance/renewal, reverse proxy, runtime environment variables,
+  database access, deployment, and frontend verification at their actual points
+  in the path; do not collect omissions only in a final checklist.
+- Define even basic terms at first use or in a nearby beginner glossary, while
+  keeping general networking terms distinct from AWS product names.
 - Next to the relevant visual, compare practical setup options, their tradeoffs,
   TRACEBACK's choice, and the reason for it. Put applicable configuration or
   source excerpts beside their explanation, with links to the current files.
@@ -100,4 +108,6 @@ document owns a topic.
   instead of implying the initial deployment is complete.
 - Recheck live-state claims or date them, and compare code excerpts with the
   current repository. Review screenshots before publishing: record visible
-  account/resource identifiers and remove secrets or personal data.
+  account/resource identifiers and remove secrets or personal data. Show console
+  screenshots large enough to read or give a direct full-resolution link; do not
+  shrink dense settings pages into a two-column thumbnail grid.

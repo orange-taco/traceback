@@ -35,6 +35,13 @@
     @media (max-width:700px) { .commerce-map-head,.commerce-rail-head,.map-head,.section-title,.release-track-head { align-items:start; flex-direction:column; gap:2px; } .commerce-board { padding:14px; } .commerce-rail-flow { flex-direction:column; align-items:stretch; } .commerce-rail-flow span { flex:none; width:100%; } .commerce-rail-flow b { align-self:center; line-height:1; transform:rotate(90deg); } .release-route { flex-wrap:wrap; gap:5px; } .release-route span { flex:none; width:100%; } .release-route b { width:100%; text-align:center; font-size:0; } .release-route b::before { content:"↓ PR ↓"; font-size:13px; } .release-columns { grid-template-columns:minmax(0,1fr); } .release-track { padding:17px; } .release-bridge { flex-direction:column; gap:3px; } .map-lane { padding:14px; } .map-lane-head { align-items:start; flex-direction:column; gap:1px; } .map-route,.map-route.five { grid-template-columns:minmax(0,1fr); } .map-node { min-height:0; padding:12px 14px; } .map-link { height:35px; } .map-link::before { top:0; right:auto; bottom:8px; left:50%; border-top:0; border-left:2px solid var(--line); } .map-link::after { top:auto; right:auto; bottom:0; left:50%; transform:translateX(-50%); border:6px solid transparent; border-bottom:0; border-top-color:var(--line); } .map-link span { align-self:center; margin:0 0 0 58px; padding:0 5px; background:var(--soft); } .concept-grid,.code-grid { grid-template-columns:minmax(0,1fr); } .code-route { flex-direction:column; } .code-route b { transform:rotate(90deg); } } @media (prefers-reduced-motion:reduce) { * { scroll-behavior:auto!important; } }
   </style>
   <style>
+    .release-readiness { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:9px; margin:16px 0 22px; }
+    .release-readiness a { display:block; min-width:0; padding:13px; border:1px solid var(--line); border-top:4px solid #a66325; border-radius:9px; background:#fffaf2; color:var(--ink); text-decoration:none; }
+    .release-readiness a.ready { border-top-color:#25805d; background:#f0faf4; }
+    .release-readiness b { display:block; font-size:.88rem; }
+    .release-readiness small { display:block; margin-top:5px; color:var(--muted); line-height:1.45; }
+    @media(max-width:700px){.release-readiness{grid-template-columns:1fr 1fr}}
+    @media(max-width:440px){.release-readiness{grid-template-columns:1fr}}
     .pdf-export { position:fixed; right:18px; bottom:18px; z-index:1000; border:1px solid #164d68; border-radius:999px; padding:10px 16px; background:#fff; color:#123c50; box-shadow:0 8px 24px #102a4333; font:700 14px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; cursor:pointer; }
     .pdf-export:focus-visible { outline:3px solid #efa92b; outline-offset:3px; }
     @page { size:A4; margin:14mm; }
@@ -153,6 +160,12 @@
           </div>
         </section>
         <section id="delivery" class="panel" role="tabpanel" hidden><div class="panel-head"><p class="eyebrow">Delivery · source to running container</p><h2>두 번 검증하고, 한 번 만든 이미지를 승격합니다</h2><p>feature PR은 코드를 검증하고, development push가 이미지를 ECR에 올립니다. main은 새 이미지를 만들지 않고 development에서 배포에 성공한 digest를 사용합니다. 각 단계를 눌러 실행 조건과 실제 코드를 볼 수 있습니다. 코드 상자는 핵심 부분을 축약한 것이며 원본 파일로 이동할 수 있습니다.</p></div>
+          <div class="release-readiness" aria-label="인프라 연결 단계와 현재 상태">
+            <a class="ready" href="3-development-ip-domain-guide.html#now"><b>① DNS → EIP · 확인됨</b><small>API 이름이 개발 EC2 주소를 찾음</small></a>
+            <a href="2-dev-server-first-deployment.html#launch-order"><b>② EC2·DB 준비 · 일부만 완료</b><small>ECR pull·Docker·앱 DB 사용자·런타임 .env 대기</small></a>
+            <a href="2-dev-server-first-deployment.html#https-sequence"><b>③ TLS → Nginx · 미설정</b><small>현재 외부 API 443 연결 거부. 인증서·프록시 필요</small></a>
+            <a href="2-dev-server-first-deployment.html#env"><b>④ Vercel → 인증 · 미검증</b><small>origin 저장됨. API HTTPS 뒤 재배포·브라우저 QA</small></a>
+          </div>
           <div class="concept-grid" aria-label="서로 다른 세 가지 식별자"><div class="concept-card"><small>도구 버전 · 외부 저장소</small><strong>Action 커밋 SHA</strong><p><code>uses: astral-sh/setup-uv@…</code>의 SHA는 CI가 실행할 외부 Action 코드입니다. 우리 앱 버전이 아닙니다. <code>version: 0.10.4</code>는 설치할 uv 프로그램 버전입니다.</p></div><div class="concept-card"><small>소스 버전 · TRACEBACK</small><strong>앱 커밋 SHA</strong><p>GitHub push의 <code>github.sha</code>입니다. development 배포에서는 이 값을 ECR 이미지 태그로 사용합니다. 운영에서는 릴리스 merge commit의 두 번째 부모가 개발 원본 SHA입니다.</p></div><div class="concept-card"><small>이미지 내용 · ECR</small><strong>image digest</strong><p><code>@sha256:…</code>은 빌드된 이미지 내용을 식별합니다. 개발 EC2와 운영 EC2가 이 동일한 digest를 실행합니다.</p></div></div>
           <div class="release-route" aria-label="브랜치 승격 경로"><span>feature</span><b aria-hidden="true">→ PR →</b><span>development</span><b aria-hidden="true">→ PR →</b><span>main</span></div>
           <div class="release-columns">

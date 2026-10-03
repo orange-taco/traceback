@@ -40,6 +40,10 @@
     .hero-flow { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:22px; }
     .hero-flow span { padding:9px 11px; border:1px solid #ffffff77; border-radius:9px; background:#ffffff18; color:#fff; font-size:.86rem; font-weight:700; }
     .hero-flow b { color:#b9e4ed; }
+    .starter-terms { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:18px; }
+    .starter-terms div { padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:#fbfdfd; }
+    .starter-terms dt { font-weight:800; color:#123c50; }
+    .starter-terms dd { margin:2px 0 0; color:var(--muted); font-size:.92rem; }
     section { margin-top: 25px; padding: clamp(20px, 4vw, 34px); border: 1px solid var(--line); border-radius: 18px; background: var(--white); box-shadow: var(--shadow); }
     h2 { margin: 0 0 9px; font-size: clamp(1.4rem, 3vw, 2rem); line-height: 1.25; letter-spacing: -.025em; }
     h3 { margin: 24px 0 8px; font-size: 1.12rem; }
@@ -97,6 +101,7 @@
       .trouble { grid-template-columns: 1fr; gap: 2px; }
       .matrix { font-size: .9rem; }
       .matrix th, .matrix td { padding: 9px 7px; }
+      .starter-terms { grid-template-columns:1fr; }
     }
     @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
   </style>
@@ -154,6 +159,14 @@
       <span class="tag">일반 네트워크 지식</span>
       <h2>먼저 네트워크 자체를 구분합니다</h2>
       <p class="lead">AWS를 몰라도 이해할 수 있는 인터넷 통신의 기본 개념입니다. AWS 용어와 섞이지 않도록 이 구역에서는 네트워크 동작만 설명합니다.</p>
+      <dl class="starter-terms">
+        <div><dt>서버 · 클라이언트</dt><dd>요청을 받고 응답하는 컴퓨터·프로그램 / 요청을 보내는 쪽입니다. 내 터미널은 접속 클라이언트, EC2는 접속 대상 서버입니다.</dd></div>
+        <div><dt>IP 주소 · 도메인</dt><dd>네트워크 목적지를 찾는 숫자 주소 / 사람이 읽기 쉬운 이름입니다. DNS가 도메인에 대응하는 IP를 알려줍니다.</dd></div>
+        <div><dt>TCP · 포트</dt><dd>TCP는 양쪽 프로그램 사이에 연결을 만들고 데이터를 순서대로 전달합니다. 포트는 같은 컴퓨터 안에서 받을 프로그램을 구분하는 번호입니다.</dd></div>
+        <div><dt>SSH · 셸</dt><dd>SSH(Secure Shell)는 암호화된 원격 접속 규약입니다. 셸은 명령을 입력하고 결과를 보는 프로그램이며, SSH는 셸에 접속하는 한 방법입니다.</dd></div>
+        <div><dt>터미널 · CLI</dt><dd>터미널은 명령을 입력하는 화면, CLI(Command Line Interface)는 <code>aws</code>처럼 명령으로 도구를 조작하는 인터페이스입니다.</dd></div>
+        <div><dt>공개 키 · 개인 키</dt><dd>SSH 키 인증에서 공개 키는 서버에 두고 개인 키는 내 컴퓨터에 보관합니다. SSM 접속에서는 이 SSH 키 쌍을 쓰지 않습니다.</dd></div>
+      </dl>
       <div class="split">
         <article class="card network">
           <h3>SSH는 원격 터미널 통신 규약</h3>
@@ -173,6 +186,14 @@
       <span class="tag">AWS 용어</span>
       <h2>SSM은 AWS 관리 서비스가 세션을 중계합니다</h2>
       <p class="lead">SSM은 SSH의 다른 이름이 아닙니다. 사용자는 AWS 권한으로 세션 시작을 요청하고, 인스턴스의 SSM Agent가 AWS 서비스에 먼저 연결합니다.</p>
+      <dl class="starter-terms">
+        <div><dt>EC2 · 인스턴스</dt><dd>EC2는 AWS가 제공하는 가상 서버 서비스이고, 인스턴스는 실제로 생성한 서버 한 대입니다.</dd></div>
+        <div><dt>VPC · 서브넷</dt><dd>VPC는 AWS 계정 안에서 나누는 가상 네트워크, 서브넷은 그 안의 IP 주소 범위입니다. 공개 서브넷의 EC2도 보안 그룹 규칙을 따릅니다.</dd></div>
+        <div><dt>IAM · 역할 · 정책</dt><dd>IAM은 AWS 권한 관리입니다. 역할은 임시로 맡는 신원이고, 정책은 그 신원이 할 수 있는 API 작업을 정의합니다.</dd></div>
+        <div><dt>SSM · 세션</dt><dd>Systems Manager는 AWS 관리 서비스이고, Session Manager는 그 안의 접속 기능입니다. 세션은 시작부터 종료까지 이어지는 한 번의 연결입니다.</dd></div>
+        <div><dt>Identity Center · SSO</dt><dd>AWS 액세스 포털에 한 번 로그인해 계정 권한을 쓰는 방식입니다. 로컬 CLI 프로필은 그 로그인 위치와 사용 권한을 기억합니다.</dd></div>
+        <div><dt>보안 그룹</dt><dd>EC2나 RDS에 붙는 AWS 가상 방화벽입니다. 어느 출발지에서 어느 포트로 들어오고 나갈 수 있는지 정합니다.</dd></div>
+      </dl>
       <div class="split">
         <article class="card aws">
           <h3>Session Manager</h3>

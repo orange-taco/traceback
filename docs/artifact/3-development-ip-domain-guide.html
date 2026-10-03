@@ -16,6 +16,15 @@
   <style>
     .config-source { margin:14px 0 0; padding:14px; background:#102a43; color:#edf6fb; border-radius:8px; overflow:auto; font: .78rem/1.55 ui-monospace,SFMono-Regular,Menlo,monospace; }
     .steps { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .readiness { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-top:13px; }
+    .readiness article { min-width:0; padding:12px; border:1px solid var(--line); background:#fff; }
+    .readiness b { display:block; margin-bottom:4px; font-size:.8rem; }
+    .readiness small { display:block; color:var(--muted); line-height:1.45; }
+    .readiness .ready { border-top:4px solid var(--green); }
+    .readiness .missing { border-top:4px solid var(--red); }
+    .readiness .later { border-top:4px solid var(--amber); }
+    @media (max-width:700px) { .readiness { grid-template-columns:1fr 1fr; } }
+    @media (max-width:480px) { .readiness { grid-template-columns:1fr; } }
     @media (max-width:700px) { .steps { grid-template-columns:1fr; } }
     .pdf-export { position:fixed; right:18px; bottom:18px; z-index:1000; border:1px solid #164d68; border-radius:999px; padding:10px 16px; background:#fff; color:#123c50; box-shadow:0 8px 24px #102a4333; font:700 14px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; cursor:pointer; }
     .pdf-export:focus-visible { outline:3px solid #efa92b; outline-offset:3px; }
@@ -68,7 +77,14 @@
         <div class="node ip"><span class="tag">EIP · 연결 완료</span><strong>3.34.78.140</strong><small>고정 공인 IPv4 주소</small></div>
       </div>
       <div class="route"><span>요청이 실제 서비스에 도착하려면</span><b>EC2 보안 그룹</b><span>→</span><b>Nginx + TLS</b><span>→</span><b>Django 앱</b><span>→</span><b>Private RDS</b><span class="status wait"><i></i>아직 배포 전</span></div>
+      <div class="readiness" aria-label="주소 확인 다음부터 웹 요청이 통과하는 순서">
+        <article class="ready"><b>① 이름 → IP · 확인됨</b><small>Route 53 A 레코드가 개발 EC2의 EIP를 알려줍니다.</small></article>
+        <article class="missing"><b>② IP:443 연결 · 현재 중단</b><small>2026-10-03 외부 HTTPS 연결 거부. EC2에서 443을 받을 서비스가 아직 준비되지 않았습니다.</small></article>
+        <article class="later"><b>③ TLS 인증서 · 미설정</b><small>도메인 소유 확인, 인증서 발급·갱신, Nginx 443 설정이 필요합니다.</small></article>
+        <article class="later"><b>④ API 응답 · 미검증</b><small>Nginx가 localhost Django로 전달하고 앱이 RDS에 연결해야 합니다.</small></article>
+      </div>
       <div class="callout"><strong>중요:</strong> 도메인과 EIP를 연결한 것까지 완료했습니다. 이 설정만으로 API가 동작하거나 HTTPS가 생기지는 않습니다. EC2에 앱과 Nginx를 올리고 TLS 인증서를 설정해야 합니다.</div>
+      <div class="callout"><strong>다음 설정의 실제 순서:</strong> <a href="2-dev-server-first-deployment.html#launch-order">2번의 전체 배포 단계</a>에서 EC2 권한·DB 환경변수를 먼저 확인하고, <a href="2-dev-server-first-deployment.html#https-sequence">HTTPS·인증서·Nginx 절차</a>를 진행합니다. 이 페이지의 A 레코드가 정상이어도 ②~④가 자동으로 만들어지지 않습니다.</div>
       <div class="facts" aria-label="현재 실제 설정"><div class="fact"><small>AWS 계정 / 리전</small><strong>traceback · ap-northeast-2</strong></div><div class="fact"><small>개발 EC2</small><strong>traceback-development-app</strong></div><div class="fact"><small>인스턴스 ID</small><strong class="mono">i-051f85a1ac4e64a2c</strong></div><div class="fact"><small>Elastic IP</small><strong class="mono">3.34.78.140</strong></div><div class="fact"><small>도메인 등록</small><strong>dev-traceback.com · ACTIVE</strong></div><div class="fact"><small>Route 53 레코드</small><strong class="mono">api.dev-traceback.com → 3.34.78.140</strong></div></div>
       <pre class="config-source"><code>Route 53 public hosted zone (AWS 콘솔 설정, 저장소 코드 아님)
 Name: api.dev-traceback.com  Type: A  TTL: 300  Value: 3.34.78.140
