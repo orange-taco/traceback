@@ -9,8 +9,8 @@
 
 ## Validation / Next action
 
-- PR #12의 CI quality/test 통과; `Deploy development`는 pull request 이벤트에서 조건상 skip됨. PR 리뷰의 유효한 지적과 문서 갱신 후 checks를 다시 확인한다.
-- 실제 AWS 배포는 아직 미검증이다. 선행 설정 및 NACL 확인은 [2번 첫 배포 가이드](../artifact/2-dev-server-first-deployment.html)에 있다.
+- PR #12 quality/test 통과. `Deploy development`는 pull request 이벤트에서 조건상 skip됨. 기존 CodeRabbit 지적 5건은 반영했고, 새 review 요청은 rate limit 상태다.
+- PR #12의 새 checks/review 상태를 확인한 뒤 `development`에 병합한다. 실제 AWS 배포는 아직 미검증이며, 선행 설정은 [2번 첫 배포 가이드](../artifact/2-dev-server-first-deployment.html)에 있다.
 
 ## Maintenance
 
