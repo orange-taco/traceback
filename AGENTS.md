@@ -89,6 +89,15 @@ Do not assume a phase is complete from conversation context alone.
 - If a column is only for future expansion and not required now, do not add it; record the deferred idea in the relevant docs instead.
 - Keep the model-purpose document aligned with the actual migrations before stopping work.
 
+## Visual Artifacts
+
+- Before creating or editing an HTML guide in `docs/artifact/`, read
+  `.codex/skills/auth-flow-visualizer/SKILL.md` and apply its **Required artifact
+  standard**. This is a completion criterion, not optional styling guidance.
+- For the five AWS initial setup guides, also apply the skill's **AWS initial
+  setup learning set** so the shared reading path, general choices, TRACEBACK
+  decision, code explanation, verified state, and remaining work stay aligned.
+
 ## Test Organization
 
 - Each Django app owns its tests under `apps/<app>/tests/`. Do not put another app's model, serializer, view, service, or provider tests under `apps/core/tests`.

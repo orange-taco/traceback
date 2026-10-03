@@ -86,6 +86,15 @@ passes that file directly to the app container. It removes the local source
 mount, host port, and PostgreSQL container and requires an external
 `TRACEBACK_DATABASE_URL`.
 
+## AWS learning guides
+
+AWS 초기 설정을 처음부터 공부할 때는 [System Guide](docs/artifact/traceback-system-guide.html)에서
+전체 흐름을 본 다음 [1. SSH·SSM](docs/artifact/1-aws-ssm-ssh-learning-guide.html) →
+[2. 첫 서버 배포](docs/artifact/2-dev-server-first-deployment.html) →
+[3. IP·도메인](docs/artifact/3-development-ip-domain-guide.html) →
+[4. DNS](docs/artifact/4-dns-resolution-map.html) 순서로 읽는다. 각 가이드는 일반적인
+설정 방법과 선택지, TRACEBACK의 선택 이유, 현재 설정 및 남은 검증을 함께 설명한다.
+
 ## Delivery
 
 - Feature branches open pull requests into `development`; CI runs quality and tests.

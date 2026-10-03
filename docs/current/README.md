@@ -5,7 +5,7 @@
 ## Current state
 
 - AWS development 첫 배포 가이드와 스크립트가 PR #12에 모여 있다. Production EC2는 아직 없다.
-- 학습 순서와 각 artifact의 역할은 [System Guide](../artifact/traceback-system-guide.html)에서 확인한다.
+- 학습 순서는 [System Guide](../artifact/traceback-system-guide.html)에서, 새 artifact의 필수 작성 기준은 [시각화 스킬](../../.codex/skills/auth-flow-visualizer/SKILL.md)에서 확인한다.
 
 ## Validation / Next action
 
