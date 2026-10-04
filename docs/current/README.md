@@ -5,7 +5,7 @@
 ## Current state
 
 - AWS development 첫 배포 가이드와 스크립트가 PR #12에 있다. Production EC2는 아직 없다. Vercel은 `DJANGO_ORIGIN` 적용 재배포가 Ready이고 인증 경로는 API HTTPS 미연결로 502다. EC2에 Nginx·Docker·Compose·Certbot을 설치하고 ECR pull 권한을 연결했다. API HTTP는 200, HTTPS 443은 아직 연결 거부다.
-- 다섯 가이드는 [학습 목차](../artifact/index.html)에서 한 주소로 연다. GitHub Pages는 workflow 방식으로 활성화했고 `github-pages` 환경은 `development` 배포만 허용한다. 게시 워크플로는 이 PR에 있어 병합 뒤 공개 URL을 검증한다.
+- 다섯 가이드는 [학습 목차](../artifact/index.html)에서 한 주소로 연다. 목차에는 Pages 게시 선행 조건과 첫 404 원인을, [첫 배포 가이드](../artifact/2-dev-server-first-deployment.html)에는 Git pull/이미지 배포·서버 `.env` 위치·Vercel 브랜치/환경 구분과 실제 443 상태를 반영했다. GitHub Pages는 workflow 방식이고 `github-pages` 환경은 `development` 배포만 허용한다. 게시 워크플로는 이 PR에 있어 병합 뒤 공개 URL을 검증한다.
 
 ## Validation / Next action
 
