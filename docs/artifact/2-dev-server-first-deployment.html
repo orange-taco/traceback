@@ -366,7 +366,8 @@
     <section class="section" id="network-audit">
       <p class="handoff">이미지가 서버에 도착해도 고객 요청이 들어오는 네트워크 경로가 열려야 합니다. 앞의 요청 경로로 돌아가 VPC·보안 그룹·라우팅을 점검합니다.</p>
       <h2>AWS 네트워크와 보안 그룹 실제 점검</h2>
-      <p class="lead">아래는 2026-10-03에 AWS 콘솔에서 읽기 전용으로 확인한 개발 환경입니다. 보안 그룹은 서버의 가상 방화벽이고, 서브넷·라우팅은 서버가 인터넷이나 다른 VPC 리소스에 도달하는 경로를 정합니다.</p>
+      <p class="lead"><b>일반 구조부터:</b> AWS 계정 안에 VPC가 있고, VPC 안의 서브넷에 EC2의 네트워크 인터페이스를 놓습니다. 그 <b>서브넷의 라우팅 테이블</b>은 목적지로 가는 길을 고르고, <b>EC2에 연결된 보안 그룹</b>은 그 연결을 허용할지 결정합니다. RDS도 서브넷과 보안 그룹을 사용합니다. 라우팅 테이블과 보안 그룹은 포함 관계가 아니며, 어느 하나만 맞아도 통신이 끝나는 것은 아닙니다. <a href="1-aws-ssm-ssh-learning-guide.html#aws-terms">포함 관계와 권한을 그림으로 보기</a></p>
+      <p>아래는 이 일반 구조에 TRACEBACK 값을 대입한 결과입니다. 2026-10-03에 AWS 콘솔에서 읽기 전용으로 확인한 개발 환경이며, 실제 앱 통신 성공까지 검증했다는 뜻은 아닙니다.</p>
       <div class="architecture">
         <article class="selected">
           <span class="pattern">현재 개발 경로</span><h3>공개 EC2 · 비공개 RDS</h3>
@@ -502,7 +503,7 @@
     <section class="section" id="glossary">
       <p class="handoff">설정 중 낯선 단어가 나오면 이 용어집으로 돌아오세요. 앞의 흐름을 다시 읽을 때 필요한 네트워크·AWS 말을 정리합니다.</p>
       <h2>처음 나오는 네트워크 용어</h2>
-      <p class="lead">먼저 단어를 익히면 위의 요청 그림을 따라가기 쉬워집니다. 일반 네트워크 용어와 AWS에서 붙인 이름을 함께 적었습니다.</p>
+      <p class="lead">위의 요청·배포 그림에서 낯선 단어를 다시 찾는 참고용입니다. 단어가 서로 어디에 놓이고 무엇을 결정하는지는 <a href="1-aws-ssm-ssh-learning-guide.html#aws-terms">VPC·서브넷·경로·권한 구조도</a>와 이 문서의 네트워크 점검 그림을 함께 보세요.</p>
       <div class="grid two">
         <article class="panel"><h3>일반 네트워크 용어</h3><dl><dt>HTTP · HTTPS</dt><dd>HTTP는 웹 요청·응답 형식이고 HTTPS는 그 통신을 TLS로 암호화한 방식입니다. 보통 80/443 포트를 사용합니다.</dd><dt>TLS 인증서 · 개인 키</dt><dd>인증서는 접속한 도메인의 서버 신원을 증명하고 암호화 연결을 돕습니다. 대응하는 개인 키는 서버에서 보호하며 공개 저장소에 넣지 않습니다.</dd><dt>CA · ACME</dt><dd>CA는 인증서를 발급하는 기관, ACME는 도메인 확인과 발급·갱신을 자동화하는 규약입니다. Let's Encrypt와 Certbot은 각각 CA와 ACME client의 예입니다.</dd><dt>Reverse proxy · 역방향 프록시</dt><dd>사용자 요청을 먼저 받은 뒤 내부 앱 서버로 대신 전달하는 서버입니다. 이 구성에서는 Nginx가 해당 역할을 합니다.</dd><dt>Upstream · 전달 대상</dt><dd>프록시가 요청을 넘기는 다음 서버입니다. 여기서는 Django 앱의 <code>127.0.0.1:8000</code>입니다.</dd><dt>Loopback · 자기 자신 주소</dt><dd><code>127.0.0.1</code>은 해당 컴퓨터 자신을 가리킵니다. EC2 안의 Nginx와 앱 사이에서만 포트를 열 때 씁니다.</dd><dt>TLS 종료</dt><dd>HTTPS 암호화를 풀고 인증서를 제시하는 지점입니다. 현재 계획에서는 EC2의 Nginx가 처리합니다.</dd><dt>인바운드 / 아웃바운드</dt><dd>보안 경계로 들어오는 연결 / 그 경계에서 밖으로 나가는 연결입니다. 인터넷의 443 요청은 인바운드이고, EC2가 RDS 5432로 접속하는 것은 아웃바운드입니다.</dd></dl></article>
         <article class="panel"><h3>AWS 및 Docker 용어</h3><dl><dt>Security Group · 보안 그룹</dt><dd>EC2나 RDS의 가상 방화벽 규칙입니다. 포트와 허용할 출발지/대상을 지정합니다.</dd><dt>ALB Listener · 수신기</dt><dd>ALB가 어떤 포트/프로토콜(예: HTTPS 443)을 받을지 정의합니다.</dd><dt>Target group · 대상 그룹</dt><dd>ALB가 요청을 전달할 앱 서버 묶음과 상태 확인 규칙입니다.</dd><dt>Health check · 상태 확인</dt><dd>앱이 요청을 처리할 수 있는지 주기적으로 검사해 정상 대상을 고르는 절차입니다.</dd><dt>Compose overlay · 설정 덧씌우기</dt><dd>여러 Compose 파일을 순서대로 합쳐 환경별 최종 구성을 만듭니다. 뒤 파일은 앞 설정을 추가하거나 바꿀 수 있습니다.</dd></dl></article>

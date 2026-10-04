@@ -134,6 +134,18 @@ the system guide and the deployment guide where server configuration matters.
 - Anticipate a beginner's next question at each conceptual jump (for example,
   how a service connects, which identity authorizes it, and why a port is or is
   not needed). Answer it next to the relevant diagram in plain language.
+- Before writing a glossary, draw a concept map for every cluster of related
+  terms. Show containment (which resource is inside which), sequence (what must
+  exist or happen first), and independent controls (for example route table vs
+  security group vs IAM). Label arrows by their meaning; do not use one arrow
+  for both containment and network traffic. A term pair such as “EC2 · instance”
+  must say whether it is a service-to-resource relationship or two alternatives.
+- Run a beginner-question audit after drafting each section: ask “why is this
+  needed?”, “who owns/uses it?”, “what is it inside or attached to?”, “what
+  happens before and after?”, “how is it different from the adjacent term?”,
+  and “what fails if it is absent?”. Answer the likely questions near the map,
+  then leave a glossary only for quick recall. Review every guide in the
+  learning set for the same isolated-definition problem when changing one.
 - In a setup recipe, label shared prerequisites and standard commands separately
   from one project's provider, profile, resource IDs, or convenience shortcuts.
   Never imply a project-specific alias is a built-in cloud command or a required

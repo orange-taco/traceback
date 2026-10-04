@@ -44,6 +44,25 @@
     .starter-terms div { padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:#fbfdfd; }
     .starter-terms dt { font-weight:800; color:#123c50; }
     .starter-terms dd { margin:2px 0 0; color:var(--muted); font-size:.92rem; }
+    .concept-map { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr); gap:14px; margin:18px 0; }
+    .boundary { padding:14px; border:2px solid #9bb7c2; border-radius:13px; background:#f6fafb; }
+    .boundary + .boundary { margin-top:10px; }
+    .boundary.vpc { border-color:#74a6bb; background:#eaf5f9; }
+    .boundary.subnet { border-color:#7ebba1; background:#eef9f2; }
+    .boundary.instance { border-color:#bca970; background:#fffaf0; }
+    .boundary strong { display:block; color:#123c50; }
+    .boundary small { display:block; color:var(--muted); margin:2px 0 10px; }
+    .boundary.instance small { margin-bottom:0; }
+    .map-note { padding:14px; border:1px solid var(--line); border-radius:12px; background:#fff; }
+    .map-note + .map-note { margin-top:10px; }
+    .map-note strong { display:block; color:#123c50; }
+    .map-note p { margin:4px 0 0; font-size:.91rem; }
+    .identity-map { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:17px 0; }
+    .identity-track { border:1px solid var(--line); border-radius:12px; padding:16px; background:#f8fbfc; }
+    .identity-track h3 { margin:0 0 12px; }
+    .identity-track ol { margin:0; padding-left:23px; }
+    .identity-track li { padding:4px 0; }
+    .identity-join { padding:13px 16px; border-radius:10px; background:var(--blue-soft); border:1px solid #b8dce7; }
     section { margin-top: 25px; padding: clamp(20px, 4vw, 34px); border: 1px solid var(--line); border-radius: 18px; background: var(--white); box-shadow: var(--shadow); }
     h2 { margin: 0 0 9px; font-size: clamp(1.4rem, 3vw, 2rem); line-height: 1.25; letter-spacing: -.025em; }
     h3 { margin: 24px 0 8px; font-size: 1.12rem; }
@@ -123,6 +142,7 @@
       .matrix { font-size: .9rem; }
       .matrix th, .matrix td { padding: 9px 7px; }
       .starter-terms { grid-template-columns:1fr; }
+      .concept-map, .identity-map { grid-template-columns:1fr; }
     }
     @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
   </style>
@@ -175,7 +195,7 @@
       <p>여기서 접속하려는 대상은 <b>AWS에 있는 원격 EC2 컴퓨터</b>입니다. SSH는 내 Mac/PC가 그 EC2의 SSH 프로그램(보통 22번 포트)에 새 연결을 엽니다. SSM Session Manager는 내 Mac/PC와 EC2 안의 Agent가 AWS 세션 서비스를 통해 입력과 결과를 주고받습니다. 아래에서 먼저 “누가 누구에게” 연결하는지부터 설명합니다.</p>
       <div class="hero-flow" role="img" aria-label="원격 EC2 셸에 들어가는 두 경로: SSH는 내 컴퓨터에서 대상 EC2의 TCP 22로, SSM Session Manager는 사용자와 대상 EC2 Agent가 AWS 세션 서비스를 통해 통신"><span>SSH: 내 Mac/PC</span><b>→</b><span>원격 EC2 · TCP 22</span><b>│</b><span>SSM: 내 Mac/PC ↔ AWS 세션 서비스 ↔ 원격 EC2 Agent</span></div>
       <nav class="hero-nav" aria-label="문서 목차">
-        <a href="#journey">전체 접속 지도</a><a href="#network">네트워크 기초</a><a href="#aws-terms">AWS 용어</a><a href="#path">연결 그림</a><a href="#steps">설정 순서</a><a href="#troubleshooting">문제 해결</a>
+        <a href="#journey">전체 접속 지도</a><a href="#network">네트워크 기초</a><a href="#aws-terms">AWS 구조·권한</a><a href="#path">연결 그림</a><a href="#steps">설정 순서</a><a href="#troubleshooting">문제 해결</a>
       </nav>
     </header>
 
@@ -240,36 +260,40 @@
 
     <section id="aws-terms">
       <p class="handoff">이제 같은 연결을 AWS 제품과 권한으로 번역합니다. 사람의 권한(②)과 EC2 Agent의 권한(④)은 서로 다른 신원입니다.</p>
-      <span class="tag">AWS 용어</span>
-      <h2>SSM은 무엇이고, Session Manager는 무엇인가요?</h2>
-      <p class="lead">이제 앞 절의 일반적인 “내 컴퓨터 → 원격 컴퓨터”를 AWS 이름으로 바꿉니다. 원격 컴퓨터는 <b>EC2 인스턴스</b>, 그 안에서 AWS와 통신하는 프로그램은 <b>SSM Agent</b>입니다. SSM은 SSH의 다른 이름이 아닙니다.</p>
-      <dl class="starter-terms">
-        <div><dt>EC2 · 인스턴스</dt><dd>EC2는 AWS의 가상 컴퓨터 서비스입니다. “인스턴스”는 그 서비스에서 실제로 만든 컴퓨터 한 대입니다. 이 문서의 접속 대상은 TRACEBACK 개발용 EC2 한 대입니다.</dd></div>
-        <div><dt>VPC · 서브넷</dt><dd>VPC는 내 AWS 계정 안에 만든 네트워크 공간, 서브넷은 그 공간의 IP 주소 일부입니다. EC2는 어느 서브넷에 놓였는지에 따라 인터넷으로 나가는 길이 달라집니다. “퍼블릭 서브넷”에 있어도 보안 그룹이 허용하지 않으면 SSH 22번 연결은 받지 않습니다.</dd></div>
-        <div><dt>IAM · 역할 · 정책</dt><dd>IAM은 “누가 어떤 AWS 작업을 해도 되는지” 정합니다. <b>정책</b>은 허용할 작업 목록, <b>역할</b>은 그 정책을 붙여 임시로 사용하는 AWS 신원입니다. 내 Mac의 로그인 사용자와 EC2의 Agent는 서로 다른 권한을 씁니다.</dd></div>
-        <div><dt>SSM · Session Manager · 세션</dt><dd><b>SSM</b>은 AWS Systems Manager의 약칭입니다. <b>Session Manager</b>는 그 안의 원격 접속 기능입니다. <b>세션</b>은 내 터미널과 원격 EC2 셸 사이에서 시작부터 종료까지 이어지는 한 번의 대화입니다.</dd></div>
-        <div><dt>SSM Agent · 인스턴스 프로파일</dt><dd>Agent는 원격 EC2 안에서 실행되며 AWS SSM 서비스와 통신하는 프로그램입니다. 인스턴스 프로파일은 EC2에 IAM 역할을 붙이는 통로입니다. 그 역할이 Agent의 AWS API 사용 권한을 줍니다.</dd></div>
-        <div><dt>Identity Center · SSO · CLI 프로필</dt><dd>Identity Center는 사람이 AWS 포털에서 로그인하고 사용할 계정 권한을 받는 서비스입니다. SSO는 한 로그인으로 허용된 곳에 접근하는 방식입니다. 내 Mac의 CLI 프로필은 어느 포털·계정·권한을 쓸지 적은 로컬 설정이며 비밀번호나 EC2의 Linux 사용자 자체가 아닙니다.</dd></div>
-        <div><dt>보안 그룹</dt><dd>EC2에 붙는 AWS의 네트워크 허용 규칙입니다. 앞 절에서 본 EC2 기준 인바운드·아웃바운드를 포트와 출발지/목적지로 정합니다. <b>사람이 접속할 권한(IAM)</b>과 <b>통신할 수 있는 경로(보안 그룹)</b>는 둘 다 필요하지만 서로 다른 조건입니다.</dd></div>
-      </dl>
-      <div class="split">
-        <article class="card aws">
-          <h3>SSM의 Session Manager</h3>
-          <p>SSM(AWS Systems Manager) 안의 대화형 원격 접속 기능입니다. 사용자의 AWS 인증·권한을 확인한 다음 관리 대상 인스턴스의 Agent와 양방향 세션을 만듭니다. <code>aws ssm start-session</code>은 일반 셸 세션을 열고, 로컬 Session Manager plugin은 그 입출력을 터미널에 연결합니다.</p>
-        </article>
-        <article class="card aws">
-          <h3>SSM Agent와 인스턴스 역할</h3>
-          <p><b>SSM Agent</b>는 EC2 안에서 실행되며 Systems Manager와 통신하는 프로그램입니다. <b>인스턴스 프로파일</b>은 EC2에 역할을 연결하는 통로이고, 그 역할의 <code>AmazonSSMManagedInstanceCore</code> 정책은 Agent가 인스턴스를 관리 대상으로 등록하고 세션 통신을 하는 데 필요한 권한을 제공합니다.</p>
-        </article>
-        <article class="card aws">
-          <h3>사용자 프로필과 IAM Identity Center</h3>
-          <p>컴퓨터의 AWS CLI 프로필은 “어느 AWS 계정의 어떤 사용자 권한으로 명령을 실행할지” 정하는 로컬 설정입니다. IAM Identity Center(이전 명칭 AWS SSO)를 쓰면 브라우저 로그인으로 임시 자격 증명을 받습니다. 계정 관리자가 사용자에게 계정과 Permission Set을 할당해야 합니다.</p>
-        </article>
-        <article class="card aws">
-          <h3>보안 그룹</h3>
-          <p>EC2 네트워크 인터페이스에 붙는 가상 방화벽입니다. 현재 개발 EC2의 인바운드는 웹 TCP 80/443이고 SSH 22는 없습니다. 아웃바운드는 기본 전체 허용입니다. SSM Agent의 바깥쪽 HTTPS 통신은 현재 이 아웃바운드 경로를 사용합니다.</p>
-        </article>
+      <span class="tag">AWS의 장소 → 길 → 출입 규칙 → 사용 권한</span>
+      <h2>접속 대상은 어디에 있고, 누가 문을 열어 주나요?</h2>
+      <p class="lead">먼저 <b>컴퓨터의 위치</b>를 그린 다음 <b>네트워크 길</b>과 <b>AWS 사용 권한</b>을 각각 겹쳐 봅니다. AWS에서 <b>EC2</b>는 가상 컴퓨터를 만드는 서비스 이름이고, <b>EC2 인스턴스</b>는 그 서비스로 실행한 컴퓨터 한 대입니다. 다음 그림의 가장 안쪽 컴퓨터가 우리가 접속할 대상입니다.</p>
+      <div class="concept-map">
+        <div class="boundary" role="img" aria-label="AWS 계정 안에 VPC, VPC 안에 서브넷, 서브넷 안에 EC2 인스턴스의 네트워크 인터페이스가 있는 포함 관계">
+          <strong>AWS 계정 · 리소스를 소유하고 권한을 관리</strong><small>한 계정에 여러 VPC와 EC2 인스턴스를 만들 수 있음</small>
+          <div class="boundary vpc"><strong>① VPC · 내 AWS 가상 네트워크의 큰 경계</strong><small>서브넷과 라우팅을 담는 네트워크. 서로 다른 VPC는 자동으로 이어지지 않음</small>
+            <div class="boundary subnet"><strong>② 서브넷 · VPC 안의 한 IP 주소 구간</strong><small>EC2를 어느 구간에 놓을지 결정. 한 서브넷은 한 가용 영역에 속함</small>
+              <div class="boundary instance"><strong>③ EC2 인스턴스 · 실제 접속할 가상 컴퓨터</strong><small>서브넷의 주소를 가진 네트워크 인터페이스(ENI)를 통해 통신</small></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="map-note"><strong>④ 라우팅 테이블 · 어디로 보낼까?</strong><p>서브넷에 연결된 목적지별 길 안내입니다. 같은 VPC 안 주소는 <code>local</code>, 인터넷 목적지는 인터넷 게이트웨이(IGW)로 보내는 식입니다. 명시적 연결이 없으면 VPC의 기본(main) 테이블을 씁니다.</p></div>
+          <div class="map-note"><strong>⑤ 보안 그룹 · 이 연결을 허용할까?</strong><p>EC2의 네트워크 인터페이스에 붙는 인바운드·아웃바운드 허용 규칙입니다. 서브넷의 하위 공간이나 라우팅 테이블의 일부가 아닙니다. 길이 있어도 해당 연결이 허용되지 않으면 통과하지 못합니다.</p></div>
+          <div class="map-note"><strong>⑥ IAM · 누가 AWS 작업을 해도 될까?</strong><p>사람이 <code>ssm:StartSession</code>을 요청할 권한, EC2 Agent가 AWS와 통신할 권한을 정합니다. 네트워크가 열려 있어도 AWS API 권한이 없으면 SSM 세션을 시작할 수 없습니다.</p></div>
+        </div>
       </div>
+      <p class="caption"><b>그림 읽는 법:</b> ①→②→③은 <b>포함·배치 관계</b>입니다. ④·⑤·⑥은 그 안에 또 들어가는 층이 아니라, ③의 통신에 각각 적용되는 <b>길·네트워크 허용·AWS 작업 허용</b>입니다. AWS가 제공하는 기본 VPC를 사용하면 ①·②·④ 일부가 미리 만들어져 있을 수 있으므로, 매번 손으로 새 VPC부터 만드는 절차라는 뜻은 아닙니다. <a href="https://docs.aws.amazon.com/vpc/latest/userguide/how-it-works.html">AWS VPC 구조</a> · <a href="https://docs.aws.amazon.com/vpc/latest/userguide/subnet-route-tables.html">AWS 서브넷과 라우팅 테이블</a></p>
+      <div class="split">
+        <article class="card aws"><h3>VPC가 먼저인가요, 서브넷이 먼저인가요?</h3><p><b>구조상 VPC가 부모</b>입니다. 서브넷은 반드시 어떤 VPC에 속하며, EC2를 시작할 때 그 인스턴스의 네트워크 인터페이스를 서브넷에 둡니다. 직접 새 네트워크를 설계한다면 VPC → 서브넷/라우팅 → EC2 순서로 준비합니다. 기존 기본 VPC를 사용한다면 그 안의 서브넷과 경로를 선택·확인합니다.</p></article>
+        <article class="card aws"><h3>‘공개 서브넷’이면 누구나 EC2에 접속하나요?</h3><p>아닙니다. 인터넷 목적지 경로가 IGW로 향하는 서브넷을 보통 공개 서브넷이라고 부릅니다. 인터넷에서 EC2의 공개 IPv4/EIP로 직접 접속하려면 <b>그 주소, 서브넷 경로, EC2 보안 그룹 인바운드 허용, 수신 프로그램</b>도 맞아야 합니다. SSM 셸은 EC2의 22번 인바운드 대신 Agent의 443 아웃바운드 경로를 씁니다. <a href="https://docs.aws.amazon.com/vpc/latest/userguide/route-table-options.html">AWS 공개 서브넷 경로</a></p></article>
+      </div>
+      <details class="learning"><summary>VPC와 서브넷을 왜 둘로 나누나요? 리전·가용 영역은 또 무엇인가요?</summary><p><b>리전</b>은 AWS가 서비스를 운영하는 지리적 지역이고, <b>가용 영역(AZ)</b>은 리전 안에서 장애 영역을 나눈 장소입니다. VPC는 한 리전의 네트워크 주소 공간과 연결 경계를 정합니다. 그 VPC를 여러 서브넷으로 나누어, 각 서브넷을 한 가용 영역에 배치합니다. 예를 들어 웹 서버가 있는 서브넷에는 인터넷 경로를 주고 DB 서브넷에는 직접 인터넷 경로를 주지 않을 수 있습니다. 이 구분 덕분에 <b>같은 VPC 안에서도 자원을 어느 주소 구간·장애 영역·경로에 둘지</b> 선택할 수 있습니다. 서브넷 이름만 ‘private’으로 붙인다고 비공개가 되는 것은 아니고 실제 라우팅과 공개 주소, 접근 규칙을 함께 봐야 합니다.</p></details>
+      <h3>사람과 EC2는 서로 다른 AWS 권한으로 Session Manager에서 만납니다</h3>
+      <p>여기서 <b>SSM</b>은 AWS Systems Manager 서비스의 약칭, <b>Session Manager</b>는 SSM 안에서 원격 셸을 여는 기능입니다. <b>세션</b>은 내 터미널과 원격 EC2 셸 사이에서 한 번 열려 종료할 때까지 이어지는 대화입니다. SSM은 SSH의 다른 이름이 아닙니다.</p>
+      <div class="identity-map">
+        <div class="identity-track"><h3>사람 · 내 Mac/PC에서 요청</h3><ol><li><b>IAM Identity Center</b>가 사람의 로그인과 계정 접근을 관리. SSO는 허용된 여러 자원에 한 로그인으로 들어가는 방식입니다.</li><li>관리자가 <b>사용자/그룹 + AWS 계정 + Permission set(권한 묶음)</b>을 할당합니다. Identity Center가 해당 계정에 IAM 역할을 마련합니다.</li><li>내 컴퓨터의 <b>AWS CLI 프로필</b>은 사용할 포털·계정·권한 묶음을 가리키는 설정입니다. <code>aws sso login</code> 뒤 CLI가 임시 자격 증명을 얻습니다.</li><li>CLI가 대상 EC2의 <code>ssm:StartSession</code>을 요청합니다. 로그인만 했고 이 권한이 없으면 거절됩니다.</li></ol></div>
+        <div class="identity-track"><h3>EC2 인스턴스 · AWS와 통신</h3><ol><li>EC2 안에서 <b>SSM Agent</b> 프로그램이 실행됩니다.</li><li>EC2에 연결된 <b>인스턴스 프로파일</b>이 Agent에게 IAM 역할의 임시 자격 증명을 제공합니다. 역할에는 SSM 관리 대상 통신 권한이 필요합니다.</li><li>Agent가 EC2 보안 그룹 아웃바운드와 서브넷의 경로를 이용해 AWS SSM 서비스의 HTTPS 443으로 연결합니다.</li><li>Session Manager가 두 쪽을 이어 주면 EC2 안에서 Linux 셸이 열립니다. <code>ssm-user</code>는 이 Linux 계정이며, Identity Center 사용자나 IAM 역할과 다릅니다.</li></ol></div>
+      </div>
+      <div class="identity-join"><b>두 경로의 만남:</b> 사람의 권한은 “이 EC2에 세션을 요청해도 되는가?”, EC2 역할은 “이 Agent가 SSM에 등록·통신해도 되는가?”를 답합니다. 둘 다 맞아야 합니다. Session Manager plugin은 내 컴퓨터의 터미널 입출력을 세션에 연결합니다. <a href="https://docs.aws.amazon.com/singlesignon/latest/userguide/howtogetcredentials.html">AWS Identity Center 임시 자격 증명</a> · <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-getting-started-instance-profile.html">AWS EC2 역할</a></div>
+      <details class="learning"><summary>IAM 정책, 역할, Permission set은 서로 어떻게 다른가요?</summary><p><b>정책(Policy)</b>은 “어떤 AWS API 작업을 어떤 대상에 허용할지” 적은 규칙입니다. <b>역할(Role)</b>은 그 규칙을 붙이고 조건에 맞는 주체가 잠시 맡는 AWS 신원입니다. <b>Permission set</b>은 Identity Center 관리자가 사람에게 AWS 계정 접근을 할당할 때 고르는 권한 묶음이며, Identity Center가 대상 계정에 대응하는 IAM 역할을 마련합니다. EC2의 <b>인스턴스 프로파일</b>은 EC2에 별도 IAM 역할을 연결합니다. 따라서 사람의 Permission set에 SSM 권한을 넣어도 EC2 Agent 역할의 권한이 자동으로 생기지 않고, 반대도 마찬가지입니다. <a href="https://docs.aws.amazon.com/singlesignon/latest/userguide/permissionsetsconcept.html">AWS Permission set</a></p></details>
+      <details class="learning"><summary>Identity Center가 왜 필요한가요? IAM 사용자 키로도 되나요?</summary><p>내 컴퓨터의 CLI가 AWS에 “누가 세션을 시작하는지” 증명해야 하기 때문입니다. Identity Center는 사람의 브라우저 로그인과 계정 권한 할당을 관리하고 CLI에 <b>만료되는 임시 자격 증명</b>을 제공합니다. IAM 사용자의 장기 Access Key 등 다른 인증 수단도 가능하지만 키를 보관·교체해야 합니다. Identity Center를 쓰더라도 권한 묶음에 대상 EC2의 세션 권한이 없으면 접속할 수 없습니다.</p></details>
+      <details class="learning"><summary>라우팅 테이블, 보안 그룹, IAM 중 무엇부터 확인하나요?</summary><p>서로 대체하지 않는 세 질문으로 나눕니다. <b>라우팅 테이블</b>은 EC2가 AWS SSM 서비스까지 갈 길을 찾는지, <b>EC2 보안 그룹</b>은 그 아웃바운드 HTTPS 연결을 허용하는지, <b>IAM</b>은 사람의 세션 요청과 Agent의 서비스 통신을 허용하는지 검사합니다. SSM이 연결되지 않으면 모두 확인합니다. SSH를 택한 경우에는 내 PC에서 EC2까지의 경로와 EC2의 인바운드 22 허용 여부가 추가로 중요합니다.</p></details>
       <details class="learning"><summary>SSM은 어떤 원리로 동작하나요? SSH처럼 22번 포트로 들어가나요?</summary><p>로컬 AWS CLI가 <code>StartSession</code> API를 요청합니다. Session Manager는 사용자 신원과 IAM 권한을 검사하고 EC2의 SSM Agent에 세션 시작을 알립니다. Agent는 AWS의 Systems Manager 통신 경로에 HTTPS/TLS로 <b>아웃바운드</b> 연결합니다. 로컬 plugin과 Agent가 세션 채널로 입력·출력을 주고받으므로 일반 셸 접속에 EC2 인바운드 22번 포트가 필요하지 않습니다. EC2는 AWS 서비스에 닿을 수 있어야 하며 인터넷 경로나 적절한 VPC 엔드포인트를 사용합니다. <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager.html">AWS: Session Manager 작동 방식</a> · <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-prerequisites.html">AWS: 네트워크 전제 조건</a></p></details>
       <details class="learning"><summary>어떤 권한으로 접속하나요? 내 AWS 로그인과 EC2 역할은 같은 것인가요?</summary><p>두 신원이 필요합니다. <b>사람의 AWS 신원</b>에는 대상 EC2에 <code>ssm:StartSession</code>을 요청할 IAM 권한이 있어야 합니다. 로그인은 Identity Center나 다른 임시 자격 증명으로 구성할 수 있습니다. <b>EC2의 신원</b>은 Agent가 Systems Manager에 통신할 권한을 제공합니다. EC2 인스턴스 프로파일에 <code>AmazonSSMManagedInstanceCore</code>를 붙이는 것이 한 방법입니다. 이는 사람에게 세션 시작 권한을 주는 것과 별개입니다. 세션 안의 Linux 계정 <code>ssm-user</code>도 AWS 로그인 사용자와 다른 OS 계정입니다. <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-getting-started-restrict-access.html">AWS: 사용자 세션 접근 제어</a> · <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-getting-started-instance-profile.html">AWS: 인스턴스 권한</a></p></details>
       <details class="learning"><summary>SSM과 SSH는 언제 각각 쓰나요?</summary><p>둘 다 서버 셸에 접근할 수 있습니다. SSH는 서버의 SSH 서비스까지 도달해야 하고 키·사용자·22번 인바운드 규칙을 관리합니다. Session Manager는 AWS 신원과 Agent·아웃바운드 경로를 준비하며 세션 권한을 IAM으로 제어합니다. 조직 정책과 네트워크 구조에 따라 SSH, SSM 또는 둘 다 사용할 수 있습니다. TRACEBACK은 개발 EC2의 22번 포트를 열지 않는 SSM 경로를 선택했습니다.</p></details>
