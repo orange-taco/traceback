@@ -83,7 +83,8 @@ APP_ENV_FILE=config/ci-container-smoke.env APP_IMAGE=traceback-production:local 
 AWS development and production use the same Docker image and Compose overlay.
 Each server injects its own untracked `.env`; the overlay
 passes that file directly to the app container. It removes the local source
-mount, host port, and PostgreSQL container and requires an external
+mount and PostgreSQL container, keeps the app port bound to host loopback
+(`127.0.0.1:8000`), and requires an external
 `TRACEBACK_DATABASE_URL`.
 
 ## AWS learning guides
