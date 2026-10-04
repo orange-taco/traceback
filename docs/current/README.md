@@ -10,7 +10,7 @@
 
 ## Validation / Next action
 
-- 8개 HTML 게시 빌드와 문서 내 이동 링크 검사가 통과했다. 인증·SSM 가이드의 세 탈퇴 경로, 6단계·두 claim 승자 전환, 초보자용 네트워크 설명을 데스크톱과 390px 모바일에서 확인했고 가로 넘침과 JS 오류는 없었다. PR #12의 Quality·Test는 이전 커밋 기준 통과했고 CodeRabbit은 review paused 상태다. AWS 리소스 변경과 실제 배포는 아직 진행하지 않았다.
+- 8개 HTML 게시 빌드와 문서 내 이동 링크 검사가 통과했다. 인증·SSM 가이드의 세 탈퇴 경로, 6단계·두 claim 승자 전환, 초보자용 네트워크 설명을 데스크톱과 390px 모바일에서 확인했고 가로 넘침과 JS 오류는 없었다. PR #12의 Quality·Test는 통과했고 CodeRabbit은 review paused 상태다. AWS 리소스 변경과 실제 배포는 아직 진행하지 않았다.
 - Pages URL은 아직 404다. 게시 workflow가 PR 브랜치에만 있고 `github-pages` 환경은 `development`만 허용한다. 병합 뒤 실제 배포와 공개 URL을 검증한다.
 - API 인증서 발급과 Nginx 프록시 설정, EC2 `.env`·RDS DB 사용자·Django 이미지 배포가 남았다. HTTP 200과 ACME 검증 경로, Vercel auth 경로 502, ECR 저장소 이미지 0개를 확인했다. 순서는 [2번 배포 가이드](../artifact/2-dev-server-first-deployment.html)에 있다.
 
