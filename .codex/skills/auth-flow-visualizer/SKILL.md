@@ -38,6 +38,13 @@ future domains without reducing the explanation to a table or a prose-only page.
   or state transition when known, and briefly explain what the node does.
 - Mark short-circuit conditions, transaction boundaries, retries, and failure paths
   explicitly. Do not imply a callback or library hook runs unless the source proves it.
+- Name the actor and target whenever a sentence mentions a server, key, port,
+  request, response, inbound rule, outbound rule, or permission. For example,
+  distinguish the reader's local computer from the remote EC2 instance, and
+  distinguish an AWS login identity from the Linux user inside EC2. Explain a
+  prerequisite term such as HTTP/HTTPS or a new connection before using it to
+  explain stateful return traffic. A beginner should not need another source to
+  identify who owns an object or which direction an arrow travels.
 - Use semantic controls, visible labels, `aria-live` where state changes, text
   alternatives, keyboard operation, and responsive layout down to narrow widths.
 - Provide a visible PDF save action. Its print view must include content hidden

@@ -37,7 +37,10 @@ codebase check → system/design check → user decision review → implementati
 - Kakao `-101`은 이미 unlink된 상태이므로 성공으로 처리한다.
 - 사용자 세션은 `allauth.usersessions`로 사용자별 조회·종료한다.
 - SocialAccount 연결 해제의 검증·삭제 흐름은 allauth Headless endpoint를 사용한다.
-- 계정 전체 삭제는 `/accounts/delete`에서 provider unlink 후 User를 비활성·익명화한다.
+- 계정 전체 삭제는 `/accounts/delete`에서 이메일 전용이면 로컬 DB만 정리하고,
+  Kakao 전용·이메일+Kakao이면 provider unlink 후 로컬 DB를 정리한다. User 행은
+  soft delete로 남겨 `is_active=False`, `deleted_at` 및 익명화·비밀번호 무효화를
+  적용한다. EmailAddress와 SocialAccount 행은 실제 삭제한다.
 
 ## Catalog
 
