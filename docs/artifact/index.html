@@ -26,9 +26,14 @@
   <main>
     <p class="eyebrow">TRACEBACK · learning map</p>
     <h1>전체 흐름에서 시작해<br>설정 한 단계씩 읽기</h1>
-    <p class="intro">이 주소 하나를 저장하세요. 다섯 문서는 독립적으로 열리지만, 아래 순서로 읽으면 같은 배포 흐름을 점점 확대해서 볼 수 있습니다. 각 문서에서 이 목차로 돌아올 수 있습니다.</p>
+    <p class="intro">이 주소 하나를 저장하세요. 전체 구조에서 시작해 인프라와 인증·이메일의 두 경로를 따라갑니다. 각 문서는 일반 원리와 대안을 먼저 설명하고, TRACEBACK의 선택·이유·현재 검증 상태를 구분합니다.</p>
+    <p class="eyebrow">인프라 학습 경로</p>
     <div class="map" role="img" aria-label="전체 시스템 지도에서 서버 접속, 첫 배포, IP와 도메인, DNS 순서로 학습합니다">
       <span>전체 시스템<small>무엇을 배포하는가</small></span><b aria-hidden="true">→</b><span>서버 접속<small>누가 어떻게 접속하는가</small></span><b aria-hidden="true">→</b><span>첫 배포<small>코드와 설정이 어떻게 전달되는가</small></span><b aria-hidden="true">→</b><span>IP·도메인<small>서버 주소를 어떻게 유지하는가</small></span><b aria-hidden="true">→</b><span>DNS<small>그 주소를 어떻게 찾는가</small></span>
+    </div>
+    <p class="eyebrow">고객 인증 학습 경로</p>
+    <div class="map" role="img" aria-label="전체 시스템에서 세션과 allauth 선택을 살핀 뒤 SMTP와 SES로 확인 메일이 전달되는 길을 학습합니다">
+      <span>전체 시스템<small>고객과 서버의 관계</small></span><b aria-hidden="true">→</b><span>세션·토큰<small>로그인 상태를 어떻게 유지하나</small></span><b aria-hidden="true">→</b><span>allauth Headless<small>가입과 인증은 누가 구현하나</small></span><b aria-hidden="true">→</b><span>SMTP·SES<small>확인 메일은 어떻게 전송하나</small></span>
     </div>
     <section class="publish" aria-labelledby="publish-title">
       <h2 id="publish-title">이 학습 사이트는 어떻게 공개되나요?</h2>
@@ -41,12 +46,17 @@
       <details><summary>첫 공개 전에 URL이 404였던 이유는?</summary><p>2026-10-04 기준 게시 workflow는 PR 브랜치에만 있었습니다. 이 저장소는 <code>development</code> push에서 Pages를 게시하도록 설정했고 <code>github-pages</code> 환경도 그 브랜치만 허용합니다. PR의 Quality/Test 성공은 Pages 게시 성공을 뜻하지 않습니다. 병합 뒤 Pages 실행 결과와 실제 URL을 확인해야 합니다. API 서버의 ECR 이미지 빌드·EC2 배포는 별도 workflow이므로 Pages 404와 원인이 다릅니다. <a href="https://github.com/orange-taco/traceback/blob/development/.github/workflows/artifact-pages.yml">게시 workflow 원문</a></p></details>
     </section>
     <div class="section-head"><h2>추천 읽기 순서</h2><p>먼저 그림을 보고, 더 궁금한 부분을 펼쳐 읽으세요.</p></div>
-    <nav class="cards" aria-label="다섯 학습 문서">
+    <nav class="cards" aria-label="시스템과 AWS 인프라 학습 문서">
       <a class="card featured" href="traceback-system-guide.html"><small>START · SYSTEM GUIDE</small><strong>TRACEBACK 전체 구조와 CI/CD</strong><p>고객 요청과 코드 배포의 큰 지도를 본 뒤 인증·워크플로 원문까지 이어집니다.</p></a>
       <a class="card" href="1-aws-ssm-ssh-learning-guide.html"><small>01 · ACCESS</small><strong>SSH·SSM으로 EC2 접속</strong><p>일반 네트워크 연결, AWS 신원과 권한, 로컬 터미널 접속을 구분합니다.</p></a>
       <a class="card" href="2-dev-server-first-deployment.html"><small>02 · DEPLOY</small><strong>개발 서버 첫 배포</strong><p>GitHub Actions에서 ECR·EC2·RDS까지 이어지는 설정 순서와 아직 막힌 지점을 봅니다.</p></a>
       <a class="card" href="3-development-ip-domain-guide.html"><small>03 · ADDRESS</small><strong>서버 IP와 도메인</strong><p>유동 IP·Elastic IP를 비교하고, 도메인 등록과 DNS 관리를 분리해 이해합니다.</p></a>
       <a class="card" href="4-dns-resolution-map.html"><small>04 · DNS</small><strong>주소를 입력한 뒤 일어나는 일</strong><p>브라우저가 DNS를 통해 IP를 찾고 HTTPS 서버에 연결하는 경로를 따라갑니다.</p></a>
+    </nav>
+    <div class="section-head"><h2>인증과 이메일 발송</h2><p>인프라 경로와 연결되는 별도의 학습 축입니다.</p></div>
+    <nav class="cards" aria-label="인증과 이메일 학습 문서">
+      <a class="card" href="auth-session-allauth-guide.html"><small>IDENTITY · DECISIONS</small><strong>세션·토큰부터 allauth Headless까지</strong><p>상태 전달, 인증 구현, 화면/API 방식을 각각 비교한 뒤 실제 로그인 흐름을 봅니다.</p></a>
+      <a class="card" href="email-smtp-ses-guide.html"><small>EMAIL · DELIVERY</small><strong>SMTP와 SES로 확인 메일 보내기</strong><p>메일 생성과 전송, 발송 서비스 선택, AWS 설정 및 확인 링크를 구분합니다.</p></a>
     </nav>
     <p class="foot">문서는 공개 학습 자료입니다. TRACEBACK의 실제 설정 상태는 각 문서에 표시된 확인 날짜를 기준으로 읽으세요.</p>
   </main>

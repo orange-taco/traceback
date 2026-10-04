@@ -73,6 +73,14 @@ can answer these questions from the page itself:
    Label these states explicitly, including security and deployment boundaries.
 
 Keep the visual and its detailed explanation close enough to read together.
+Treat repository code as evidence of TRACEBACK's implementation, not evidence
+that the choice is universal or optimal. For layered decisions, compare each
+independent layer in order (for example, browser session vs token, account-flow
+library, then templated pages vs headless API; or email protocol, delivery
+provider, then synchronous vs queued sending). Name at least one credible
+alternative at each real decision point, its tradeoff, and the reason the
+current project chose its path. Do not invent an alternative merely to fill a
+template.
 Use screenshots only when they add verifiable setup context; diagrams may explain
 the general path. Verify the source and observed setup before asserting a current
 state. An attractive page that omits a required answer is unfinished.
@@ -87,6 +95,12 @@ path: `traceback-system-guide.html` for the whole system and CI/CD map, then
 `4-dns-resolution-map.html` for DNS resolution. Link forward and back where a
 reader needs the companion explanation or code; do not make readers guess which
 document owns a topic.
+
+The index also links the authentication study path:
+`auth-session-allauth-guide.html` compares session/token, account-flow tools,
+and allauth presentation modes; `email-smtp-ses-guide.html` compares mail
+transport, delivery provider, and send timing. Keep both paths connected to
+the system guide and the deployment guide where server configuration matters.
 
 - Start each topic with a visual path that shows what talks to what and why.
   The first visual must teach the document's general mechanism, not serve as a

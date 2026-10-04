@@ -87,14 +87,17 @@ mount and PostgreSQL container, keeps the app port bound to host loopback
 (`127.0.0.1:8000`), and requires an external
 `TRACEBACK_DATABASE_URL`.
 
-## AWS learning guides
+## System learning guides
 
-AWS 초기 설정을 처음부터 공부할 때는 [학습 목차](docs/artifact/index.html)에서 시작한다.
+처음부터 공부할 때는 [학습 목차](docs/artifact/index.html)에서 시작한다.
 [System Guide](docs/artifact/traceback-system-guide.html)에서
-전체 흐름을 본 다음 [1. SSH·SSM](docs/artifact/1-aws-ssm-ssh-learning-guide.html) →
+전체 흐름을 본다. 인프라는 [1. SSH·SSM](docs/artifact/1-aws-ssm-ssh-learning-guide.html) →
 [2. 첫 서버 배포](docs/artifact/2-dev-server-first-deployment.html) →
 [3. IP·도메인](docs/artifact/3-development-ip-domain-guide.html) →
-[4. DNS](docs/artifact/4-dns-resolution-map.html) 순서로 읽는다. 각 가이드는 일반적인
+[4. DNS](docs/artifact/4-dns-resolution-map.html) 순서로 읽는다. 인증은
+[세션·토큰과 allauth](docs/artifact/auth-session-allauth-guide.html) →
+[SMTP·SES와 확인 메일](docs/artifact/email-smtp-ses-guide.html) 순서로 읽는다.
+각 가이드는 일반적인
 설정 방법과 선택지, TRACEBACK의 선택 이유, 현재 설정 및 남은 검증을 함께 설명한다.
 각 HTML의 `PDF로 저장` 버튼은 브라우저 인쇄 창을 열며, 거기서 PDF 대상으로 저장한다.
 

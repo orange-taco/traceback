@@ -29,7 +29,8 @@ codebase check → system/design check → user decision review → implementati
 - Email: mandatory verification, allauth `EmailAddress`가 인증 상태 소유
 - Social: allauth `SocialAccount`가 provider identity 소유
 - Kakao: verified `account_email`만 사용하고 Admin Key server-side unlink
-- Kakao unlink 성공 후 로컬 account state를 atomic하게 정리한다.
+- Kakao unlink 성공 후 User·SocialAccount·EmailAddress를 한 DB transaction에서
+  정리하고, UserSession 종료는 transaction이 끝난 뒤 실행한다.
 - Kakao `-101`은 이미 unlink된 상태이므로 성공으로 처리한다.
 - 사용자 세션은 `allauth.usersessions`로 사용자별 조회·종료한다.
 - SocialAccount 연결 해제의 검증·삭제 흐름은 allauth Headless endpoint를 사용한다.

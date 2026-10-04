@@ -351,6 +351,11 @@ session-manager-plugin</code></pre><p>현재 Mac에서는 plugin이 <code>~/.loc
   --region ap-northeast-2 \
   --profile traceback-dev</code></pre><p>성공하면 원격 Linux 셸 프롬프트가 나타납니다. 작업을 끝내면 <code>exit</code>를 입력해 세션을 닫습니다. 이 명령은 EC2나 RDS를 만들거나 시작/중지하지 않고, 실행 중인 EC2에 셸 연결만 엽니다.</p><p>현재는 셸 함수로 <code>aws ssm traceback-dev</code>를 입력하면 위 긴 명령을 실행합니다. 짧은 명령은 AWS CLI 기본 명령이 아니라 내 컴퓨터에 추가한 편의 설정입니다.</p></div></div>
 
+      <details class="learning" id="linux-permissions"><summary>SSM 접속은 됐는데 <code>cd /opt/traceback</code>이 Permission denied인 이유는?</summary><p><b>SSM 접속 권한과 Linux 파일 권한은 다른 단계</b>입니다. SSM은 셸을 열어 주지만 모든 폴더의 소유권을 주지는 않습니다. 현재 셸은 <code>ssm-user</code>이고, TRACEBACK의 실행 폴더는 비밀 환경 파일을 보호하려고 root 전용으로 준비됐습니다. <code>/opt</code> 목록을 볼 수 있어도 그 안의 <code>traceback</code> 디렉터리에 들어가려면 해당 디렉터리의 <b>실행(x) 권한</b>이 필요합니다. <code>ec2-user</code>와 <code>ssm-user</code>도 서로 다른 Linux 사용자이며 홈 디렉터리가 자동 동기화되지 않습니다.</p><span class="source-label">EC2 셸에서 확인하는 명령 · 저장소 소스 파일이 아닙니다</span><pre><code>whoami
+id
+ls -ld /opt /opt/traceback
+namei -l /opt/traceback</code></pre><p>관리 권한이 부여된 경우에만 <code>sudo -i</code>로 root 셸을 연 뒤 <code>cd /opt/traceback</code>으로 이동하고, 마치면 <code>exit</code>로 돌아옵니다. <code>cd</code>는 셸 내부 명령이므로 <code>sudo cd /opt/traceback</code>은 해결 방법이 아닙니다. 폴더를 모두에게 공개하도록 <code>chmod 777</code>하지 않습니다.</p><p><b>일반적인 운영 선택지:</b> root 전용 폴더는 비밀값 보호가 단순하지만 관리자는 <code>sudo</code>가 필요합니다. 전용 배포 사용자·그룹을 두면 일상 작업을 분리할 수 있지만 소유권·그룹·파일 권한을 함께 설계해야 합니다. TRACEBACK은 초기 한 대 서버에서 root 전용 폴더와 root 소유 <code>.env</code>를 택했습니다. <a href="2-dev-server-first-deployment.html#env">서버 환경 파일 위치와 배포 방식 비교</a></p></details>
+
       <div class="step"><div class="num">7</div><div><h3>선택 사항 · TRACEBACK 로컬 단축 명령</h3><p>AWS CLI 자체에는 <code>aws ssm traceback-dev</code> 명령이 없습니다. 현재는 <code>~/.zshrc</code>의 셸 함수가 이 입력을 가로채, 자격 증명이 만료됐으면 SSO 로그인 후 긴 <code>start-session</code> 명령을 실행합니다. 나머지 <code>aws ...</code> 명령은 원래 CLI로 전달합니다.</p><span class="source-label">로컬 ~/.zshrc 셸 함수 예시 · AWS CLI 기본 명령이나 저장소 소스 파일이 아닙니다</span><pre><code>aws() {
   if [[ "$#" -eq 2 && "$1" == "ssm" && "$2" == "traceback-dev" ]]; then
     command aws sts get-caller-identity --profile traceback-dev >/dev/null 2>&1 || {
