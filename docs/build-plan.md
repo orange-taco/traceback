@@ -27,6 +27,7 @@
 
 현재 남은 Phase 0 작업:
 
+- Kakao unlink와 로컬 탈퇴·연결 해제의 부분 실패 복구 설계·구현·검증
 - client password-change 및 Kakao browser QA
 - AWS development/production 이미지 승격과 reverse proxy/SMTP 검증
 - 최종 remote CI 확인

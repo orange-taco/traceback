@@ -31,6 +31,9 @@ codebase check → system/design check → user decision review → implementati
 - Kakao: verified `account_email`만 사용하고 Admin Key server-side unlink
 - Kakao unlink 성공 후 User·SocialAccount·EmailAddress를 한 DB transaction에서
   정리하고, UserSession 종료는 transaction이 끝난 뒤 실행한다.
+- 현재 구현은 원격 Kakao 성공 후 로컬 DB 실패를 복구하는 영속 작업 기록이 없다.
+  `validate_disconnect()`에서도 검증 중 원격 unlink를 호출한다. 두 경로의
+  상태 전이·작업 점유·재시도 설계는 미구현이며 Phase 0에서 결정·수정한다.
 - Kakao `-101`은 이미 unlink된 상태이므로 성공으로 처리한다.
 - 사용자 세션은 `allauth.usersessions`로 사용자별 조회·종료한다.
 - SocialAccount 연결 해제의 검증·삭제 흐름은 allauth Headless endpoint를 사용한다.
