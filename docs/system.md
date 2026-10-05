@@ -95,8 +95,9 @@ codebase check → system/design check → user decision review → implementati
 - 학습용 HTML·이미지·작성 스킬의 원본은 독립된 공개 저장소
   `orange-taco/traceback-artifacts`에서 관리한다. 백엔드 저장소에는 학습 문서의
   복사본을 유지하지 않는다. 문서 사이트는 그 저장소에서 게시하며, 백엔드 코드
-  설명은 `orange-taco/traceback`의 확인된 revision에 링크한다. iPad의 Codex
-  Cloud 작업은 두 저장소를 같은 환경에 연결해 소스를 읽고 문서만 수정한다.
+  설명은 `orange-taco/traceback`과 `orange-taco/traceback-client`의 확인된
+  revision에 링크한다. iPad의 Codex Cloud 작업은 아티팩트·백엔드·프런트
+  세 저장소를 같은 환경에 연결해 소스를 읽고 문서만 수정한다.
   메모·댓글 저장 기능은 별도 결정 전까지 두지 않는다.
 - Local email은 console mailer로 출력하고, AWS 환경은 SES SMTP(STARTTLS, 587)를 사용한다.
 

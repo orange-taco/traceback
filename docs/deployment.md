@@ -162,10 +162,11 @@ The independent `orange-taco/traceback-artifacts` repository owns the learning
 HTML, images, and authoring skill. GitHub Pages publishes its `main` branch to
 `https://orange-taco.github.io/traceback-artifacts/`. The index is the single
 mobile entry point. Its source links point to checked revisions of this backend
-repository. The screenshots show AWS account/resource identifiers and GitHub
-settings, but no password, token, or private contact detail. A Codex Cloud
-environment for iPad editing must include both repositories; publishing the
-site alone does not give Codex access to backend files.
+repository and `orange-taco/traceback-client`. The screenshots show AWS
+account/resource identifiers and GitHub settings, but no password, token, or
+private contact detail. A Codex Cloud environment for iPad editing must include
+all three repositories; publishing the site alone does not give Codex access to
+source files or provide in-page editing.
 
 ## Current delivery contract
 
