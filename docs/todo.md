@@ -3,7 +3,7 @@
 지금 해야 할 일과 이후에 할 일을 함께 모은 순서 목록이다. Phase 범위·완료 기준은
 [`build-plan.md`](build-plan.md), 실제 AWS/Vercel 설정값과 현재 확인 상태는
 [`deployment.md`](deployment.md), 처음 배포하는 사람을 위한 그림·설명은
-[2번 첫 배포 가이드](artifact/2-dev-server-first-deployment.html#launch-order)에 둔다.
+[2번 첫 배포 가이드](https://orange-taco.github.io/traceback-artifacts/2-dev-server-first-deployment.html#launch-order)에 둔다.
 완료한 설정을 이 목록에 길게 복사하지 않고, 남은 작업만 체크한다.
 
 ## 1. 개발 환경 첫 실사용까지
@@ -23,7 +23,7 @@
    제공하고 TLS 인증서를 발급한다. 갱신을 시험한 뒤 호스트 Nginx 설정을
    활성화해 `127.0.0.1:8000` Django로 전달하도록 준비한다. 인증서와 외부
    443 연결을 확인한다. 앱 배포 전의 502 응답은 다음 단계에서 해결한다. 자세한 순서는
-   [인증서·Nginx 절](artifact/2-dev-server-first-deployment.html#https-sequence)을 따른다.
+   [인증서·Nginx 절](https://orange-taco.github.io/traceback-artifacts/2-dev-server-first-deployment.html#https-sequence)을 따른다.
 5. [ ] **개발 자동 배포 검증** — PR을 `development`에 병합한 뒤 CI의
    Quality/Test → GitHub OIDC → ECR image push → SSM → EC2 Compose·migration
    흐름을 확인한다. image digest, 앱 health check와 외부 HTTPS

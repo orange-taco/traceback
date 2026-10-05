@@ -93,12 +93,11 @@ Do not assume a phase is complete from conversation context alone.
 
 ## Visual Artifacts
 
-- Before creating or editing an HTML guide in `docs/artifact/`, read
-  `.codex/skills/auth-flow-visualizer/SKILL.md` and apply its **Required artifact
-  standard**. This is a completion criterion, not optional styling guidance.
-- For the five AWS initial setup guides, also apply the skill's **AWS initial
-  setup learning set** so the shared reading path, general choices, TRACEBACK
-  decision, code explanation, verified state, and remaining work stay aligned.
+- HTML guides, images, and `auth-flow-visualizer` now live in the separate
+  `orange-taco/traceback-artifacts` repository. When a task changes a guide,
+  work there and read its `AGENTS.md` and skill. Inspect this backend repository
+  at the relevant revision for code and deployment claims. The backend does not
+  keep a second copy of the guides.
 
 ## Test Organization
 

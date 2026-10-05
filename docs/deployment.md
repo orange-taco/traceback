@@ -158,15 +158,14 @@ not uploaded to Vercel. The current frontend `vercel.ts` consumes only
 
 ## Public learning guides
 
-GitHub Pages is enabled for `https://orange-taco.github.io/traceback/` with a
-GitHub Actions publishing source. The `github-pages` environment permits only
-the `development` branch. `.github/workflows/artifact-pages.yml` publishes only
-`docs/artifact/` after changes reach `development`; the site is not live until
-that workflow runs successfully. `docs/artifact/index.html` is the single mobile
-entry point. The packaging script converts links to source files outside the
-artifact directory into revision-specific GitHub links. The screenshots were
-reviewed before publication: they show AWS account/resource identifiers and
-GitHub settings, but no password, token, or private contact detail.
+The independent `orange-taco/traceback-artifacts` repository owns the learning
+HTML, images, and authoring skill. GitHub Pages publishes its `main` branch to
+`https://orange-taco.github.io/traceback-artifacts/`. The index is the single
+mobile entry point. Its source links point to checked revisions of this backend
+repository. The screenshots show AWS account/resource identifiers and GitHub
+settings, but no password, token, or private contact detail. A Codex Cloud
+environment for iPad editing must include both repositories; publishing the
+site alone does not give Codex access to backend files.
 
 ## Current delivery contract
 
@@ -248,7 +247,7 @@ Check on **both** hosts: the EC2 architecture can run the GitHub-hosted runner's
 The example Nginx file is not copied onto the host by `deploy-common.sh`; provision it
 separately. It references certificate files, so serve the HTTP ACME challenge and
 obtain the certificate before enabling that file. See the
-[ordered HTTPS setup guide](artifact/2-dev-server-first-deployment.html#https-sequence).
+[ordered HTTPS setup guide](https://orange-taco.github.io/traceback-artifacts/2-dev-server-first-deployment.html#https-sequence).
 
 Do not place passwords in SSM command parameters or GitHub logs. The SSM command does not print `.env`, but Compose/application error output could reveal sensitive data, so restrict access to command invocation output.
 

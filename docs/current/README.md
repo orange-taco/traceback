@@ -5,14 +5,13 @@
 ## Current state
 
 - AWS development 첫 배포 가이드와 스크립트가 PR #12에 있다. Production EC2는 아직 없다. Vercel은 `DJANGO_ORIGIN` 적용 재배포가 Ready이고 인증 경로는 API HTTPS 미연결로 502다. EC2에 Nginx·Docker·Compose·Certbot을 설치하고 ECR pull 권한을 연결했다. API HTTP는 200, HTTPS 443은 아직 연결 거부다.
-- [학습 목차](../artifact/index.html)는 전체 시스템, AWS 접속·배포·주소·DNS, 인증·메일 가이드를 연결한다. AWS 접속 가이드는 VPC → 서브넷 → EC2의 포함 관계와 라우팅·보안 그룹·IAM의 독립된 역할, 사람·EC2의 두 권한 경로를 먼저 보여준다. 각 주제에서 일반적인 대안과 TRACEBACK 선택·코드·미검증 상태를 구분한다. GitHub Pages 게시 워크플로는 이 PR에 있고 `github-pages` 환경은 `development` 배포만 허용하므로 병합 뒤 공개 URL을 검증한다.
-- [System Guide 인증 탭](../artifact/traceback-system-guide.html#auth)은 이메일 전용·Kakao 전용·이메일+Kakao의 전체 탈퇴와 User soft delete를 구분한다. [인증 결정 가이드](../artifact/auth-session-allauth-guide.html#external-unlink)는 작업 유실 방지와 외부 API 중복 호출을 별개 문제로 설명하고 Kakao의 문서화된 -101·사용자 정보 조회와 멱등성 키 미확인을 기록한다. 상태·작업 행과 재시도는 개선 설계로 아직 구현되지 않았다.
+- [학습 목차](https://orange-taco.github.io/traceback-artifacts/)와 작성 스킬은 별도 `orange-taco/traceback-artifacts` 저장소에서 관리한다. iPad는 게시된 사이트에서 읽는다. Codex Cloud의 `traceback` 환경 초안에는 문서·백엔드 두 저장소를 선택했으며 게시 전 설정을 마쳐야 한다. 백엔드 저장소의 HTML 복사본과 Pages 워크플로는 제거한다.
+- [인증 결정 가이드](https://orange-taco.github.io/traceback-artifacts/auth-session-allauth-guide.html#external-unlink)는 Kakao unlink의 부분 실패와 작업 복구 설계를 설명한다. 상태·작업 행과 재시도는 개선 설계로 아직 구현되지 않았다.
 
 ## Validation / Next action
 
-- 8개 HTML의 설명 순서를 점검했다. SSM 가이드 구조도를 데스크톱에서 확인했고 390px 모바일에서 가로 넘침이 없었다. 8개 HTML 게시 빌드, 문서 내 fragment 링크 검사, `git diff --check`가 통과했다. 기존 PR의 Quality·Test는 통과했고 CodeRabbit은 review paused 상태다. AWS 리소스 변경과 실제 배포는 아직 진행하지 않았다.
-- Pages URL은 아직 404다. 게시 workflow가 PR 브랜치에만 있고 `github-pages` 환경은 `development`만 허용한다. 병합 뒤 실제 배포와 공개 URL을 검증한다.
-- API 인증서 발급과 Nginx 프록시 설정, EC2 `.env`·RDS DB 사용자·Django 이미지 배포가 남았다. HTTP 200과 ACME 검증 경로, Vercel auth 경로 502, ECR 저장소 이미지 0개를 확인했다. 순서는 [2번 배포 가이드](../artifact/2-dev-server-first-deployment.html)에 있다.
+- 별도 아티팩트 저장소의 8개 HTML 내부 링크 검사가 통과했고 Pages 배포 run이 성공했다. 공개 목차 URL은 HTTP 200으로 확인했다. Codex Cloud 환경은 아직 `게시되지 않음` 상태다. 기존 백엔드 PR의 Quality·Test는 통과했고 CodeRabbit은 review paused 상태다. AWS 리소스 변경과 실제 앱 배포는 아직 진행하지 않았다.
+- API 인증서 발급과 Nginx 프록시 설정, EC2 `.env`·RDS DB 사용자·Django 이미지 배포가 남았다. HTTP 200과 ACME 검증 경로, Vercel auth 경로 502, ECR 저장소 이미지 0개를 확인했다. 순서는 [2번 배포 가이드](https://orange-taco.github.io/traceback-artifacts/2-dev-server-first-deployment.html)에 있다.
 
 ## Maintenance
 
