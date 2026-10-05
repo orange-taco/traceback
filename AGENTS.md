@@ -40,8 +40,10 @@ Do not assume a phase is complete from conversation context alone.
 - After finishing development work, update `docs/current/README.md` so a new session can see the current state, next action, completed scope, and remaining validation without reading the full docs set.
 - Keep `docs/current/README.md` short and snapshot-like, including only the current
   next action and validation state. Do not append task history there.
-- Use `docs/todo.md` only for optional future backlog. Read it when a related future
-  area is selected; it is not a mandatory task list for every new session.
+- Use `docs/todo.md` as the ordered inventory of unfinished work, including current
+  setup tasks and later optional work. Keep status details and procedures in the
+  affected guide or `docs/deployment.md`; do not duplicate the Phase completion
+  criteria from `docs/build-plan.md`. Read the relevant TODO section for the task.
 - Treat each user task as one bounded work slice. When the slice is complete, update
   the checkpoint, report the result, and end the AI session. Do not carry completed
   work into an implicit next task; the next task starts in a new AI session.
@@ -88,6 +90,14 @@ Do not assume a phase is complete from conversation context alone.
 - Each column purpose must be justified by the minimal MVP scope or an explicit requirement.
 - If a column is only for future expansion and not required now, do not add it; record the deferred idea in the relevant docs instead.
 - Keep the model-purpose document aligned with the actual migrations before stopping work.
+
+## Visual Artifacts
+
+- HTML guides, images, and `auth-flow-visualizer` now live in the separate
+  `orange-taco/traceback-artifacts` repository. When a task changes a guide,
+  work there and read its `AGENTS.md` and skill. Inspect this backend repository
+  at the relevant revision for code and deployment claims. The backend does not
+  keep a second copy of the guides.
 
 ## Test Organization
 

@@ -74,6 +74,6 @@ jobs:
           echo "uri=${account_id}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}@${digest}" >> "$GITHUB_OUTPUT"
       - env:
           APP_IMAGE: ${{ steps.image.outputs.uri }}
-          INSTANCE_ID: ${{ vars.PRODUCTION_INSTANCE_ID }}
+          PRODUCTION_INSTANCE_ID: ${{ vars.PRODUCTION_INSTANCE_ID }}
           AWS_REGION: ${{ vars.AWS_REGION }}
-        run: bash .github/scripts/deploy-ec2.sh
+        run: bash .github/scripts/deploy-prod.sh
