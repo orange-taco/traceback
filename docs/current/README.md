@@ -12,7 +12,7 @@
 ## Validation / Next action
 
 - 별도 아티팩트 저장소의 8개 HTML 내부 링크 검사와 Pages 배포가 성공했다. 세 저장소 Cloud 환경을 게시했고 온보딩 중 프런트 타입 검사·빌드, 백엔드 테스트 40개, 문서 링크 검사가 통과했다. 새 Cloud 작업에서 저장소 복원은 아직 별도 확인이 필요하다. 기존 백엔드 PR의 Quality·Test는 통과했고 CodeRabbit은 review paused 상태다. SES 도메인과 DKIM DNS를 추가했으며 실제 앱 배포는 아직 진행하지 않았다.
-- 다음 작업은 인증서 알림용 이메일 주소와 Kakao Admin Key를 확보하는 것이다. 서버 `.env`·인증서는 없고 HTTPS 443은 연결되지 않았다. 로컬에 준비한 서버 환경값을 완성한 뒤 인증서·Nginx·이미지 배포를 진행한다. SES 샌드박스에서는 수신자 인증 또는 발송 권한 확대도 필요하다. 순서는 [2번 배포 가이드](https://orange-taco.github.io/traceback-artifacts/2-dev-server-first-deployment.html)에 있다.
+- 다음 작업은 Kakao Admin Key를 확보하고 Let's Encrypt 인증서를 이메일 주소 없이 발급하는 것이다. Let's Encrypt는 만료 알림 메일을 2025년에 종료했으므로 개인 이메일은 인증서 발급의 선행 조건이 아니다. 서버 `.env`·인증서는 없고 HTTPS 443은 연결되지 않았다. 로컬 서버 환경값을 완성한 뒤 Nginx·이미지 배포를 진행한다. SES 샌드박스에서는 수신자 인증 또는 발송 권한 확대도 필요하다. 순서는 [2번 배포 가이드](https://orange-taco.github.io/traceback-artifacts/2-dev-server-first-deployment.html)에 있다.
 
 ## Maintenance
 

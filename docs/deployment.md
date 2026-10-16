@@ -272,6 +272,9 @@ The example Nginx file is not copied onto the host by `deploy-common.sh`; provis
 separately. It references certificate files, so serve the HTTP ACME challenge and
 obtain the certificate before enabling that file. See the
 [ordered HTTPS setup guide](https://orange-taco.github.io/traceback-artifacts/2-dev-server-first-deployment.html#https-sequence).
+Let's Encrypt ended certificate-expiration emails in 2025; a personal contact
+address is not needed for this certificate. Issue it without an email address,
+then verify Certbot's automatic renewal and monitor the certificate expiry.
 
 Do not place passwords in SSM command parameters or GitHub logs. The SSM command does not print `.env`, but Compose/application error output could reveal sensitive data, so restrict access to command invocation output.
 
