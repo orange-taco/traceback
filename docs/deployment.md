@@ -57,7 +57,10 @@ associated with this EC2 instance's primary private address. Route 53 domain
 hosted zone. The zone now has `api.dev-traceback.com A 3.34.78.140` with a
 300-second TTL. The record resolves to the EC2 address. Nginx answers HTTP on
 port 80, and the `/.well-known/acme-challenge/` webroot was verified externally.
-TLS and the application are not installed yet, so port 443 refuses connections.
+On 2026-10-16, Let's Encrypt issued an email-free certificate for
+`api.dev-traceback.com` (expiry 2027-01-14). The repository Nginx reverse-proxy
+example is active on the host, and external HTTPS reaches Nginx. The API is
+not deployed yet, so `/health/` currently returns 502.
 
 The RDS instance was created on 2026-09-27 and is `Available`. Its endpoint is
 `traceback-development-db.cdgccc6q6aoe.ap-northeast-2.rds.amazonaws.com`. The
@@ -144,10 +147,9 @@ rebuilt development commit `afd7664` on 2026-10-04 with
 `DJANGO_ORIGIN=https://api.dev-traceback.com` in its Production environment.
 The deployment is Ready. The auth config request
 `/_allauth/browser/v1/config` changed from a React Router 404 to a Vercel 502:
-the rewrite is active, but `api.dev-traceback.com:443` still refuses connections.
-HTTP on port 80 now answers through Nginx. Issue the TLS certificate, install
-the reverse-proxy configuration, and deploy Django; then verify session, CSRF,
-email, and Kakao.
+the rewrite is active, but the API was not available then. HTTPS now reaches
+Nginx and returns 502 until Django is deployed. After deployment, verify
+session, CSRF, email, and Kakao.
 The `.env.dev` frontend origin is recorded locally in the client repository;
 `.env.prod` remains unset.
 
@@ -285,9 +287,11 @@ obtain the certificate before enabling that file. See the
 Let's Encrypt ended certificate-expiration emails in 2025; a personal contact
 address is not needed for this certificate. Issue it without an email address,
 then verify Certbot's automatic renewal and monitor the certificate expiry.
-The HTTP ACME webroot was rechecked from outside the EC2 on 2026-10-16.
-Certificate issuance is pending acceptance of the Let's Encrypt Subscriber
-Agreement.
+The user accepted the Let's Encrypt Subscriber Agreement on 2026-10-16.
+The HTTP ACME webroot was checked externally, and the certificate was issued
+without an email address. `certbot renew --dry-run --no-random-sleep-on-renew`
+succeeded. `certbot-renew.timer` is enabled, and a deploy hook reloads Nginx
+after successful renewal. Monitor expiry because no notification email is set.
 
 Do not place passwords in SSM command parameters or GitHub logs. The SSM command does not print `.env`, but Compose/application error output could reveal sensitive data, so restrict access to command invocation output.
 
@@ -300,7 +304,7 @@ Do not place passwords in SSM command parameters or GitHub logs. The SSM command
 - Seoul private ECR repository `traceback` is immutable-tagged and AES-256 encrypted. It has no images yet.
 - This setup has not been exercised by a `development` push workflow. The latest inspected CI run was a pull request, so deploy jobs were correctly skipped. It is not an OIDC deployment test.
 - The EC2 instance role now has repository-scoped ECR pull access. Docker Engine, Compose v5.6.0, AWS CLI v2, Nginx, and Certbot are installed. EC2 ECR authentication succeeds, and external HTTP returns 200. `/opt/traceback` exists with root-only access.
-- Still required before the first development push: prepare `/opt/traceback/.env`, create the Django DB user, issue the TLS certificate, and install the Nginx reverse-proxy configuration. Vercel's `DJANGO_ORIGIN` is active; end-to-end verification still requires API HTTPS and Django.
+- Still required before the first development push: transfer the prepared runtime values to `/opt/traceback/.env`, complete the deployment Kakao credentials and callback URI, and deploy Django. The dedicated `traceback_app` RDS role and TLS reverse proxy are ready. Vercel's `DJANGO_ORIGIN` is active; end-to-end verification still requires Django.
 
 Before the first development push, validate the `development` Environment and its four values; confirm OIDC trust/permissions, EC2 SSM online state, instance ECR pull permission, and ECR `IMMUTABLE` tags. Before production work, separately verify the `production` Environment, reviewer and branch restriction, production role/instance, and distinct database. Confirm environment IDs and each `.env` target match the intended account before deploying.
 

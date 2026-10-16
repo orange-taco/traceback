@@ -21,11 +21,9 @@
    API/Vercel 주소, SES·Kakao 값을 채운 뒤 EC2→RDS 연결을 검증한다.
    SES `dev-traceback.com` 도메인 인증과 SMTP 계정 인증은 완료됐다.
    SES 샌드박스에서 가입 메일을 받을 주소를 인증하거나 운영 발송 권한을 얻는다.
-4. [ ] **API HTTPS와 역방향 프록시** — `api.dev-traceback.com`의 HTTP 검증 경로를
-   제공하고 TLS 인증서를 발급한다. 갱신을 시험한 뒤 호스트 Nginx 설정을
-   활성화해 `127.0.0.1:8000` Django로 전달하도록 준비한다. 인증서와 외부
-   443 연결을 확인한다. 앱 배포 전의 502 응답은 다음 단계에서 해결한다. 자세한 순서는
-   [인증서·Nginx 절](https://orange-taco.github.io/traceback-artifacts/2-dev-server-first-deployment.html#https-sequence)을 따른다.
+4. [x] **API HTTPS와 역방향 프록시** — 인증서 발급, 갱신 모의 실행,
+   `certbot-renew.timer`와 Nginx reload hook, 외부 443 연결을 확인했다.
+   현재 502 응답은 Django 앱 배포 후 5번에서 확인한다.
 5. [ ] **개발 자동 배포 검증** — PR을 `development`에 병합한 뒤 CI의
    Quality/Test → GitHub OIDC → ECR image push → SSM → EC2 Compose·migration
    흐름을 확인한다. image digest, 앱 health check와 외부 HTTPS
@@ -33,7 +31,7 @@
    ECR 보존 정책은 운영 승격·rollback에 필요한 digest를 지우지 않게 정한다.
 6. [ ] **Vercel 경유 브라우저 인증 검증** — 개발 Vercel 프로젝트의 Production
    범위 `DJANGO_ORIGIN`은 재배포로 적용됐다. 현재 API HTTPS 연결이 안 되어
-   인증 경로가 502를 반환한다. 서버 연결 후 `/_allauth`, `/accounts`, `/api`,
+   인증 경로가 502를 반환한다. Django 배포 후 `/_allauth`, `/accounts`, `/api`,
    쿠키·CSRF, 이메일 가입/로그인/탈퇴와 Kakao
    callback·연결 해제를 브라우저에서 검사한다. Preview URL은 별도 CSRF·OAuth
    정책을 정할 때 연결한다.
