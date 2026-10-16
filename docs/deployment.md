@@ -179,6 +179,16 @@ owner-only file, not on the EC2 yet. The account remains in the SES sandbox;
 recipient verification or SES production access is required for external signup
 mail tests. The EC2 runtime `.env` must use the chosen sender and SMTP credentials.
 
+## Development Kakao app
+
+The local environment uses Kakao's `traceback_dev-TEST` test app (ID `1547059`).
+The AWS development EC2 uses the separate `traceback` app (ID `1547058`). Its
+REST API key, Kakao Login client secret, and Admin Key must all come from that
+same app. The local `.env.dev` keys belong to the test app and must not be copied
+to `/opt/traceback/.env`. The deployment app currently has only the local
+`http://localhost:8000/accounts/kakao/login/callback/` redirect URI; add and
+verify the deployed callback URI before browser QA.
+
 ## Public learning guides
 
 The independent `orange-taco/traceback-artifacts` repository owns the learning
@@ -275,6 +285,9 @@ obtain the certificate before enabling that file. See the
 Let's Encrypt ended certificate-expiration emails in 2025; a personal contact
 address is not needed for this certificate. Issue it without an email address,
 then verify Certbot's automatic renewal and monitor the certificate expiry.
+The HTTP ACME webroot was rechecked from outside the EC2 on 2026-10-16.
+Certificate issuance is pending acceptance of the Let's Encrypt Subscriber
+Agreement.
 
 Do not place passwords in SSM command parameters or GitHub logs. The SSM command does not print `.env`, but Compose/application error output could reveal sensitive data, so restrict access to command invocation output.
 

@@ -29,6 +29,9 @@ codebase check → system/design check → user decision review → implementati
 - Email: mandatory verification, allauth `EmailAddress`가 인증 상태 소유
 - Social: allauth `SocialAccount`가 provider identity 소유
 - Kakao: verified `account_email`만 사용하고 Admin Key server-side unlink
+- 로컬 Kakao 설정은 `traceback_dev-TEST` 테스트 앱을 사용하고, AWS development는
+  `traceback` 앱을 사용한다. 두 앱의 REST API Key·Client Secret·Admin Key를
+  섞지 않는다.
 - Kakao unlink 성공 후 User·SocialAccount·EmailAddress를 한 DB transaction에서
   정리하고, UserSession 종료는 transaction이 끝난 뒤 실행한다.
 - 현재 구현은 원격 Kakao 성공 후 로컬 DB 실패를 복구하는 영속 작업 기록이 없다.
