@@ -74,6 +74,14 @@ traffic. [AWS documents](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/
 that a stopped RDS instance avoids instance-hour charges but continues to bill
 storage/backups and automatically starts after seven consecutive stopped days.
 
+On 2026-10-16, the `traceback_admin` master password was reset because the old
+value was unavailable. Login through an SSM port-forward to RDS succeeded with
+the new value. A dedicated `traceback_app` login was created for Django and
+granted database `CONNECT` plus `USAGE, CREATE` on schema `public`. Its login and
+table-creation permission were verified with a rolled-back transaction. The
+passwords are held in local owner-only files while the EC2 `.env` is prepared;
+they are not in this repository or on the EC2 yet.
+
 ## Cost-conscious development defaults
 
 First check the account's creation date, Free or Paid plan, remaining credits,
@@ -163,10 +171,13 @@ The development sender is `no-reply@dev-traceback.com`. On 2026-10-16, the
 Easy DKIM. Its three CNAME records were added to the authoritative Route 53
 hosted zone and the change reached `INSYNC`. SES now reports
 `VerifiedForSendingStatus=true` and DKIM `SUCCESS`.
-The account remains in the SES sandbox with no SMTP credentials configured;
+The dedicated IAM user `traceback-development-ses-smtp` can call only
+`ses:SendRawEmail` for this domain identity with From address
+`no-reply@dev-traceback.com`. Its Seoul SMTP credentials were generated and
+authenticated successfully on port 587 with STARTTLS. They are held in a local
+owner-only file, not on the EC2 yet. The account remains in the SES sandbox;
 recipient verification or SES production access is required for external signup
-mail tests. The EC2 runtime `.env` must use the chosen sender and its own SMTP
-credentials once available.
+mail tests. The EC2 runtime `.env` must use the chosen sender and SMTP credentials.
 
 ## Public learning guides
 

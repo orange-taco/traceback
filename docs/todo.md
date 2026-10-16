@@ -15,11 +15,11 @@
 2. [ ] **EC2 배포 기반 준비** — 개발 EC2 역할에 해당 ECR 저장소의 pull 권한을
    추가한다. SSM으로 접속해 Docker Engine, Compose v2, AWS CLI v2와
    `/opt/traceback` 배포 디렉터리를 준비한다.
-3. [ ] **RDS·서버 환경변수 연결** — 앱 전용 PostgreSQL 사용자·DB를 만들고,
-   RDS 백업/복구 지점을 확인한다. 개발 EC2의 미추적 `/opt/traceback/.env`에
+3. [ ] **RDS·서버 환경변수 연결** — 앱 전용 `traceback_app` 계정과
+   RDS 자동 백업은 확인했다. 개발 EC2의 미추적 `/opt/traceback/.env`에
    `config/server.development.env.example`을 기준으로 DB URL, Django secret,
    API/Vercel 주소, SES·Kakao 값을 채운 뒤 EC2→RDS 연결을 검증한다.
-   SES `dev-traceback.com` 도메인 인증은 완료됐다. SMTP 자격 증명을 준비한다.
+   SES `dev-traceback.com` 도메인 인증과 SMTP 계정 인증은 완료됐다.
    SES 샌드박스에서 가입 메일을 받을 주소를 인증하거나 운영 발송 권한을 얻는다.
 4. [ ] **API HTTPS와 역방향 프록시** — `api.dev-traceback.com`의 HTTP 검증 경로를
    제공하고 TLS 인증서를 발급한다. 갱신을 시험한 뒤 호스트 Nginx 설정을
