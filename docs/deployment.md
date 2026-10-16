@@ -156,6 +156,18 @@ ordinary local Vite proxy is configured separately. A local `.env.dev` file is
 not uploaded to Vercel. The current frontend `vercel.ts` consumes only
 `DJANGO_ORIGIN`; do not put Django, database, SES, or Kakao secrets in Vercel.
 
+## Development email identity
+
+The development sender is `no-reply@dev-traceback.com`. On 2026-10-16, the
+`dev-traceback.com` domain identity was created in SES `ap-northeast-2` with
+Easy DKIM. Its three CNAME records were added to the authoritative Route 53
+hosted zone and the change reached `INSYNC`. SES now reports
+`VerifiedForSendingStatus=true` and DKIM `SUCCESS`.
+The account remains in the SES sandbox with no SMTP credentials configured;
+recipient verification or SES production access is required for external signup
+mail tests. The EC2 runtime `.env` must use the chosen sender and its own SMTP
+credentials once available.
+
 ## Public learning guides
 
 The independent `orange-taco/traceback-artifacts` repository owns the learning
