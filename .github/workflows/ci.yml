@@ -46,30 +46,40 @@ jobs:
       - run: docker compose --env-file .env.example config --quiet
       - env:
           APP_IMAGE: traceback-production:ci
-          APP_ENV_FILE: config/ci-production.env
-        run: docker compose --env-file config/ci-production.env -f docker-compose.yml -f docker-compose_prod.yml config --quiet
+          APP_ENV_FILE: config/ci-container-smoke.env
+        run: >-
+          docker compose --env-file config/ci-container-smoke.env
+          -f docker-compose.yml -f docker-compose_prod.yml config --quiet
       - run: docker build --target production -t traceback-production:ci .
       - name: Smoke test production container
         if: github.event_name == 'pull_request' && github.base_ref == 'main'
         env:
           APP_IMAGE: traceback-production:ci
-          APP_ENV_FILE: config/ci-production.env
+          APP_ENV_FILE: config/ci-container-smoke.env
         run: |
-          docker compose --env-file config/ci-production.env -f docker-compose.yml -f docker-compose_prod.yml up -d --no-build
-          docker compose --env-file config/ci-production.env -f docker-compose.yml -f docker-compose_prod.yml exec -T app python manage.py migrate --noinput
-          docker compose --env-file config/ci-production.env -f docker-compose.yml -f docker-compose_prod.yml up -d --no-build --wait
+          docker compose --env-file config/ci-container-smoke.env \
+            -f docker-compose.yml -f docker-compose_prod.yml up -d --no-build
+          docker compose --env-file config/ci-container-smoke.env \
+            -f docker-compose.yml -f docker-compose_prod.yml exec -T app \
+            python manage.py migrate --noinput
+          docker compose --env-file config/ci-container-smoke.env \
+            -f docker-compose.yml -f docker-compose_prod.yml up -d --no-build --wait
       - name: Show production container logs
         if: always() && github.event_name == 'pull_request' && github.base_ref == 'main'
         env:
           APP_IMAGE: traceback-production:ci
-          APP_ENV_FILE: config/ci-production.env
-        run: docker compose --env-file config/ci-production.env -f docker-compose.yml -f docker-compose_prod.yml logs --no-color
+          APP_ENV_FILE: config/ci-container-smoke.env
+        run: >-
+          docker compose --env-file config/ci-container-smoke.env
+          -f docker-compose.yml -f docker-compose_prod.yml logs --no-color
       - name: Stop production container
         if: always() && github.event_name == 'pull_request' && github.base_ref == 'main'
         env:
           APP_IMAGE: traceback-production:ci
-          APP_ENV_FILE: config/ci-production.env
-        run: docker compose --env-file config/ci-production.env -f docker-compose.yml -f docker-compose_prod.yml down -v
+          APP_ENV_FILE: config/ci-container-smoke.env
+        run: >-
+          docker compose --env-file config/ci-container-smoke.env
+          -f docker-compose.yml -f docker-compose_prod.yml down -v
 
   test:
     name: Test

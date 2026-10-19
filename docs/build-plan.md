@@ -13,18 +13,21 @@
 - Kakao OAuth, provider 연결/해제, account deletion
 - PostgreSQL 개발·운영 계약과 same-origin browser session
 - client auth flow와 실제 브라우저 QA
+- Vercel에서 client React Router SSR 운영, AWS EC2 API와 same-origin auth 연결
 
 완료 기준:
 
 - 현재 코드·테스트·문서가 인증 계약과 일치한다.
 - backend full test, Ruff, format, mypy, Django check, migration drift check가 통과한다.
 - client typecheck/build와 실제 Kakao cross-route QA가 통과한다.
+- Vercel development/production 배포와 환경별 API proxy, email/Kakao 인증이 검증된다.
 - development/production EC2에서 동일 ECR image digest 배포, reverse proxy,
   SMTP, CI 검증이 통과한다.
 - 완료 커밋/PR과 남은 위험이 `docs/current/README.md`에 기록된다.
 
 현재 남은 Phase 0 작업:
 
+- Kakao unlink와 로컬 탈퇴·연결 해제의 부분 실패 복구 설계·구현·검증
 - client password-change 및 Kakao browser QA
 - AWS development/production 이미지 승격과 reverse proxy/SMTP 검증
 - 최종 remote CI 확인

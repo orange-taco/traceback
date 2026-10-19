@@ -1,30 +1,21 @@
 # Current Work
 
-새 AI 세션은 이 문서와 [`../system.md`](../system.md)를 먼저 읽는다.
+새 세션은 이 요약과 [`../system.md`](../system.md)를 확인한 뒤 실제 브랜치 상태를 점검한다.
 
 ## Current state
 
-- Phase 0 Foundation의 account/auth 서버 slice가 구현되어 있다.
-- 현재 브랜치는 `phase-0d-pr8-review-round2`이며 PR #8의 CodeRabbit 지적 5개를 반영했다. 로컬 호스트 DB URL, 외부 Action SHA 고정, 운영 승격 SHA, `detail` 필드 오류, 로컬 DB 포트 바인딩을 수정했다.
-- Kakao provider unlink, account deletion, 사용자별 세션 추적이 구현되어 있다.
-- 로컬 메일은 console, AWS development/production 메일은 SES SMTP를 사용한다. `.env.example`과 `config/server.env.example`에 SES 인증 변수 이름을 명시했다.
-- `development`/`main` push의 quality·test 성공 뒤에만 배포 job이 호출된다. Development는 SHA 이미지가 이미 있으면 재사용하고, production은 성공한 development CI의 SHA로 조회한 동일 digest를 승격한다. EC2는 이미지 속 Compose 파일을 반영하고 migration 후 HTTP/DB healthcheck가 통과한 앱을 실행한다.
-- `.env.dev.git`/`.env.prod.git`는 GitHub Environment 변수 목록이고,
-  EC2 `/opt/traceback/.env`의 변수 목록은 `config/server.env.example`이다. AWS/GitHub 수동 설정은 `docs/deployment.md`에 정리했다.
-- `visualizations/index.html`은 전체 구조·인증·CI/CD·워크플로 전체 코드의 진입점이다. System Guide는 세 워크플로 YAML의 모든 줄(127+87+79줄)을 구간별 원문과 해설로 보여준다.
+- AWS development 첫 배포 가이드와 스크립트가 PR #12에 있다. Production EC2는 아직 없다. Vercel은 `DJANGO_ORIGIN` 적용 재배포가 Ready다. EC2에 Nginx·Docker·Compose·Certbot과 ECR pull 권한이 있다. API HTTPS 인증서와 reverse proxy가 활성화됐고, 앱 미배포로 `/health/`는 502다.
+- [학습 목차](https://orange-taco.github.io/traceback-artifacts/)와 작성 스킬은 별도 `orange-taco/traceback-artifacts` 저장소에서 관리한다. iPad는 게시된 사이트에서 읽는다. Codex Cloud의 비공개 `TRACEBACK Study (3 repos)` 환경에 문서·백엔드·프런트 저장소를 연결해 게시했다. 사이트 내 수정 요청 기능은 아직 없다. 백엔드 저장소의 HTML 복사본과 Pages 워크플로는 제거한다.
+- [인증 결정 가이드](https://orange-taco.github.io/traceback-artifacts/auth-session-allauth-guide.html#external-unlink)는 Kakao unlink의 부분 실패와 작업 복구 설계를 설명한다. 상태·작업 행과 재시도는 개선 설계로 아직 구현되지 않았다.
+- SES 서울 리전에 `dev-traceback.com` 발신 도메인을 등록하고 Easy DKIM 검증을 완료했다. 개발 발신 주소는 `no-reply@dev-traceback.com`이며 전용 SMTP 계정 인증에 성공했다. RDS 관리자 비밀번호를 재설정하고 `traceback_app` 계정의 로그인·테이블 생성 권한을 검증했다. 자격 증명은 로컬 권한 제한 파일에 있고 EC2에는 아직 없다.
+- 로컬 `.env`·`.env.dev`의 카카오 키 3개는 `traceback_dev-TEST` 앱과 일치한다. AWS 개발 EC2의 root 전용 `.env`에는 `traceback` 앱 키 3개와 RDS·SES 값이 설치됐다. 배포 callback URI도 카카오 콘솔에 등록했다.
 
-## Validation
+## Validation / Next action
 
-- Backend SQLite suite 40 passed, 96.23% coverage. Ruff, format, mypy, YAML lint, production 배포 단계 셸 구문, local/production Compose config 통과. 로컬 DB 포트가 `127.0.0.1:15432`로 렌더링됨을 확인했다.
-- HTML의 링크와 스크립트 문법, 브라우저의 탭·상세 설명 동작을 확인했다. 세 YAML 원문의 줄 번호와 전체 범위를 대조했다.
-- 수정 브랜치의 원격 CI와 실제 AWS 배포는 미검증. 최근 development CI는 quality/test가 통과했지만 GitHub `development` Environment의 변수 4개가 비어 있어 배포가 `aws-region` 누락으로 실패했다. AWS 리소스는 생성하지 않았다.
-
-## Next action
-
-- 수정 브랜치를 `development`에 PR로 검토·병합한 뒤 원격 CI를 확인한다.
-- 소유자가 `docs/todo.md` 순서에 따라 AWS 개발 환경과 GitHub Environment 변수를 준비한다. 설정 후 development 배포/HTTP·DB smoke를 검증한다. Production은 source SHA·digest·migration 영향 확인과 명시적 승인 뒤 배포한다.
+- 별도 아티팩트 저장소의 8개 HTML 내부 링크 검사와 Pages 배포가 성공했다. 세 저장소 Cloud 환경을 게시했고 온보딩 중 프런트 타입 검사·빌드, 백엔드 테스트 40개, 문서 링크 검사가 통과했다. 새 Cloud 작업에서 저장소 복원은 아직 별도 확인이 필요하다. 기존 백엔드 PR의 Quality·Test는 통과했고 CodeRabbit은 review paused 상태다. SES 도메인과 DKIM DNS를 추가했으며 실제 앱 배포는 아직 진행하지 않았다.
+- 다음 작업은 PR #12를 `development`에 병합해 첫 자동 배포를 실행하는 것이다. EC2 `.env`의 root:root/600, 필수값, EC2→RDS TCP 연결을 확인했다. Let's Encrypt 인증서 발급·갱신 모의 실행·자동 타이머도 통과했다. 배포 후 외부 API·카카오 callback·브라우저 QA와 SES 샌드박스 수신자 인증 또는 발송 권한 확대가 남았다. 순서는 [2번 배포 가이드](https://orange-taco.github.io/traceback-artifacts/2-dev-server-first-deployment.html)에 있다.
 
 ## Maintenance
 
-- 이 문서는 현재 상태·검증·다음 세션 진입점만 유지한다.
-- 선택적 미래 backlog는 [`../todo.md`](../todo.md)에서 관리한다.
+- 이 문서에는 현재 상태, 검증 상태, 다음 작업만 짧게 유지한다.
+- 선택적 미래 작업은 [`../todo.md`](../todo.md)에 둔다.
