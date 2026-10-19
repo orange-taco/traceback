@@ -183,11 +183,15 @@ mail tests. The EC2 runtime `.env` must use the chosen sender and SMTP credentia
 
 ## Development Kakao app
 
-The local environment uses Kakao's `traceback_dev-TEST` test app (ID `1547059`).
+The local `.env` and `.env.dev` use Kakao's `traceback_dev-TEST` test app (ID `1547059`).
 The AWS development EC2 uses the separate `traceback` app (ID `1547058`). Its
 REST API key, Kakao Login client secret, and Admin Key must all come from that
-same app. The local `.env.dev` keys belong to the test app and must not be copied
-to `/opt/traceback/.env`. The deployment app currently has only the local
+same app. On 2026-10-19, all three values in the owner-only local server staging
+file were compared against that app's console values; the local `.env` and
+`.env.dev` were aligned with the test app. Do not copy the test app values to
+`/opt/traceback/.env`. The supplied deployment Admin Key is the app's default
+key, which the console lists with all API access and no IP restriction. It is
+held only in the local staging file until EC2 installation. The deployment app currently has only the local
 `http://localhost:8000/accounts/kakao/login/callback/` redirect URI; add and
 verify the deployed callback URI before browser QA.
 
