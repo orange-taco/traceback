@@ -12,7 +12,7 @@
    EC2·RDS·EIP·Route 53·ECR 예상 비용을 계산하고, EC2 아웃바운드·NACL·
    RDS 5432·라우팅 테이블을 현재 구성에 맞게 다시 확인한다. 개발 테스트가 끝나면
    RDS/EC2를 중지하는 운영 습관을 정한다.
-2. [ ] **EC2 배포 기반 준비** — 개발 EC2 역할에 해당 ECR 저장소의 pull 권한을
+2. [x] **EC2 배포 기반 준비** — 개발 EC2 역할에 해당 ECR 저장소의 pull 권한을
    추가한다. SSM으로 접속해 Docker Engine, Compose v2, AWS CLI v2와
    `/opt/traceback` 배포 디렉터리를 준비한다.
 3. [ ] **RDS·서버 환경변수 연결** — 앱 전용 `traceback_app` 계정과
@@ -24,14 +24,14 @@
 4. [x] **API HTTPS와 역방향 프록시** — 인증서 발급, 갱신 모의 실행,
    `certbot-renew.timer`와 Nginx reload hook, 외부 443 연결을 확인했다.
    현재 502 응답은 Django 앱 배포 후 5번에서 확인한다.
-5. [ ] **개발 자동 배포 검증** — PR을 `development`에 병합한 뒤 CI의
+5. [x] **개발 자동 배포 검증** — PR을 `development`에 병합한 뒤 CI의
    Quality/Test → GitHub OIDC → ECR image push → SSM → EC2 Compose·migration
    흐름을 확인한다. image digest, 앱 health check와 외부 HTTPS
    `/_allauth/browser/v1/config`의 200 응답을 각각 검사한다.
-   ECR 보존 정책은 운영 승격·rollback에 필요한 digest를 지우지 않게 정한다.
+   ECR에는 lifecycle 삭제 정책을 두지 않아 현재 digest를 보존한다.
 6. [ ] **Vercel 경유 브라우저 인증 검증** — 개발 Vercel 프로젝트의 Production
-   범위 `DJANGO_ORIGIN`은 재배포로 적용됐다. 현재 API HTTPS 연결이 안 되어
-   인증 경로가 502를 반환한다. Django 배포 후 `/_allauth`, `/accounts`, `/api`,
+   범위 `DJANGO_ORIGIN`은 재배포로 적용됐고 allauth config가 200을 반환한다.
+   `/_allauth`, `/accounts`, `/api`,
    쿠키·CSRF, 이메일 가입/로그인/탈퇴와 Kakao
    callback·연결 해제를 브라우저에서 검사한다. Preview URL은 별도 CSRF·OAuth
    정책을 정할 때 연결한다.

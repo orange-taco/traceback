@@ -308,14 +308,15 @@ Do not place passwords in SSM command parameters or GitHub logs. The SSM command
 
 ## Verification and release
 
-### Completed development deployment setup (2026-10-03)
+### Completed development deployment (2026-10-19)
 
 - GitHub `development` Environment allows only the `development` branch. Its four values match `.env.dev.git`; they are environment variables, not secrets. The `development` branch requires a pull request and the `Quality` and `Test` checks. Required approvals are set to zero to support the single-maintainer workflow; force pushes and branch deletion are disabled.
 - AWS account `968579693658` has the GitHub OIDC provider and `traceback-development-deploy` role. Its trust subject is exactly `repo:orange-taco/traceback:environment:development`; its policy is limited to ECR repository `traceback` and SSM commands for EC2 `i-051f85a1ac4e64a2c`.
-- Seoul private ECR repository `traceback` is immutable-tagged and AES-256 encrypted. It has no images yet.
-- This setup has not been exercised by a `development` push workflow. The latest inspected CI run was a pull request, so deploy jobs were correctly skipped. It is not an OIDC deployment test.
+- Seoul private ECR repository `traceback` is immutable-tagged and AES-256 encrypted. No lifecycle deletion policy is configured.
+- PR #12 merged to `development` as `2a8e0f1261a2c17fb72fadd786fbc3cb4d7d8a3a`. CI run `39211302295` passed Quality and Test, published digest `sha256:b3af0a3140e1bcfcf6591ba8ac22a2c4323f0e1f2723304a8da2e1ca9042daf5`, and deployed that digest through OIDC and SSM.
 - The EC2 instance role now has repository-scoped ECR pull access. Docker Engine, Compose v5.6.0, AWS CLI v2, Nginx, and Certbot are installed. EC2 ECR authentication succeeds, and external HTTP returns 200. `/opt/traceback` exists with root-only access.
-- Still required before the first development push: transfer the prepared runtime values to `/opt/traceback/.env`, complete the deployment Kakao credentials and callback URI, and deploy Django. The dedicated `traceback_app` RDS role and TLS reverse proxy are ready. Vercel's `DJANGO_ORIGIN` is active; end-to-end verification still requires Django.
+- The running container is healthy and reports the same ECR digest. `migrate --check` and Django `check` pass. Direct API HTTPS and Vercel-proxied `/_allauth/browser/v1/config` return 200 with valid TLS. The deployed Kakao authorization request uses the expected app, `account_email` scope, and registered API callback.
+- Browser QA found that signed-out `/account` treated allauth's expected 401 as an error. Frontend PR #10 fixed the branch and Vercel production now redirects it to `/auth/login`. Full email and Kakao consent/login/disconnect/delete QA remains.
 
 Before the first development push, validate the `development` Environment and its four values; confirm OIDC trust/permissions, EC2 SSM online state, instance ECR pull permission, and ECR `IMMUTABLE` tags. Before production work, separately verify the `production` Environment, reviewer and branch restriction, production role/instance, and distinct database. Confirm environment IDs and each `.env` target match the intended account before deploying.
 
