@@ -190,10 +190,17 @@ same app. On 2026-10-19, all three values in the owner-only local server staging
 file were compared against that app's console values; the local `.env` and
 `.env.dev` were aligned with the test app. Do not copy the test app values to
 `/opt/traceback/.env`. The supplied deployment Admin Key is the app's default
-key, which the console lists with all API access and no IP restriction. It is
-held only in the local staging file until EC2 installation. The deployment app currently has only the local
-`http://localhost:8000/accounts/kakao/login/callback/` redirect URI; add and
-verify the deployed callback URI before browser QA.
+key, which the console lists with all API access and no IP restriction. The
+deployment callback
+`https://api.dev-traceback.com/accounts/kakao/login/callback/` is registered
+alongside the local callback.
+
+The populated runtime file is installed at `/opt/traceback/.env` with
+`root:root` ownership and mode `600`. Its local and remote SHA-256 matched after
+transfer through an interactive SSM session; required-value checks and an EC2
+TCP connection to the configured RDS endpoint succeeded without printing
+secrets. Application-level DB authentication and migrations are verified by the
+first image deployment.
 
 ## Public learning guides
 
